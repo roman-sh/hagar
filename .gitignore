@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# WhatsApp Web.js auth data
+.wwebjs_auth/
+.wwebjs_cache/
+
+template-app/
+template-scripts/
+
+data/
+
+# Environment variables
+.env
+
+# Development config
+nodemon.json
+
+# Other
+.DS_Store

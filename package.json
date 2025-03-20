@@ -1,0 +1,25 @@
+{
+  "name": "hagar-delivery",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "AI-powered store inventory assistant",
+  "scripts": {
+    "start": "nodemon app/main.js"
+  },
+  "dependencies": {
+    "@azure/ai-form-recognizer": "^5.0.0",
+    "@azure/identity": "^4.8.0",
+    "dotenv": "^16.4.7",
+    "file-type": "^20.4.1",
+    "mongodb": "^6.14.2",
+    "nano": "^10.1.4",
+    "openai": "^4.87.3",
+    "pino": "^9.6.0",
+    "pino-pretty": "^13.0.0",
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.26.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
