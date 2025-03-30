@@ -1,4 +1,4 @@
-import db from '../db/connection.js'
+import { db } from '../connections/mongodb.js'
 import path from 'path'
 
 /**

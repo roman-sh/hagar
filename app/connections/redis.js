@@ -36,5 +36,5 @@ export async function initializeRedis() {
    return redisClient
 }
 
-// Export the client (it will be null until initializeRedis is called)
+// Export the client (it will be empty until initializeRedis is called)
 export default redisClient

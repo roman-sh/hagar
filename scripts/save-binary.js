@@ -33,8 +33,10 @@ async function saveBinaryFile(filePath, storeId = 'organi_ein_karem') {
 
       // Generate unique filename for S3
       const filename = path.basename(filePath)
-      const randomId = randomBytes(24).toString('base64url')
-      const s3Key = `${storeId}/${randomId}/${filename}`
+      // const pathObfuscator = randomBytes(24).toString('base64url')
+      // const s3Key = `${storeId}/${pathObfuscator}/${originalFilename}`
+      const s3Key = `${storeId}/${originalFilename}`
+
 
       // Upload to S3
       const uploadCommand = new PutObjectCommand({
@@ -49,10 +51,10 @@ async function saveBinaryFile(filePath, storeId = 'organi_ein_karem') {
       // Create MongoDB document
       const doc = {
          _id: `scan_${filename}`,
+         type: 'scan',
          storeId,
          filename,
-         status: 'received',
-         createdAt: stats.birthtime.toISOString(),
+         createdAt: new Date(),
          contentType: fileType.mime,
          url: `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`,
          s3Key
