@@ -1,37 +1,37 @@
-import nano from 'nano'
+import { MongoClient, ServerApiVersion } from 'mongodb'
 import 'dotenv/config'
-import log from '../utils/global-logger.js'
 
+// MongoDB client and db connection
+let client
 let db
 
-async function initializeDatabase() {
-    try {
-        // Connect to the CouchDB server
-        const couch = nano(process.env.COUCHDB_URL)
-        
-        // Get database name from env or use default
-        const dbName = process.env.COUCHDB_DB_NAME || 'rexail'
-        
-        try {
-            // Try to use the database directly
-            db = couch.use(dbName)
-            
-            // Verify connection by making a simple request
-            await db.info()
-            log.info(`Connected to CouchDB database: ${dbName}`)
-        } catch (error) {
-            // If database doesn't exist, create it
-            await couch.db.create(dbName)
-            db = couch.use(dbName)
-            log.info(`Created and connected to CouchDB database: ${dbName}`)
-        }
-    } catch (error) {
-        log.error(error, 'CouchDB connection error')
-        throw error
-    }
+export async function initializeDatabase() {
+   // Get MongoDB connection URI from environment variables
+   const uri = process.env.MONGO_URI
+
+   // Create a MongoClient with a MongoClientOptions object to set the Stable API version
+   client = new MongoClient(uri, {
+      serverApi: {
+         version: ServerApiVersion.v1,
+         strict: true,
+         deprecationErrors: true
+      }
+   })
+
+   // Connect the client to the server
+   await client.connect()
+
+   const dbName = process.env.MONGO_DB_NAME
+
+   // Get a reference to the database
+   db = client.db(dbName)
+
+   // Verify the connection with a simple command
+   await db.command({ ping: 1 })
+   log.info(`Connected to MongoDB database: ${dbName}`)
+
+   return db
 }
 
-// Initialize the database connection
-await initializeDatabase()
-
+// Export the db object (it will be null until initializeDatabase is called)
 export default db

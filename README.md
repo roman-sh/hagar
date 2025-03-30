@@ -8,7 +8,7 @@ Hagar is a specialized system designed to streamline inventory management for st
 
 ## Core Features
 
-- **Document Ingestion**: Stores scan delivery invoices using a compact scanner (Epson DS-80W)
+- **Document Ingestion**: Stores scan delivery invoices using a compact scanner (Fujitsu ScanSnap ix100)
 - **Hebrew OCR Processing**: Uses Azure Document Intelligence to extract information from Hebrew documents
 - **WhatsApp Integration**: Store managers receive notifications and verify extracted information via WhatsApp
 - **Automatic Inventory Updates**: Once verified, the system updates the store's inventory system automatically
@@ -55,7 +55,7 @@ For matching invoice items to catalog products, the system uses:
 - **Redis**: Powers both the job queue system and vector search capabilities
 - **Bull**: Queue management for document processing pipeline
 - **WhatsApp Web.js**: For WhatsApp integration
-- **CouchDB**: For document and data storage
+- **CouchDB/MongoDB**: For document and data storage
 - **OpenAI**: For embeddings and LLM-based verification
 
 ## Installation
@@ -90,7 +90,7 @@ REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_PASSWORD=your_redis_password
 
-# CouchDB
+# MongoDB/CouchDB
 DB_CONNECTION_STRING=your_database_connection_string
 
 # OpenAI

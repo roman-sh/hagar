@@ -1,48 +1,79 @@
 import 'dotenv/config'
-import nano from 'nano'
+import path from 'path'
+import { randomBytes } from 'crypto'
+import { MongoClient } from 'mongodb'
 import { readFile, stat } from 'fs/promises'
 import { fileTypeFromBuffer } from 'file-type'
-import path from 'path'
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 
-const db = nano(process.env.COUCHDB_URL).use(process.env.COUCHDB_DB_NAME)
+// Initialize MongoDB client
+const mongoClient = new MongoClient(process.env.MONGO_URI)
+await mongoClient.connect()
+const db = mongoClient.db(process.env.MONGO_DB_NAME)
 
-async function saveBinaryFile(filePath) {
-  // Read file content and get stats
-  const [content, stats] = await Promise.all([
-    readFile(filePath),
-    stat(filePath)
-  ])
+// Initialize S3 client
+const s3Client = new S3Client({
+   region: process.env.AWS_REGION,
+   credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY,
+      secretAccessKey: process.env.AWS_SECRET_KEY
+   }
+})
 
-  // Detect mime type
-  const fileType = await fileTypeFromBuffer(content)
+async function saveBinaryFile(filePath, storeId = 'organi_ein_karem') {
+   try {
+      // Read file content and get stats
+      const [content, stats] = await Promise.all([
+         readFile(filePath),
+         stat(filePath)
+      ])
 
-  // Create document
-  const filename = path.basename(filePath)
-  const doc = {
-    _id: `file_${Date.now()}_${filename}`,
-    filename,
-    status: 'received',
-    createdAt: stats.birthtime.toISOString(),
-  }
-  
-  // First insert the document
-  const { id, rev } = await db.insert(doc)
-  console.log(`Document created with ID: ${id}`)
-  
-  // Then attach the binary file
-  const response = await db.attachment.insert(
-    id, 
-    'content', 
-    content, 
-    fileType.mime, 
-    { rev }
-  )
-  
-  console.log('File stored successfully:', response)
-  return response
+      // Detect mime type
+      const fileType = await fileTypeFromBuffer(content)
+
+      // Generate unique filename for S3
+      const filename = path.basename(filePath)
+      const randomId = randomBytes(24).toString('base64url')
+      const s3Key = `${storeId}/${randomId}/${filename}`
+
+      // Upload to S3
+      const uploadCommand = new PutObjectCommand({
+         Bucket: process.env.AWS_BUCKET_NAME,
+         Key: s3Key,
+         Body: content,
+         ContentType: fileType.mime
+      })
+
+      await s3Client.send(uploadCommand)
+
+      // Create MongoDB document
+      const doc = {
+         _id: `scan_${filename}`,
+         storeId,
+         filename,
+         status: 'received',
+         createdAt: stats.birthtime.toISOString(),
+         contentType: fileType.mime,
+         url: `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`,
+         s3Key
+      }
+
+      // Insert document into MongoDB
+      const result = await db.collection(storeId).insertOne(doc)
+
+      console.log(`Document created with ID: ${result.insertedId}`)
+      console.log('File stored successfully in S3:', doc.url)
+
+      return doc
+   } finally {
+      // Close MongoDB connection
+      await mongoClient.close()
+   }
 }
 
 // Run the script
 const filePath = process.argv[2]
-saveBinaryFile(filePath)
-
+saveBinaryFile(filePath).catch((error) => {
+   console.error('Error:', error)
+   process.exit(1)
+})

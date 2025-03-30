@@ -1,11 +1,6 @@
-export const STAGES = {
-    RECEIVED: 'received',
-    PENDING_SCAN_APPROVAL: 'pending_scan_approval',
-    SCAN_APPROVED: 'scan_approved',
-    
-    IN_PROGRESS: 'in_progress',
-    COMPLETED: 'completed',
-    CANCELLED: 'cancelled',
-}
-
-
+export const SCAN_APPROVAL = 'scan_approval'
+export const DATA_EXTRACTION = 'data_extraction'
+export const DATA_APPROVAL = 'data_approval'
+export const INVENTORY_UPDATE = 'inventory_update'
+export const INBOUND_MESSAGES = 'inbound_messages'
+export const OUTBOUND_MESSAGES = 'outbound_messages'

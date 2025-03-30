@@ -108,7 +108,7 @@ The document structure includes:
 
 ### Document Acquisition
 1. **Scanning Process**:
-   - Store manager scans delivery invoice using Epson DS-80W scanner
+   - Store manager scans delivery invoice using Fujitsu ScanSnap ix100 scanner
    - Scanner outputs PDF file of the document
    - PDF is automatically sent to dedicated email address via scanner's direct cloud integration
 

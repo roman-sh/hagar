@@ -7,15 +7,23 @@
     "start": "nodemon app/main.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.777.0",
     "@azure/ai-form-recognizer": "^5.0.0",
     "@azure/identity": "^4.8.0",
+    "@bull-board/api": "^6.7.10",
+    "@bull-board/express": "^6.7.10",
+    "bull": "^4.16.5",
     "dotenv": "^16.4.7",
+    "express": "^5.0.1",
     "file-type": "^20.4.1",
+    "ioredis": "^5.6.0",
+    "mongodb": "^6.15.0",
     "nano": "^10.1.4",
     "openai": "^4.87.3",
     "pino": "^9.6.0",
     "pino-pretty": "^13.0.0",
     "qrcode-terminal": "^0.12.0",
+    "redis": "^4.7.0",
     "whatsapp-web.js": "^1.26.0"
   },
   "devDependencies": {
