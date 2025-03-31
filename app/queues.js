@@ -4,7 +4,7 @@ import {
    DATA_EXTRACTION,
    DATA_APPROVAL,
    INVENTORY_UPDATE
-} from './constants.js'
+} from './config/constants.js'
 
 import {
    scanApprovalProcessor,

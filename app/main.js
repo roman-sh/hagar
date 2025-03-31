@@ -1,19 +1,13 @@
 import './utils/suppress-warnings.js'
 import './utils/global-logger.js'
-import express from 'express'
-import { queuesMap, initializeQueues } from './queues.js'
-import { createBullBoard } from '@bull-board/api'
-import { BullAdapter } from '@bull-board/api/bullAdapter.js'
-import { ExpressAdapter } from '@bull-board/express'
+import { Hono } from 'hono'
+import { initializeQueues } from './queues.js'
 import { initializeDatabase } from './connections/mongodb.js'
 import { initializeRedis } from './connections/redis.js'
 import { initializeS3 } from './connections/s3.js'
 import { pdfUploadHandler } from './api/pdf-upload.js'
-import { errorHandler } from './api/error-handler.js'
+import { configureBullBoard } from './config/bull-board.js'
 
-
-const app = express()
-app.use(express.json())
 
 try {
    // Initialize database connection
@@ -24,39 +18,39 @@ try {
    // Initialize all queues with their processors
    initializeQueues()
 
+   const app = new Hono()
+
    // Set up Bull Board
-   const serverAdapter = new ExpressAdapter()
-   serverAdapter.setBasePath('/ui')
+   const { serverAdapter, basePath } = configureBullBoard()
 
-   // Create adapters for each queue
-   const queueAdapters = Object.values(queuesMap).map(
-      (queue) => new BullAdapter(queue)
-   )
+   // Register Bull Board routes
+   app.route(basePath, serverAdapter.registerPlugin())
 
-   createBullBoard({
-      queues: queueAdapters,
-      serverAdapter
-   })
-
-   app.use('/ui', serverAdapter.getRouter())
-   app.post('/api/pdf-upload', pdfUploadHandler)
+   // API routes
+   app.post('/api/pdf-upload', pdfUploadHandler)   // app's entry point
 
    // Define a health check endpoint
-   app.get('/health', (req, res) => {
-      res.json({ status: 'ok' })
+   app.get('/health', (c) => c.json({ status: 'ok' }))
+
+   // Error handling
+   app.onError((err, c) => {
+      log.error(err, 'Error handling request')
+      return c.json({ error: 'Internal server error' }, 500)
    })
-
-   // Error handling middleware (must be last)
-  app.use(errorHandler)
-
+   
    // Start the HTTP server
    const PORT = process.env.PORT || 3000
-   app.listen(PORT, () => {
-      log.info(`Server running on port ${PORT}`)
-      log.info(`Bull Dashboard available at http://localhost:${PORT}/ui`)
+   
+   // In Bun, you can pass the Hono app directly to Bun.serve
+   Bun.serve({
+      fetch: app.fetch,
+      port: PORT
    })
-
+   
+   log.info(`Server running on port ${PORT}`)
+   log.info(`Bull Dashboard available at http://localhost:${PORT}${basePath}`)
    log.info('Application started successfully')
+
 } catch (error) {
-   log.error(error, 'Fatal error')
+   log.error(error, 'Application Error')
 }

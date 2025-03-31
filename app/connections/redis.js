@@ -1,15 +1,14 @@
-import { createClient } from 'redis'
-// Alternative: import Redis from 'ioredis'
+import Redis from 'ioredis'
+// Alternative: import { createClient } from 'redis'
 
-// Redis client connection
-let redisClient
+// Redis client connection - now export as named export
+export let redisClient
 
 export async function initializeRedis() {
-   const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379'
-
-   redisClient = createClient({
-      url: redisUrl
-   })
+   // Use REDIS_URL from env if available, otherwise ioredis defaults to localhost:6379
+   redisClient = process.env.REDIS_URL 
+      ? new Redis(process.env.REDIS_URL)
+      : new Redis()
 
    // Error handling
    redisClient.on('error', (error) => {
@@ -26,15 +25,9 @@ export async function initializeRedis() {
       log.info('Redis client connected')
    })
 
-   // Connect to Redis server
-   await redisClient.connect()
-
    // Ping to verify connection
    const pingResult = await redisClient.ping()
    log.info({ pingResult }, 'Redis connection verified')
 
    return redisClient
 }
-
-// Export the client (it will be empty until initializeRedis is called)
-export default redisClient
