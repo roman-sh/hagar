@@ -18,41 +18,36 @@ interface ExtractionJobResult extends BaseJobResult {
  * @returns The processing result
  */
 export async function dataExtractionProcessor(job: Job<JobData>): Promise<ExtractionJobResult> {
-   try {
-      log.info(`Processing data extraction job: ${job.id}`)
-      
-      // Get document ID from job.id (not job.data.docId)
-      const docId = job.id.toString()
-      const storeId = job.data.storeId
-      
-      log.info(`Document ID: ${docId}, Store ID: ${storeId}`)
+   log.info(`Processing data extraction job: ${job.id}`)
 
-      // Mock processing logic - in a real implementation, this would:
-      // 1. Extract data from document using OCR or other techniques
-      // 2. Structure and validate the extracted data
-      // 3. Update document with extracted data
+   // Get document ID from job.id (not job.data.docId)
+   const docId = job.id.toString()
+   const storeId = job.data.storeId
 
-      // Simulate processing delay
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+   log.info(`Document ID: ${docId}, Store ID: ${storeId}`)
 
-      // Mock extracted data
-      const extractedData: ExtractedData = {
-         title: `Document ${docId}`,
-         date: new Date().toISOString(),
-         content: 'Sample extracted content'
-      }
+   // Mock processing logic - in a real implementation, this would:
+   // 1. Extract data from document using OCR or other techniques
+   // 2. Structure and validate the extracted data
+   // 3. Update document with extracted data
 
-      // Mock update to database
-      log.info(`Updating document ${docId} with extracted data`)
+   // Simulate processing delay
+   await new Promise((resolve) => setTimeout(resolve, 2000))
 
-      return {
-         success: true,
-         docId,
-         message: 'Data successfully extracted',
-         extractedData
-      }
-   } catch (error) {
-      log.error(`Error processing data extraction: ${error.message}`)
-      throw error // Re-throw so Bull can handle retries
+   // Mock extracted data
+   const extractedData: ExtractedData = {
+      title: `Document ${docId}`,
+      date: new Date().toISOString(),
+      content: 'Sample extracted content'
+   }
+
+   // Mock update to database
+   log.info(`Updating document ${docId} with extracted data`)
+
+   return {
+      success: true,
+      docId,
+      message: 'Data successfully extracted',
+      extractedData
    }
 } 

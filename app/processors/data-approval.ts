@@ -8,33 +8,28 @@ import { JobData, BaseJobResult } from '../types/jobs'
  * @returns The processing result
  */
 export async function dataApprovalProcessor(job: Job<JobData>): Promise<BaseJobResult> {
-   try {
-      log.info(`Processing data approval job: ${job.id}`)
-      
-      // Get document ID from job.id
-      const docId = job.id.toString()
-      const storeId = job.data.storeId
-      
-      log.info(`Document ID: ${docId}, Store ID: ${storeId}`)
+   log.info(`Processing data approval job: ${job.id}`)
 
-      // Mock processing logic - in a real implementation, this would:
-      // 1. Notify relevant users about data needing approval
-      // 2. Provide interface for reviewing extracted data
-      // 3. Update document status based on approval
+   // Get document ID from job.id
+   const docId = job.id.toString()
+   const storeId = job.data.storeId
 
-      // Simulate processing delay
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+   log.info(`Document ID: ${docId}, Store ID: ${storeId}`)
 
-      // Mock update to database
-      log.info(`Updating document ${docId} status to 'pending_data_approval'`)
+   // Mock processing logic - in a real implementation, this would:
+   // 1. Notify relevant users about data needing approval
+   // 2. Provide interface for reviewing extracted data
+   // 3. Update document status based on approval
 
-      return {
-         success: true,
-         docId,
-         message: 'Data approval notification sent'
-      }
-   } catch (error) {
-      log.error(`Error processing data approval: ${error.message}`)
-      throw error // Re-throw so Bull can handle retries
+   // Simulate processing delay
+   await new Promise((resolve) => setTimeout(resolve, 1000))
+
+   // Mock update to database
+   log.info(`Updating document ${docId} status to 'pending_data_approval'`)
+
+   return {
+      success: true,
+      docId,
+      message: 'Data approval notification sent'
    }
 } 

@@ -1,5 +1,6 @@
 /// <reference types="bun-types" />
 import './utils/suppress-warnings.ts'
+import './utils/global-logger.ts'
 import { Hono } from 'hono'
 import { initializeQueues } from './queues.ts'
 import { initializeDatabase } from './connections/mongodb.ts'
@@ -7,7 +8,6 @@ import { initializeRedis } from './connections/redis.ts'
 import { initializeS3 } from './connections/s3.ts'
 import { pdfUploadHandler } from './api/pdf-upload'
 import { configureBullBoard, type BullBoardConfig } from './config/bull-board'
-
 
 try {
    // Initialize database connection
