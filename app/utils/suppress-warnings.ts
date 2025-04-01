@@ -1,3 +1,8 @@
+/**
+ * Suppress specific NodeJS deprecation warnings to reduce noise in logs
+ */
+
+// @ts-nocheck - Disabling TypeScript for this file
 // Suppress punycode deprecation warning
 const originalEmit = process.emit
 process.emit = function (name, data, ...args) {
@@ -9,4 +14,4 @@ process.emit = function (name, data, ...args) {
       return false
    }
    return originalEmit.apply(process, [name, data, ...args])
-}
+} 

@@ -1,18 +1,43 @@
-import { db } from '../connections/mongodb.js'
-import path from 'path'
+import { db } from '../connections/mongodb.ts'
+import { Job } from 'bull'
+import { ObjectId } from 'mongodb'
+import { JobData, BaseJobResult } from '../types/jobs'
+
+interface InventoryDoc {
+   _id: string | ObjectId;
+   updateProcessor?: string;
+   [key: string]: any;
+}
+
+interface UpdateResult {
+   [key: string]: any;
+}
+
+interface InventoryJobResult extends BaseJobResult {
+   systemName: string;
+   [key: string]: any;
+}
 
 /**
  * Process a job for inventory update
- * @param {Object} job - The Bull job object
- * @returns {Promise<Object>} The processing result
+ * @param job - The Bull job object
+ * @returns The processing result
  */
-export async function inventoryUpdateProcessor(job) {
+export async function inventoryUpdateProcessor(job: Job<JobData>): Promise<InventoryJobResult> {
    try {
+      // Get document ID from job.id
       const docId = job.id
-      log.info({ docId }, 'Processing inventory update job')
+      const storeId = job.data.storeId
+      
+      log.info({ docId, storeId }, 'Processing inventory update job')
 
-      // Get the document from the database
-      const doc = await db.get(docId)
+      // Get the document from the database - using proper MongoDB API
+      // Assuming documents are stored in a collection matching the storeId
+      const doc = await db.collection(storeId).findOne({ _id: new ObjectId(docId.toString()) }) as InventoryDoc | null
+      
+      if (!doc) {
+         throw new Error(`Document not found for id: ${docId}`)
+      }
 
       // Determine which inventory system processor to use
       // Default to 'rexail' if not specified
@@ -36,7 +61,7 @@ export async function inventoryUpdateProcessor(job) {
          }
 
          // Call the system-specific inventory update function
-         const result = await updateInventory(doc, job)
+         const result = await updateInventory(doc, job) as UpdateResult
 
          log.info(
             { docId, systemName },
@@ -46,6 +71,7 @@ export async function inventoryUpdateProcessor(job) {
             success: true,
             docId,
             systemName,
+            message: 'Inventory successfully updated',
             ...result
          }
       } catch (importError) {
@@ -60,7 +86,7 @@ export async function inventoryUpdateProcessor(job) {
          )
 
          throw new Error(
-            `Inventory system processor '${systemName}' not available: ${importError.message}`
+            `Inventory system processor '${systemName}' not available: ${importError instanceof Error ? importError.message : String(importError)}`
          )
       }
    } catch (error) {
@@ -68,4 +94,4 @@ export async function inventoryUpdateProcessor(job) {
       log.error({ err: error, docId }, 'Error processing inventory update')
       throw error // Re-throw so Bull can handle retries
    }
-}
+} 

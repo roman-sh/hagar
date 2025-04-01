@@ -1,6 +1,7 @@
-import pino from 'pino'
+import pino, { Logger } from 'pino'
 
-global.log = pino({
+// Create the logger
+const logger = pino({
    transport: {
       target: 'pino-pretty',
       options: {
@@ -11,3 +12,11 @@ global.log = pino({
    },
    level: process.env.LOG_LEVEL || 'debug'
 })
+
+// Add a global log property
+declare global {
+   var log: Logger;
+}
+
+// Assign the logger to the global object
+global.log = logger

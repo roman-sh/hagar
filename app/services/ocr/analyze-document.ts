@@ -1,3 +1,4 @@
+// @ts-nocheck 
 // =================================================================
 // Script to analyze documents with Azure Document Intelligence
 // This script submits a document to Azure, processes it using the

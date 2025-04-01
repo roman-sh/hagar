@@ -4,11 +4,16 @@ import { HonoAdapter } from '@bull-board/hono'
 import { serveStatic as nodeServeStatic } from '@hono/node-server/serve-static'
 import { queuesMap } from '../queues.js'
 
+export interface BullBoardConfig {
+   serverAdapter: HonoAdapter;
+   basePath: string;
+}
+
 /**
  * Configure Bull Board with Hono adapter
- * @returns {HonoAdapter} The configured server adapter
+ * @returns {BullBoardConfig} The configured server adapter and basePath
  */
-export function configureBullBoard() {
+export function configureBullBoard(): BullBoardConfig {
    const basePath = '/ui'
    
    // Create Bull Board with Node.js serveStatic

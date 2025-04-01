@@ -1,15 +1,31 @@
-import { db } from '../connections/mongodb.js'
+import { db } from '../connections/mongodb.ts'
+import { Job } from 'bull'
+import { JobData, BaseJobResult } from '../types/jobs'
+
+interface ExtractedData {
+   title: string;
+   date: string;
+   content: string;
+}
+
+interface ExtractionJobResult extends BaseJobResult {
+   extractedData: ExtractedData;
+}
 
 /**
  * Process a job for data extraction
- * @param {Object} job - The Bull job object
- * @returns {Promise<Object>} The processing result
+ * @param job - The Bull job object
+ * @returns The processing result
  */
-export async function dataExtractionProcessor(job) {
+export async function dataExtractionProcessor(job: Job<JobData>): Promise<ExtractionJobResult> {
    try {
       log.info(`Processing data extraction job: ${job.id}`)
-      const docId = job.data.docId
-      log.info(`Document ID: ${docId}`)
+      
+      // Get document ID from job.id (not job.data.docId)
+      const docId = job.id.toString()
+      const storeId = job.data.storeId
+      
+      log.info(`Document ID: ${docId}, Store ID: ${storeId}`)
 
       // Mock processing logic - in a real implementation, this would:
       // 1. Extract data from document using OCR or other techniques
@@ -20,7 +36,7 @@ export async function dataExtractionProcessor(job) {
       await new Promise((resolve) => setTimeout(resolve, 2000))
 
       // Mock extracted data
-      const extractedData = {
+      const extractedData: ExtractedData = {
          title: `Document ${docId}`,
          date: new Date().toISOString(),
          content: 'Sample extracted content'
@@ -31,7 +47,7 @@ export async function dataExtractionProcessor(job) {
 
       return {
          success: true,
-         docId: docId,
+         docId,
          message: 'Data successfully extracted',
          extractedData
       }
@@ -39,4 +55,4 @@ export async function dataExtractionProcessor(job) {
       log.error(`Error processing data extraction: ${error.message}`)
       throw error // Re-throw so Bull can handle retries
    }
-}
+} 

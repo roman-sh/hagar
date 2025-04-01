@@ -1,15 +1,21 @@
-import { db } from '../connections/mongodb.js'
+import { db } from '../connections/mongodb.ts'
+import { Job } from 'bull'
+import { JobData, BaseJobResult } from '../types/jobs'
 
 /**
  * Process a job for data approval
- * @param {Object} job - The Bull job object
- * @returns {Promise<Object>} The processing result
+ * @param job - The Bull job object
+ * @returns The processing result
  */
-export async function dataApprovalProcessor(job) {
+export async function dataApprovalProcessor(job: Job<JobData>): Promise<BaseJobResult> {
    try {
       log.info(`Processing data approval job: ${job.id}`)
-      const docId = job.data.docId
-      log.info(`Document ID: ${docId}`)
+      
+      // Get document ID from job.id
+      const docId = job.id.toString()
+      const storeId = job.data.storeId
+      
+      log.info(`Document ID: ${docId}, Store ID: ${storeId}`)
 
       // Mock processing logic - in a real implementation, this would:
       // 1. Notify relevant users about data needing approval
@@ -24,11 +30,11 @@ export async function dataApprovalProcessor(job) {
 
       return {
          success: true,
-         docId: docId,
+         docId,
          message: 'Data approval notification sent'
       }
    } catch (error) {
       log.error(`Error processing data approval: ${error.message}`)
       throw error // Re-throw so Bull can handle retries
    }
-}
+} 

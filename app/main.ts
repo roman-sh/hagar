@@ -1,12 +1,13 @@
-import './utils/suppress-warnings.js'
-import './utils/global-logger.js'
+/// <reference types="bun-types" />
+import './utils/suppress-warnings.ts'
+import './utils/global-logger.ts'
 import { Hono } from 'hono'
-import { initializeQueues } from './queues.js'
-import { initializeDatabase } from './connections/mongodb.js'
-import { initializeRedis } from './connections/redis.js'
-import { initializeS3 } from './connections/s3.js'
-import { pdfUploadHandler } from './api/pdf-upload.js'
-import { configureBullBoard } from './config/bull-board.js'
+import { initializeQueues } from './queues.ts'
+import { initializeDatabase } from './connections/mongodb.ts'
+import { initializeRedis } from './connections/redis.ts'
+import { initializeS3 } from './connections/s3.ts'
+import { pdfUploadHandler } from './api/pdf-upload'
+import { configureBullBoard, type BullBoardConfig } from './config/bull-board'
 
 
 try {
@@ -21,10 +22,10 @@ try {
    const app = new Hono()
 
    // Set up Bull Board
-   const { serverAdapter, basePath } = configureBullBoard()
+   const bullBoardConfig: BullBoardConfig = configureBullBoard()
 
    // Register Bull Board routes
-   app.route(basePath, serverAdapter.registerPlugin())
+   app.route(bullBoardConfig.basePath, bullBoardConfig.serverAdapter.registerPlugin())
 
    // API routes
    app.post('/api/pdf-upload', pdfUploadHandler)   // app's entry point
@@ -41,16 +42,16 @@ try {
    // Start the HTTP server
    const PORT = process.env.PORT || 3000
    
-   // In Bun, you can pass the Hono app directly to Bun.serve
+   // Start the Bun server
    Bun.serve({
       fetch: app.fetch,
-      port: PORT
+      port: PORT as number
    })
    
    log.info(`Server running on port ${PORT}`)
-   log.info(`Bull Dashboard available at http://localhost:${PORT}${basePath}`)
+   log.info(`Bull Dashboard available at http://localhost:${PORT}${bullBoardConfig.basePath}`)
    log.info('Application started successfully')
 
 } catch (error) {
-   log.error(error, 'Application Error')
-}
+   log.error(error as Error, 'Application Error')
+} 

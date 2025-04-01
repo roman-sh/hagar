@@ -4,8 +4,9 @@
   "version": "1.0.0",
   "description": "AI-powered store inventory assistant",
   "scripts": {
-    "start": "bun run app/main.js",
-    "dev": "bun --watch app/main.js"
+    "start": "bun run app/main.ts",
+    "dev": "bun --watch app/main.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.777.0",
@@ -27,6 +28,13 @@
     "whatsapp-web.js": "^1.26.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "@types/aws-sdk": "^2.7.4",
+    "@types/bull": "^4.10.4",
+    "@types/ioredis": "^5.0.0",
+    "@types/mongodb": "^4.0.7",
+    "@types/node": "^22.13.14",
+    "bun-types": "^1.2.7",
+    "nodemon": "^3.1.9",
+    "typescript": "^5.3.3"
   }
 }

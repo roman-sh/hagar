@@ -1,15 +1,19 @@
-import { db } from '../connections/mongodb.js'
+import { db } from '../connections/mongodb.ts'
+import { Job } from 'bull'
+import { JobData, BaseJobResult } from '../types/jobs'
 
 /**
  * Process a job for scan approval
- * @param {Object} job - The Bull job object
- * @returns {Promise<Object>} The processing result
+ * @param job - The Bull job object
+ * @returns The processing result
  */
-export async function scanApprovalProcessor(job) {
+export async function scanApprovalProcessor(job: Job<JobData>): Promise<BaseJobResult> {
    try {
+      // Get document ID from job.id
       const docId = job.id
+      const storeId = job.data.storeId
 
-      log.info({ docId }, 'Processing scan approval job')
+      log.info({ docId, storeId }, 'Processing scan approval job')
 
       // Mock processing logic - in a real implementation, this would:
       // 1. Notify users and await their approval/rejection
@@ -31,4 +35,4 @@ export async function scanApprovalProcessor(job) {
       log.error({ err: error, docId }, 'Error processing scan approval')
       throw error // Re-throw so Bull can handle retries
    }
-}
+} 
