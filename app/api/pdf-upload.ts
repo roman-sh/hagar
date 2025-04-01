@@ -5,6 +5,8 @@ import { Context } from 'hono'
 import { Collection } from 'mongodb'
 import { ScanDocument } from '../types/documents'
 import { DocType } from '../config/constants.ts'
+import { q } from '../helpers/q.ts'
+
 
 export const pdfUploadHandler = async (c: Context) => {
    // Parse the multipart form data with Hono's built-in types
@@ -50,6 +52,11 @@ export const pdfUploadHandler = async (c: Context) => {
    
    // Insert document into MongoDB
    const { insertedId } = await collection.insertOne(doc)
+
+   // Queue the document to the next queue in the pipeline
+   q(storeId, insertedId, null) 
+   // null because it's the first queue (no current queue)
+   // we on purpose do not await this because it's not a blocker for the response
    
    return c.json({
       message: 'PDF uploaded successfully',

@@ -12,7 +12,7 @@ import { DocType } from '../config/constants.ts'
  * @param currentQ - The current queue the document is in
  * @returns Promise<void>
  */
-export const q = async (storeId: string, docId: string, currentQ: QueueKey): Promise<void> => {
+export const q = async (storeId: string, docId: string, currentQ: QueueKey | null): Promise<void> => {
    // Find the store document with its pipeline
    const store = await db.collection(storeId).findOne(
       { type: DocType.STORE },
