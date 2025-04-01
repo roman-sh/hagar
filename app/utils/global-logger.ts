@@ -13,10 +13,5 @@ const logger = pino({
    level: process.env.LOG_LEVEL || 'debug'
 })
 
-// Add a global log property
-declare global {
-   var log: Logger;
-}
-
 // Assign the logger to the global object
 global.log = logger

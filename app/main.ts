@@ -1,6 +1,5 @@
 /// <reference types="bun-types" />
 import './utils/suppress-warnings.ts'
-import './utils/global-logger.ts'
 import { Hono } from 'hono'
 import { initializeQueues } from './queues.ts'
 import { initializeDatabase } from './connections/mongodb.ts'
