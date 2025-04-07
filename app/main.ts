@@ -8,12 +8,15 @@ import { initializeRedis } from './connections/redis.ts'
 import { initializeS3 } from './connections/s3.ts'
 import { pdfUploadHandler } from './api/pdf-upload'
 import { configureBullBoard, type BullBoardConfig } from './config/bull-board'
+import { client as whatsappClient } from './connections/whatsapp'
+
 
 try {
    // Initialize database connection
-   await initializeDatabase()
-   await initializeRedis()
-   await initializeS3()
+   initializeDatabase()
+   initializeRedis()
+   initializeS3()
+   whatsappClient.initialize()
 
    // Initialize all queues with their processors
    initializeQueues()
