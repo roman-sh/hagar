@@ -1,40 +1,50 @@
 import Bull, { Queue, Job, ProcessCallbackFunction } from 'bull'
 import {
-   SCAN_APPROVAL,
+   SCAN_VALIDATION,
    DATA_EXTRACTION,
    DATA_APPROVAL,
-   INVENTORY_UPDATE
+   INVENTORY_UPDATE,
+   INBOUND_MESSAGES,
+   OUTBOUND_MESSAGES
 } from './config/constants.ts'
 import { JobData, BaseJobResult } from './types/jobs'
 
 import {
-   scanApprovalProcessor,
+   scanValidationProcessor,
    dataExtractionProcessor,
    dataApprovalProcessor,
-   inventoryUpdateProcessor
+   inventoryUpdateProcessor,
+   inboundMessagesProcessor,
+   outboundMessagesProcessor
 } from './processors/index.ts'
 
 // Define a type for our queue keys
 export type QueueKey =
-   typeof SCAN_APPROVAL |
+   typeof SCAN_VALIDATION |
    typeof DATA_EXTRACTION |
    typeof DATA_APPROVAL |
-   typeof INVENTORY_UPDATE
+   typeof INVENTORY_UPDATE |
+   typeof INBOUND_MESSAGES |
+   typeof OUTBOUND_MESSAGES
 
 // Create the queues with proper job data typing
 export const queuesMap: Record<QueueKey, Queue<JobData>> = {
-   [SCAN_APPROVAL]: new Bull(SCAN_APPROVAL),
+   [SCAN_VALIDATION]: new Bull(SCAN_VALIDATION),
    [DATA_EXTRACTION]: new Bull(DATA_EXTRACTION),
    [DATA_APPROVAL]: new Bull(DATA_APPROVAL),
-   [INVENTORY_UPDATE]: new Bull(INVENTORY_UPDATE)
+   [INVENTORY_UPDATE]: new Bull(INVENTORY_UPDATE),
+   [INBOUND_MESSAGES]: new Bull(INBOUND_MESSAGES),
+   [OUTBOUND_MESSAGES]: new Bull(OUTBOUND_MESSAGES)
 }
 
 // Map of queue names to their processors
 export const processorsMap: Record<QueueKey, ProcessCallbackFunction<JobData>> = {
-   [SCAN_APPROVAL]: scanApprovalProcessor,
+   [SCAN_VALIDATION]: scanValidationProcessor,
    [DATA_EXTRACTION]: dataExtractionProcessor,
    [DATA_APPROVAL]: dataApprovalProcessor,
-   [INVENTORY_UPDATE]: inventoryUpdateProcessor
+   [INVENTORY_UPDATE]: inventoryUpdateProcessor,
+   [INBOUND_MESSAGES]: inboundMessagesProcessor,
+   [OUTBOUND_MESSAGES]: outboundMessagesProcessor
 }
 
 /**

@@ -1,5 +1,5 @@
 // Queue names as string constants
-export const SCAN_APPROVAL = 'scan_approval'
+export const SCAN_VALIDATION = 'scan_validation'
 export const DATA_EXTRACTION = 'data_extraction'
 export const DATA_APPROVAL = 'data_approval'
 export const INVENTORY_UPDATE = 'inventory_update'

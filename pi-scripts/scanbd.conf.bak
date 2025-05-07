@@ -1,0 +1,59 @@
+action scan {
+      filter = "^scan.*"
+      numerical-trigger {
+            from-value = 1
+            to-value   = 0
+      }
+      desc = "Scan button"
+      script = "scan_controller.sh"
+}
+
+action page-loaded {
+      filter = "^page-loaded.*"
+      numerical-trigger {
+            from-value = 0
+            to-value   = 1
+      }
+      desc = "Page loaded"
+      script = "scan_controller.sh"
+}
+
+action power-save {
+      filter = "^power-save.*"
+      numerical-trigger {
+            from-value = 0
+            to-value   = 1
+      }
+      desc = "Power save mode"
+      script = "scan_controller.sh"
+}
+
+action cover-open {
+      filter = "^cover-open.*"
+      numerical-trigger {
+            from-value = 0
+            to-value   = 1
+      }
+      desc = "Scanner cover opened"
+      script = "scan_controller.sh"
+}
+
+action paper-unload {
+      filter = "^page-loaded.*"
+      numerical-trigger {
+            from-value = 1
+            to-value   = 0
+      }
+      desc = "Page unloaded"
+      script = "scan_controller.sh"
+}
+
+action button {
+      filter = "^button.*"
+      numerical-trigger {
+            from-value = 0
+            to-value   = 1
+      }
+      desc = "Generic button press"
+      script = "scan_controller.sh"
+}

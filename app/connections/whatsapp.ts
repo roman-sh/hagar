@@ -28,22 +28,22 @@ client.on('qr', qr => {
    qrcode.generate(qr, { small: true })
 })
 
-// Create a dedicated file transport for WhatsApp message analysis
-const messageAnalysisLogger = pino({
-   transport: {
-      target: 'pino/file',
-      options: {
-         destination: 'whatsapp-message-analysis.json',
-         mkdir: true,
-         sync: true
-      }
-   }
-})
+// // Create a dedicated file transport for WhatsApp message analysis
+// const messageAnalysisLogger = pino({
+//    transport: {
+//       target: 'pino/file',
+//       options: {
+//          destination: 'whatsapp-message-analysis.json',
+//          mkdir: true,
+//          sync: true
+//       }
+//    }
+// })
 
 client.on('message', async message => {
    // Log message for analysis
-   messageAnalysisLogger.info({ message }, 'WhatsApp message structure analysis');
+   // messageAnalysisLogger.info({ message }, 'WhatsApp message structure analysis');
    
    // Send a simple text response
-   await message.reply('This is a test reply. Button functionality is deprecated in whatsapp-web.js.');
+   await message.send('Кто там?');
 })

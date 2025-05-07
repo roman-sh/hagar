@@ -1,0 +1,706 @@
+admin@pi:~ $ sudo SANE_DEBUG_DLL=255 SANE_DEBUG_FUJITSU=255 python3 -c "import sane; sane.init(); print(sane.get_devices())"
+[01:39:47.136003] [sanei_debug] Setting debug level of dll to 255.
+[01:39:47.136358] [dll] sane_init: SANE dll backend version 1.0.13 from sane-backends 1.1.1-debian
+[01:39:47.136480] [dll] sane_init/read_dlld: attempting to open directory `./dll.d'
+[01:39:47.136615] [dll] sane_init/read_dlld: attempting to open directory `/etc/sane.d/dll.d'
+[01:39:47.136798] [dll] sane_init/read_dlld: using config directory `/etc/sane.d/dll.d'
+[01:39:47.136959] [dll] sane_init/read_dlld: considering /etc/sane.d/dll.d/airscan.disabled
+[01:39:47.137117] [dll] sane_init/read_config: reading dll.d/airscan.disabled
+[01:39:47.137279] [dll] add_backend: adding backend `airscan'
+[01:39:47.137473] [dll] sane_init/read_dlld: done.
+[01:39:47.137548] [dll] sane_init/read_config: reading dll.conf
+[01:39:47.137612] [dll] add_backend: adding backend `fujitsu'
+[01:39:47.137720] [dll] sane_get_devices
+[01:39:47.137763] [dll] load: searching backend `fujitsu' in `/usr/lib/aarch64-linux-gnu/sane:/usr/lib/sane:/usr/lib64/sane'
+[01:39:47.137800] [dll] load: trying to load `/usr/lib/aarch64-linux-gnu/sane/libsane-fujitsu.so.1'
+[01:39:47.137859] [dll] load: dlopen()ing `/usr/lib/aarch64-linux-gnu/sane/libsane-fujitsu.so.1'
+[01:39:47.138677] [dll] init: initializing backend `fujitsu'
+[01:39:47.138782] [sanei_debug] Setting debug level of fujitsu to 255.
+[01:39:47.138821] [fujitsu] sane_init: start
+[01:39:47.138854] [fujitsu] sane_init: fujitsu backend 1.0.139, from sane-backends 1.1.1-debian
+[01:39:47.138977] [fujitsu] sane_init: finish
+[01:39:47.139081] [dll] init: backend `fujitsu' is version 1.0.139
+[01:39:47.139123] [fujitsu] sane_get_devices: start
+[01:39:47.167448] [fujitsu] sane_get_devices: reading config file fujitsu.conf
+[01:39:47.167537] [fujitsu] sane_get_devices: setting "buffer-size" to 65536
+[01:39:47.167552] [fujitsu] sane_get_devices: looking for 'scsi FUJITSU'
+[01:39:47.167596] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1041'
+[01:39:47.167613] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1042'
+[01:39:47.167626] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1078'
+[01:39:47.167639] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1095'
+[01:39:47.167652] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1096'
+[01:39:47.167664] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1097'
+[01:39:47.167676] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x10ad'
+[01:39:47.167689] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x10ae'
+[01:39:47.167702] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x10af'
+[01:39:47.167714] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x10cf'
+[01:39:47.167727] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x10e0'
+[01:39:47.167739] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x10e1'
+[01:39:47.167752] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x10e2'
+[01:39:47.167765] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x10e6'
+[01:39:47.167777] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x10e7'
+[01:39:47.167790] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x10f2'
+[01:39:47.167802] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x10fe'
+[01:39:47.167815] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1135'
+[01:39:47.167827] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x114a'
+[01:39:47.167840] [fujitsu] sane_get_devices: config option "buffer-size" (262144) is > 65536, warning!
+[01:39:47.167853] [fujitsu] sane_get_devices: setting "buffer-size" to 262144
+[01:39:47.167865] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x114d'
+[01:39:47.167877] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x114e'
+[01:39:47.167890] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x114f'
+[01:39:47.167902] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1150'
+[01:39:47.167915] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1155'
+[01:39:47.167927] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x116f'
+[01:39:47.167940] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1174'
+[01:39:47.167952] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1175'
+[01:39:47.167965] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1176'
+[01:39:47.167977] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1177'
+[01:39:47.167990] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1178'
+[01:39:47.168002] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x119d'
+[01:39:47.168015] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x119e'
+[01:39:47.168027] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x11a2'
+[01:39:47.168040] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x11f1'
+[01:39:47.168052] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x11f2'
+[01:39:47.168065] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x11f3'
+[01:39:47.168077] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x11f4'
+[01:39:47.168089] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x11fc'
+[01:39:47.168102] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1213'
+[01:39:47.168114] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x128e'
+[01:39:47.168127] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x132b'
+[01:39:47.168139] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x132c'
+[01:39:47.168152] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x132d'
+[01:39:47.168164] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x132e'
+[01:39:47.168177] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x132f'
+[01:39:47.168189] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x13f3'
+[01:39:47.168201] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x13f4'
+[01:39:47.168214] [fujitsu] attach_one: start
+[01:39:47.168225] [fujitsu] attach_one: looking for 'libusb:001:003'
+[01:39:47.168243] [fujitsu] connect_fd: start
+[01:39:47.168255] [fujitsu] connect_fd: opening USB device
+[01:39:47.168329] [fujitsu] wait_scanner: start
+[01:39:47.168343] [fujitsu] do_usb_cmd: start
+[01:39:47.168355] [fujitsu] cmd: writing 31 bytes, timeout 500
+[01:39:47.168366] [fujitsu] cmd: >>
+[01:39:47.168382] [fujitsu] 000: 43 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C...............
+[01:39:47.168398] [fujitsu] 010: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ............... 
+[01:39:47.168535] [fujitsu] cmd: wrote 31 bytes, retVal 0
+[01:39:47.168562] [fujitsu] stat: reading 13 bytes, timeout 500
+[01:39:47.169191] [fujitsu] stat: <<
+[01:39:47.169237] [fujitsu] 000: 53 00 00 00 00 00 00 00 00 00 00 00 00          S............   
+[01:39:47.169272] [fujitsu] stat: read 13 bytes, retVal 0
+[01:39:47.169305] [fujitsu] do_usb_cmd: finish
+[01:39:47.169338] [fujitsu] wait_scanner: finish
+[01:39:47.169377] [fujitsu] connect_fd: finish
+[01:39:47.169409] [fujitsu] init_inquire: start
+[01:39:47.169441] [fujitsu] do_usb_cmd: start
+[01:39:47.169473] [fujitsu] cmd: writing 31 bytes, timeout 30000
+[01:39:47.169507] [fujitsu] cmd: >>
+[01:39:47.169544] [fujitsu] 000: 43 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C...............
+[01:39:47.169581] [fujitsu] 010: 00 00 00 12 00 00 00 60 00 00 00 00 00 00 00    .......`....... 
+[01:39:47.169663] [fujitsu] cmd: wrote 31 bytes, retVal 0
+[01:39:47.169702] [fujitsu] in: reading 96 bytes, timeout 30000
+[01:39:47.170426] [fujitsu] in: retVal 0
+[01:39:47.170463] [fujitsu] in: read 96 bytes
+[01:39:47.170496] [fujitsu] in: <<
+[01:39:47.170533] [fujitsu] 000: 06 00 02 02 5b 00 00 10 46 55 4a 49 54 53 55 20 ....[...FUJITSU 
+[01:39:47.170570] [fujitsu] 010: 53 63 61 6e 53 6e 61 70 20 69 58 31 30 30 20 20 ScanSnap iX100  
+[01:39:47.170607] [fujitsu] 020: 42 44 30 30 00 00 00 00 00 00 00 00 03 00 00 00 BD00............
+[01:39:47.170644] [fujitsu] 030: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+[01:39:47.170680] [fujitsu] 040: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+[01:39:47.170717] [fujitsu] 050: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+[01:39:47.170749] [fujitsu] stat: reading 13 bytes, timeout 30000
+[01:39:47.170826] [fujitsu] stat: <<
+[01:39:47.170865] [fujitsu] 000: 53 00 00 00 00 00 00 00 00 00 00 00 00          S............   
+[01:39:47.170918] [fujitsu] stat: read 13 bytes, retVal 0
+[01:39:47.170952] [fujitsu] do_usb_cmd: finish
+[01:39:47.170986] [fujitsu] init_inquire: Found FUJITSU scanner ScanSnap iX100 version BD00 at libusb:001:003
+[01:39:47.171022] [fujitsu] inquiry options
+[01:39:47.171053] [fujitsu]   color offset: 0 lines
+[01:39:47.171086] [fujitsu]   long gray scan: 1
+[01:39:47.171118] [fujitsu]   long color scan: 1
+[01:39:47.171151] [fujitsu]   emulation mode: 0
+[01:39:47.171183] [fujitsu]   CMP/CGA: 0
+[01:39:47.171215] [fujitsu]   background back: 0
+[01:39:47.171249] [fujitsu]   background front: 0
+[01:39:47.171281] [fujitsu]   background fb: 0
+[01:39:47.171313] [fujitsu]   back only scan: 0
+[01:39:47.171345] [fujitsu]   duplex offset: 0 lines
+[01:39:47.171379] [fujitsu] init_inquire: finish
+[01:39:47.171415] [fujitsu] init_vpd: start
+[01:39:47.171448] [fujitsu] do_usb_cmd: start
+[01:39:47.171480] [fujitsu] cmd: writing 31 bytes, timeout 30000
+[01:39:47.171513] [fujitsu] cmd: >>
+[01:39:47.171549] [fujitsu] 000: 43 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C...............
+[01:39:47.171586] [fujitsu] 010: 00 00 00 12 01 f0 00 cc 00 00 00 00 00 00 00    ............... 
+[01:39:47.171673] [fujitsu] cmd: wrote 31 bytes, retVal 0
+[01:39:47.171710] [fujitsu] in: reading 204 bytes, timeout 30000
+[01:39:47.172488] [fujitsu] in: retVal 0
+[01:39:47.172525] [fujitsu] in: read 204 bytes
+[01:39:47.172557] [fujitsu] in: <<
+[01:39:47.172594] [fujitsu] 000: 06 f0 02 00 8b 02 58 02 58 11 02 58 02 58 00 32 ......X.X..X.X.2
+[01:39:47.172631] [fujitsu] 010: 00 32 ff fc 00 00 14 40 00 00 52 a1 8f 00 00 00 .2.....@..R.....
+[01:39:47.172668] [fujitsu] 020: 82 0a 18 00 00 00 00 00 ef bf 00 04 00 00 00 00 ................
+[01:39:47.172705] [fujitsu] 030: 00 06 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+[01:39:47.172742] [fujitsu] 040: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+[01:39:47.172778] [fujitsu] 050: 00 00 00 ff 00 21 41 11 a8 41 08 00 00 00 00 00 .....!A..A......
+[01:39:47.172815] [fujitsu] 060: 00 00 12 00 00 99 00 99 00 c2 00 00 98 00 00 20 ............... 
+[01:39:47.172852] [fujitsu] 070: 00 00 00 b0 00 00 91 00 34 c0 72 00 00 00 00 00 ........4.r.....
+[01:39:47.172888] [fujitsu] 080: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+[01:39:47.172925] [fujitsu] 090: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+[01:39:47.172962] [fujitsu] 0a0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+[01:39:47.172999] [fujitsu] 0b0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+[01:39:47.173035] [fujitsu] 0c0: 00 00 00 00 00 00 00 00 00 00 00 00             ............    
+[01:39:47.173067] [fujitsu] stat: reading 13 bytes, timeout 30000
+[01:39:47.173143] [fujitsu] stat: <<
+[01:39:47.173184] [fujitsu] 000: 53 00 00 00 00 00 00 00 00 00 00 00 00          S............   
+[01:39:47.173220] [fujitsu] stat: read 13 bytes, retVal 0
+[01:39:47.173253] [fujitsu] do_usb_cmd: finish
+[01:39:47.173284] [fujitsu] init_vpd: length=8b
+[01:39:47.173320] [fujitsu] standard options
+[01:39:47.173352] [fujitsu]   basic x res: 600 dpi
+[01:39:47.173384] [fujitsu]   basic y res: 600 dpi
+[01:39:47.173417] [fujitsu]   step x res: 1 dpi
+[01:39:47.173450] [fujitsu]   step y res: 1 dpi
+[01:39:47.173482] [fujitsu]   max x res: 600 dpi
+[01:39:47.173514] [fujitsu]   max y res: 600 dpi
+[01:39:47.173546] [fujitsu]   min x res: 50 dpi
+[01:39:47.173578] [fujitsu]   min y res: 50 dpi
+[01:39:47.173610] [fujitsu]   60 dpi: 1
+[01:39:47.173642] [fujitsu]   75 dpi: 1
+[01:39:47.173675] [fujitsu]   100 dpi: 1
+[01:39:47.173707] [fujitsu]   120 dpi: 1
+[01:39:47.173739] [fujitsu]   150 dpi: 1
+[01:39:47.173771] [fujitsu]   160 dpi: 1
+[01:39:47.173809] [fujitsu]   180 dpi: 1
+[01:39:47.173845] [fujitsu]   200 dpi: 1
+[01:39:47.173877] [fujitsu]   240 dpi: 1
+[01:39:47.173914] [fujitsu]   300 dpi: 1
+[01:39:47.173949] [fujitsu]   320 dpi: 1
+[01:39:47.173982] [fujitsu]   400 dpi: 1
+[01:39:47.174013] [fujitsu]   480 dpi: 1
+[01:39:47.174049] [fujitsu]   600 dpi: 1
+[01:39:47.174081] [fujitsu]   800 dpi: 0
+[01:39:47.174113] [fujitsu]   1200 dpi: 0
+[01:39:47.174145] [fujitsu]   max width: 8.64 inches
+[01:39:47.174186] [fujitsu]   max length: 35.26 inches
+[01:39:47.174222] [fujitsu]   overflow: 1
+[01:39:47.174255] [fujitsu]   monochrome: 1
+[01:39:47.174289] [fujitsu]   halftone: 1
+[01:39:47.174322] [fujitsu]   grayscale: 1
+[01:39:47.174354] [fujitsu]   color_monochrome: 0
+[01:39:47.174388] [fujitsu]   color_halftone: 0
+[01:39:47.174420] [fujitsu]   color_grayscale: 1
+[01:39:47.174452] [fujitsu] vendor options
+[01:39:47.174485] [fujitsu]   adf: 1
+[01:39:47.174520] [fujitsu]   flatbed: 0
+[01:39:47.174553] [fujitsu]   transparency: 0
+[01:39:47.174586] [fujitsu]   duplex: 0
+[01:39:47.174619] [fujitsu]   back endorser: 0
+[01:39:47.174651] [fujitsu]   barcode: 0
+[01:39:47.174684] [fujitsu]   operator panel: 1
+[01:39:47.174715] [fujitsu]   front endorser: 0
+[01:39:47.174747] [fujitsu]   multi-purpose stacker: 0
+[01:39:47.174779] [fujitsu]   prepick: 0
+[01:39:47.174812] [fujitsu]   mf detect: 0
+[01:39:47.174845] [fujitsu]   paper protection: 0
+[01:39:47.174877] [fujitsu]   A/D bits: 10
+[01:39:47.174924] [fujitsu]   buffer bytes: 402653184
+[01:39:47.174957] [fujitsu] Standard commands
+[01:39:47.174989] [fujitsu]   mode_sense_10 cmd: 0
+[01:39:47.175021] [fujitsu]   mode_select_10 cmd: 0
+[01:39:47.175053] [fujitsu]   log_sense cmd: 0
+[01:39:47.175085] [fujitsu]   log_select cmd: 0
+[01:39:47.175120] [fujitsu]   change cmd: 0
+[01:39:47.175153] [fujitsu]   read_buffer cmd: 0
+[01:39:47.175187] [fujitsu]   write_buffer cmd: 0
+[01:39:47.175221] [fujitsu]   copy_and_verify cmd: 0
+[01:39:47.175254] [fujitsu]   compare cmd: 0
+[01:39:47.175286] [fujitsu]   get_d_b_status cmd: 0
+[01:39:47.175319] [fujitsu]   object_pos cmd: 1
+[01:39:47.175351] [fujitsu]   send cmd: 1
+[01:39:47.175383] [fujitsu]   read cmd: 1
+[01:39:47.175417] [fujitsu]   get_window cmd: 0
+[01:39:47.175452] [fujitsu]   set_window cmd: 1
+[01:39:47.175484] [fujitsu]   send_diag cmd: 1
+[01:39:47.175518] [fujitsu]   read_diag cmd: 1
+[01:39:47.175553] [fujitsu]   scan cmd: 1
+[01:39:47.175586] [fujitsu]   mode_sense_6 cmd: 1
+[01:39:47.175619] [fujitsu]   copy cmd: 0
+[01:39:47.175654] [fujitsu]   release cmd: 1
+[01:39:47.175686] [fujitsu]   reserve_unit cmd: 1
+[01:39:47.175720] [fujitsu]   mode_select_6 cmd: 1
+[01:39:47.175755] [fujitsu]   inquiry cmd: 1
+[01:39:47.175788] [fujitsu]   request_sense cmd: 1
+[01:39:47.175822] [fujitsu]   test_unit_ready cmd: 1
+[01:39:47.175857] [fujitsu] Vendor commands
+[01:39:47.175889] [fujitsu]   subwindow cmd: 0
+[01:39:47.175922] [fujitsu]   endorser cmd: 0
+[01:39:47.175957] [fujitsu]   hardware status cmd: 1
+[01:39:47.175990] [fujitsu]   hardware status 2 cmd: 0
+[01:39:47.176024] [fujitsu]   hardware status 3 cmd: 0
+[01:39:47.176059] [fujitsu]   scanner control cmd: 1
+[01:39:47.176092] [fujitsu]   device restart cmd: 1
+[01:39:47.176125] [fujitsu]   brightness steps: 0
+[01:39:47.176161] [fujitsu]   threshold steps: 255
+[01:39:47.176194] [fujitsu]   contrast steps: 0
+[01:39:47.176227] [fujitsu]   built in gamma patterns: 1
+[01:39:47.176262] [fujitsu]   download gamma patterns: 1
+[01:39:47.176295] [fujitsu]   built in dither patterns: 4
+[01:39:47.176328] [fujitsu]   download dither patterns: 1
+[01:39:47.176363] [fujitsu]   RIF: 1
+[01:39:47.176396] [fujitsu]   DTC (AutoI): 0
+[01:39:47.176428] [fujitsu]   SDTC (AutoII): 1
+[01:39:47.176464] [fujitsu]   outline extraction: 0
+[01:39:47.176497] [fujitsu]   image emphasis: 1
+[01:39:47.176530] [fujitsu]   automatic separation: 0
+[01:39:47.176565] [fujitsu]   mirror image: 0
+[01:39:47.176598] [fujitsu]   white level follower: 0
+[01:39:47.176630] [fujitsu]   subwindow: 0
+[01:39:47.176664] [fujitsu]   diffusion: 1
+[01:39:47.176693] [fujitsu]   ipc3: 0
+[01:39:47.176706] [fujitsu]   rotation: 0
+[01:39:47.176717] [fujitsu]   hybrid crop deskew: 0
+[01:39:47.176727] [fujitsu]   vpd extends to byte 6f: 1
+[01:39:47.176738] [fujitsu]   compression MH: 0
+[01:39:47.176749] [fujitsu]   compression MR: 0
+[01:39:47.176759] [fujitsu]   compression MMR: 0
+[01:39:47.176769] [fujitsu]   compression JBIG: 0
+[01:39:47.176780] [fujitsu]   compression JPG1: 1
+[01:39:47.176791] [fujitsu]   (Disabled)
+[01:39:47.176801] [fujitsu]   compression JPG2: 0
+[01:39:47.176811] [fujitsu]   compression JPG3: 0
+[01:39:47.176821] [fujitsu]   back endorser mech: 0
+[01:39:47.176832] [fujitsu]   back endorser stamp: 0
+[01:39:47.176842] [fujitsu]   back endorser elec: 0
+[01:39:47.176853] [fujitsu]   endorser max id: 0
+[01:39:47.176863] [fujitsu]   front endorser mech: 0
+[01:39:47.176873] [fujitsu]   front endorser stamp: 0
+[01:39:47.176884] [fujitsu]   front endorser elec: 0
+[01:39:47.176894] [fujitsu]   back endorser type: 0
+[01:39:47.176904] [fujitsu]   back endorser type: 0
+[01:39:47.176915] [fujitsu]   connection type: 2
+[01:39:47.176925] [fujitsu]   endorser ext: 0
+[01:39:47.176935] [fujitsu]   endorser pr_b: 0
+[01:39:47.176945] [fujitsu]   endorser pr_f: 0
+[01:39:47.176956] [fujitsu]   endorser po_b: 0
+[01:39:47.176966] [fujitsu]   endorser po_f: 0
+[01:39:47.176976] [fujitsu]   horizontal overscan: 153
+[01:39:47.176987] [fujitsu]   vertical overscan: 153
+[01:39:47.176997] [fujitsu]   default bg adf b: 0
+[01:39:47.177008] [fujitsu]   default bg adf f: 0
+[01:39:47.177018] [fujitsu]   default bg fb: 0
+[01:39:47.177029] [fujitsu]   auto color: 1
+[01:39:47.177039] [fujitsu]   blank skip: 1
+[01:39:47.177050] [fujitsu]   multi image: 0
+[01:39:47.177060] [fujitsu]   f b type indep: 0
+[01:39:47.177070] [fujitsu]   f b res indep: 0
+[01:39:47.177081] [fujitsu]   dropout spec: 0
+[01:39:47.177091] [fujitsu]   dropout non: 0
+[01:39:47.177102] [fujitsu]   dropout white: 0
+[01:39:47.177112] [fujitsu]   skew check: 0
+[01:39:47.177122] [fujitsu]   new feed roller: 0
+[01:39:47.177133] [fujitsu]   paper protection: 0
+[01:39:47.177143] [fujitsu]   extra evpd length: 32
+[01:39:47.177154] [fujitsu]   paper count: 0
+[01:39:47.177164] [fujitsu]   paper number: 0
+[01:39:47.177175] [fujitsu]   ext send to: 0
+[01:39:47.177185] [fujitsu]   staple det: 0
+[01:39:47.177195] [fujitsu]   pause host: 0
+[01:39:47.177206] [fujitsu]   pause panel: 0
+[01:39:47.177216] [fujitsu]   pause conf: 0
+[01:39:47.177226] [fujitsu]   hq print: 0
+[01:39:47.177237] [fujitsu]   ext GHS len: 0
+[01:39:47.177247] [fujitsu]   smbc func: 0
+[01:39:47.177258] [fujitsu]   imprint chk b: 0
+[01:39:47.177268] [fujitsu]   imprint chk f: 0
+[01:39:47.177278] [fujitsu]   force w bg: 0
+[01:39:47.177288] [fujitsu]   mf recover lvl: 0
+[01:39:47.177299] [fujitsu]   first read time: 1
+[01:39:47.177309] [fujitsu]   div scanning: 0
+[01:39:47.177319] [fujitsu]   start job: 1
+[01:39:47.177330] [fujitsu]   lifetime log: 1
+[01:39:47.177340] [fujitsu]   imff save rest: 0
+[01:39:47.177350] [fujitsu]   wide scsi type: 0
+[01:39:47.177361] [fujitsu]   lut hybrid crop: 0
+[01:39:47.177371] [fujitsu]   over under amt: 0
+[01:39:47.177382] [fujitsu]   rgb lut: 0
+[01:39:47.177392] [fujitsu]   num lut dl: 0
+[01:39:47.177402] [fujitsu]   ErP Lot6 (power off timer): 1
+[01:39:47.177413] [fujitsu]   sync next feed: 1
+[01:39:47.177423] [fujitsu]   battery: 1
+[01:39:47.177434] [fujitsu]   battery save: 1
+[01:39:47.177444] [fujitsu]   object position reverse: 0
+[01:39:47.177455] [fujitsu]   object position halt: 0
+[01:39:47.177465] [fujitsu]   return path (card) scanning: 0
+[01:39:47.177476] [fujitsu]   energy star 3: 0
+[01:39:47.177486] [fujitsu] init_vpd: finish
+[01:39:47.177497] [fujitsu] init_model: start
+[01:39:47.177525] [fujitsu] init_model: finish
+[01:39:47.177537] [fujitsu] init_ms: start
+[01:39:47.177548] [fujitsu] init_ms: autocolor
+[01:39:47.177559] [fujitsu] do_usb_cmd: start
+[01:39:47.177569] [fujitsu] cmd: writing 31 bytes, timeout 30000
+[01:39:47.177580] [fujitsu] cmd: >>
+[01:39:47.177596] [fujitsu] 000: 43 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C...............
+[01:39:47.177611] [fujitsu] 010: 00 00 00 1a 00 32 00 14 00 00 00 00 00 00 00    .....2......... 
+[01:39:47.177675] [fujitsu] cmd: wrote 31 bytes, retVal 0
+[01:39:47.177712] [fujitsu] in: reading 20 bytes, timeout 30000
+[01:39:47.178348] [fujitsu] in: retVal 0
+[01:39:47.178386] [fujitsu] in: read 20 bytes
+[01:39:47.178419] [fujitsu] in: <<
+[01:39:47.178455] [fujitsu] 000: 13 00 00 08 00 00 00 00 00 00 00 01 32 06 00 00 ............2...
+[01:39:47.178490] [fujitsu] 010: 00 00 00 00                                     ....            
+[01:39:47.178522] [fujitsu] stat: reading 13 bytes, timeout 30000
+[01:39:47.178599] [fujitsu] stat: <<
+[01:39:47.178638] [fujitsu] 000: 53 00 00 00 00 00 00 00 00 00 00 00 00          S............   
+[01:39:47.178671] [fujitsu] stat: read 13 bytes, retVal 0
+[01:39:47.178704] [fujitsu] do_usb_cmd: finish
+[01:39:47.178735] [fujitsu] init_ms: prepick
+[01:39:47.178767] [fujitsu] do_usb_cmd: start
+[01:39:47.178799] [fujitsu] cmd: writing 31 bytes, timeout 30000
+[01:39:47.178831] [fujitsu] cmd: >>
+[01:39:47.178868] [fujitsu] 000: 43 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C...............
+[01:39:47.178920] [fujitsu] 010: 00 00 00 1a 00 33 00 14 00 00 00 00 00 00 00    .....3......... 
+[01:39:47.179005] [fujitsu] cmd: wrote 31 bytes, retVal 0
+[01:39:47.179044] [fujitsu] in: reading 20 bytes, timeout 30000
+[01:39:47.179421] [fujitsu] in: retVal 0
+[01:39:47.179457] [fujitsu] in: read 20 bytes
+[01:39:47.179490] [fujitsu] in: <<
+[01:39:47.179527] [fujitsu] 000: 13 00 00 08 00 00 00 00 00 00 00 01 33 06 00 00 ............3...
+[01:39:47.179563] [fujitsu] 010: 00 00 00 00                                     ....            
+[01:39:47.179596] [fujitsu] stat: reading 13 bytes, timeout 30000
+[01:39:47.179674] [fujitsu] stat: <<
+[01:39:47.179715] [fujitsu] 000: 53 00 00 00 00 00 00 00 00 00 00 00 00          S............   
+[01:39:47.179749] [fujitsu] stat: read 13 bytes, retVal 0
+[01:39:47.179783] [fujitsu] do_usb_cmd: finish
+[01:39:47.179816] [fujitsu] init_ms: sleep
+[01:39:47.179852] [fujitsu] do_usb_cmd: start
+[01:39:47.179886] [fujitsu] cmd: writing 31 bytes, timeout 30000
+[01:39:47.179920] [fujitsu] cmd: >>
+[01:39:47.179961] [fujitsu] 000: 43 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C...............
+[01:39:47.180000] [fujitsu] 010: 00 00 00 1a 00 34 00 14 00 00 00 00 00 00 00    .....4......... 
+[01:39:47.180098] [fujitsu] cmd: wrote 31 bytes, retVal 0
+[01:39:47.180135] [fujitsu] in: reading 20 bytes, timeout 30000
+[01:39:47.180509] [fujitsu] in: retVal 0
+[01:39:47.180546] [fujitsu] in: read 20 bytes
+[01:39:47.180578] [fujitsu] in: <<
+[01:39:47.180618] [fujitsu] 000: 13 00 00 08 00 00 00 00 00 00 00 01 34 06 00 00 ............4...
+[01:39:47.180654] [fujitsu] 010: 00 00 00 00                                     ....            
+[01:39:47.180690] [fujitsu] stat: reading 13 bytes, timeout 30000
+[01:39:47.180765] [fujitsu] stat: <<
+[01:39:47.180805] [fujitsu] 000: 53 00 00 00 00 00 00 00 00 00 00 00 00          S............   
+[01:39:47.180840] [fujitsu] stat: read 13 bytes, retVal 0
+[01:39:47.180875] [fujitsu] do_usb_cmd: finish
+[01:39:47.180908] [fujitsu] init_ms: duplex
+[01:39:47.180944] [fujitsu] do_usb_cmd: start
+[01:39:47.180976] [fujitsu] cmd: writing 31 bytes, timeout 30000
+[01:39:47.181011] [fujitsu] cmd: >>
+[01:39:47.181049] [fujitsu] 000: 43 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C...............
+[01:39:47.181087] [fujitsu] 010: 00 00 00 1a 00 35 00 14 00 00 00 00 00 00 00    .....5......... 
+[01:39:47.181167] [fujitsu] cmd: wrote 31 bytes, retVal 0
+[01:39:47.181205] [fujitsu] in: reading 20 bytes, timeout 30000
+[01:39:47.181596] [fujitsu] in: retVal 0
+[01:39:47.181633] [fujitsu] in: read 20 bytes
+[01:39:47.181669] [fujitsu] in: <<
+[01:39:47.181711] [fujitsu] 000: 13 00 00 08 00 00 00 00 00 00 00 01 35 06 00 00 ............5...
+[01:39:47.181748] [fujitsu] 010: 00 00 00 00                                     ....            
+[01:39:47.181782] [fujitsu] stat: reading 13 bytes, timeout 30000
+[01:39:47.181858] [fujitsu] stat: <<
+[01:39:47.181899] [fujitsu] 000: 53 00 00 00 00 00 00 00 00 00 00 00 00          S............   
+[01:39:47.181933] [fujitsu] stat: read 13 bytes, retVal 0
+[01:39:47.181967] [fujitsu] do_usb_cmd: finish
+[01:39:47.182000] [fujitsu] init_ms: rand
+[01:39:47.182034] [fujitsu] do_usb_cmd: start
+[01:39:47.182067] [fujitsu] cmd: writing 31 bytes, timeout 30000
+[01:39:47.182102] [fujitsu] cmd: >>
+[01:39:47.182142] [fujitsu] 000: 43 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C...............
+[01:39:47.182181] [fujitsu] 010: 00 00 00 1a 00 36 00 14 00 00 00 00 00 00 00    .....6......... 
+[01:39:47.182265] [fujitsu] cmd: wrote 31 bytes, retVal 0
+[01:39:47.182302] [fujitsu] in: reading 20 bytes, timeout 30000
+[01:39:47.182492] [fujitsu] in: retVal 0
+[01:39:47.182528] [fujitsu] in: read 20 bytes
+[01:39:47.182561] [fujitsu] in: <<
+[01:39:47.182600] [fujitsu] 000: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+[01:39:47.182637] [fujitsu] 010: 00 00 00 00                                     ....            
+[01:39:47.182674] [fujitsu] stat: reading 13 bytes, timeout 30000
+[01:39:47.182752] [fujitsu] stat: <<
+[01:39:47.182794] [fujitsu] 000: 53 00 00 00 00 00 00 00 00 02 00 00 00          S............   
+[01:39:47.182828] [fujitsu] stat: read 13 bytes, retVal 0
+[01:39:47.182863] [fujitsu] stat: value 2
+[01:39:47.182910] [fujitsu] rs sub call >>
+[01:39:47.182944] [fujitsu] do_usb_cmd: start
+[01:39:47.182979] [fujitsu] cmd: writing 31 bytes, timeout 30000
+[01:39:47.183014] [fujitsu] cmd: >>
+[01:39:47.183052] [fujitsu] 000: 43 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C...............
+[01:39:47.183090] [fujitsu] 010: 00 00 00 03 00 00 00 12 00 00 00 00 00 00 00    ............... 
+[01:39:47.183175] [fujitsu] cmd: wrote 31 bytes, retVal 0
+[01:39:47.183213] [fujitsu] in: reading 18 bytes, timeout 30000
+[01:39:47.183363] [fujitsu] in: retVal 0
+[01:39:47.183400] [fujitsu] in: read 18 bytes
+[01:39:47.183434] [fujitsu] in: <<
+[01:39:47.183475] [fujitsu] 000: f0 00 05 00 00 00 00 0a 00 00 00 00 24 00 00 00 ............$...
+[01:39:47.183513] [fujitsu] 010: 00 00                                           ..              
+[01:39:47.183548] [fujitsu] stat: reading 13 bytes, timeout 30000
+[01:39:47.183624] [fujitsu] stat: <<
+[01:39:47.183666] [fujitsu] 000: 53 00 00 00 00 00 00 00 00 00 00 00 00          S............   
+[01:39:47.183700] [fujitsu] stat: read 13 bytes, retVal 0
+[01:39:47.183738] [fujitsu] do_usb_cmd: finish
+[01:39:47.183771] [fujitsu] rs sub call <<
+[01:39:47.183809] [fujitsu] sense_handler: start
+[01:39:47.183843] [fujitsu] Sense=0x5, ASC=0x24, ASCQ=00, EOM=0, ILI=0, info=00000000
+[01:39:47.183880] [fujitsu] Illegal request: invalid CDB field
+[01:39:47.183914] [fujitsu] init_ms: bg
+[01:39:47.183947] [fujitsu] do_usb_cmd: start
+[01:39:47.183980] [fujitsu] cmd: writing 31 bytes, timeout 30000
+[01:39:47.184014] [fujitsu] cmd: >>
+[01:39:47.184054] [fujitsu] 000: 43 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C...............
+[01:39:47.184095] [fujitsu] 010: 00 00 00 1a 00 37 00 14 00 00 00 00 00 00 00    .....7......... 
+[01:39:47.184175] [fujitsu] cmd: wrote 31 bytes, retVal 0
+[01:39:47.184212] [fujitsu] in: reading 20 bytes, timeout 30000
+[01:39:47.184846] [fujitsu] in: retVal 0
+[01:39:47.184883] [fujitsu] in: read 20 bytes
+[01:39:47.184919] [fujitsu] in: <<
+[01:39:47.184957] [fujitsu] 000: 13 00 00 08 00 00 00 00 00 00 00 01 37 06 00 00 ............7...
+[01:39:47.184993] [fujitsu] 010: 00 00 00 00                                     ....            
+[01:39:47.185028] [fujitsu] stat: reading 13 bytes, timeout 30000
+[01:39:47.185108] [fujitsu] stat: <<
+[01:39:47.185129] [fujitsu] 000: 53 00 00 00 00 00 00 00 00 00 00 00 00          S............   
+[01:39:47.185141] [fujitsu] stat: read 13 bytes, retVal 0
+[01:39:47.185152] [fujitsu] do_usb_cmd: finish
+[01:39:47.185163] [fujitsu] init_ms: df
+[01:39:47.185174] [fujitsu] do_usb_cmd: start
+[01:39:47.185184] [fujitsu] cmd: writing 31 bytes, timeout 30000
+[01:39:47.185195] [fujitsu] cmd: >>
+[01:39:47.185210] [fujitsu] 000: 43 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C...............
+[01:39:47.185225] [fujitsu] 010: 00 00 00 1a 00 38 00 14 00 00 00 00 00 00 00    .....8......... 
+[01:39:47.185281] [fujitsu] cmd: wrote 31 bytes, retVal 0
+[01:39:47.185317] [fujitsu] in: reading 20 bytes, timeout 30000
+[01:39:47.185914] [fujitsu] in: retVal 0
+[01:39:47.185950] [fujitsu] in: read 20 bytes
+[01:39:47.185987] [fujitsu] in: <<
+[01:39:47.186025] [fujitsu] 000: 13 00 00 08 00 00 00 00 00 00 00 01 38 06 00 00 ............8...
+[01:39:47.186062] [fujitsu] 010: 00 00 00 00                                     ....            
+[01:39:47.186096] [fujitsu] stat: reading 13 bytes, timeout 30000
+[01:39:47.186174] [fujitsu] stat: <<
+[01:39:47.186215] [fujitsu] 000: 53 00 00 00 00 00 00 00 00 00 00 00 00          S............   
+[01:39:47.186250] [fujitsu] stat: read 13 bytes, retVal 0
+[01:39:47.186283] [fujitsu] do_usb_cmd: finish
+[01:39:47.186317] [fujitsu] init_ms: dropout
+[01:39:47.186353] [fujitsu] do_usb_cmd: start
+[01:39:47.186386] [fujitsu] cmd: writing 31 bytes, timeout 30000
+[01:39:47.186422] [fujitsu] cmd: >>
+[01:39:47.186460] [fujitsu] 000: 43 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C...............
+[01:39:47.186495] [fujitsu] 010: 00 00 00 1a 00 39 00 14 00 00 00 00 00 00 00    .....9......... 
+[01:39:47.186557] [fujitsu] cmd: wrote 31 bytes, retVal 0
+[01:39:47.186595] [fujitsu] in: reading 20 bytes, timeout 30000
+[01:39:47.187001] [fujitsu] in: retVal 0
+[01:39:47.187039] [fujitsu] in: read 20 bytes
+[01:39:47.187072] [fujitsu] in: <<
+[01:39:47.187113] [fujitsu] 000: 15 00 00 08 00 00 00 00 00 00 00 01 39 08 00 00 ............9...
+[01:39:47.187149] [fujitsu] 010: 00 00 00 00                                     ....            
+[01:39:47.187185] [fujitsu] stat: reading 13 bytes, timeout 30000
+[01:39:47.187266] [fujitsu] stat: <<
+[01:39:47.187307] [fujitsu] 000: 53 00 00 00 00 00 00 00 00 00 00 00 00          S............   
+[01:39:47.187342] [fujitsu] stat: read 13 bytes, retVal 0
+[01:39:47.187376] [fujitsu] do_usb_cmd: finish
+[01:39:47.187410] [fujitsu] init_ms: buffer
+[01:39:47.187444] [fujitsu] do_usb_cmd: start
+[01:39:47.187479] [fujitsu] cmd: writing 31 bytes, timeout 30000
+[01:39:47.187514] [fujitsu] cmd: >>
+[01:39:47.187554] [fujitsu] 000: 43 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C...............
+[01:39:47.187593] [fujitsu] 010: 00 00 00 1a 00 3a 00 14 00 00 00 00 00 00 00    .....:......... 
+[01:39:47.187671] [fujitsu] cmd: wrote 31 bytes, retVal 0
+[01:39:47.187708] [fujitsu] in: reading 20 bytes, timeout 30000
+[01:39:47.188150] [fujitsu] in: retVal 0
+[01:39:47.188186] [fujitsu] in: read 20 bytes
+[01:39:47.188219] [fujitsu] in: <<
+[01:39:47.188258] [fujitsu] 000: 13 00 00 08 00 00 00 00 00 00 00 01 3a 06 00 00 ............:...
+[01:39:47.188295] [fujitsu] 010: 00 00 00 00                                     ....            
+[01:39:47.188332] [fujitsu] stat: reading 13 bytes, timeout 30000
+[01:39:47.188405] [fujitsu] stat: <<
+[01:39:47.188425] [fujitsu] 000: 53 00 00 00 00 00 00 00 00 00 00 00 00          S............   
+[01:39:47.188437] [fujitsu] stat: read 13 bytes, retVal 0
+[01:39:47.188448] [fujitsu] do_usb_cmd: finish
+[01:39:47.188459] [fujitsu] init_ms: auto
+[01:39:47.188469] [fujitsu] do_usb_cmd: start
+[01:39:47.188480] [fujitsu] cmd: writing 31 bytes, timeout 30000
+[01:39:47.188490] [fujitsu] cmd: >>
+[01:39:47.188505] [fujitsu] 000: 43 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C...............
+[01:39:47.188520] [fujitsu] 010: 00 00 00 1a 00 3c 00 14 00 00 00 00 00 00 00    .....<......... 
+[01:39:47.188571] [fujitsu] cmd: wrote 31 bytes, retVal 0
+[01:39:47.188608] [fujitsu] in: reading 20 bytes, timeout 30000
+[01:39:47.189299] [fujitsu] in: retVal 0
+[01:39:47.189336] [fujitsu] in: read 20 bytes
+[01:39:47.189368] [fujitsu] in: <<
+[01:39:47.189406] [fujitsu] 000: 13 00 00 08 00 00 00 00 00 00 00 01 3c 06 00 00 ............<...
+[01:39:47.189442] [fujitsu] 010: 00 00 00 00                                     ....            
+[01:39:47.189476] [fujitsu] stat: reading 13 bytes, timeout 30000
+[01:39:47.189552] [fujitsu] stat: <<
+[01:39:47.189593] [fujitsu] 000: 53 00 00 00 00 00 00 00 00 00 00 00 00          S............   
+[01:39:47.189628] [fujitsu] stat: read 13 bytes, retVal 0
+[01:39:47.189661] [fujitsu] do_usb_cmd: finish
+[01:39:47.189695] [fujitsu] init_ms: jobsep
+[01:39:47.189731] [fujitsu] do_usb_cmd: start
+[01:39:47.189763] [fujitsu] cmd: writing 31 bytes, timeout 30000
+[01:39:47.189797] [fujitsu] cmd: >>
+[01:39:47.189835] [fujitsu] 000: 43 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C...............
+[01:39:47.189874] [fujitsu] 010: 00 00 00 1a 00 3e 00 14 00 00 00 00 00 00 00    .....>......... 
+[01:39:47.189951] [fujitsu] cmd: wrote 31 bytes, retVal 0
+[01:39:47.189988] [fujitsu] in: reading 20 bytes, timeout 30000
+[01:39:47.190386] [fujitsu] in: retVal 0
+[01:39:47.190404] [fujitsu] in: read 20 bytes
+[01:39:47.190416] [fujitsu] in: <<
+[01:39:47.190431] [fujitsu] 000: 13 00 00 08 00 00 00 00 00 00 00 01 3e 06 00 00 ............>...
+[01:39:47.190443] [fujitsu] 010: 00 00 00 00                                     ....            
+[01:39:47.190454] [fujitsu] stat: reading 13 bytes, timeout 30000
+[01:39:47.190568] [fujitsu] stat: <<
+[01:39:47.190608] [fujitsu] 000: 53 00 00 00 00 00 00 00 00 00 00 00 00          S............   
+[01:39:47.190644] [fujitsu] stat: read 13 bytes, retVal 0
+[01:39:47.190679] [fujitsu] do_usb_cmd: finish
+[01:39:47.190711] [fujitsu]   autocolor: 1
+[01:39:47.190748] [fujitsu]   prepick: 1
+[01:39:47.190784] [fujitsu]   sleep: 1
+[01:39:47.190818] [fujitsu]   duplex: 1
+[01:39:47.190851] [fujitsu]   rand: 0
+[01:39:47.190897] [fujitsu]   bg: 1
+[01:39:47.190932] [fujitsu]   df: 1
+[01:39:47.190968] [fujitsu]   dropout: 1
+[01:39:47.191002] [fujitsu]   buff: 1
+[01:39:47.191035] [fujitsu]   auto: 1
+[01:39:47.191067] [fujitsu]   lamp: 0
+[01:39:47.191101] [fujitsu]   jobsep: 1
+[01:39:47.191135] [fujitsu] init_ms: finish
+[01:39:47.191171] [fujitsu] init_user: start
+[01:39:47.191207] [fujitsu] init_user: finish
+[01:39:47.191238] [fujitsu] init_options: start
+[01:39:47.191255] [fujitsu] init_options: finish
+[01:39:47.191266] [fujitsu] init_interlace: start
+[01:39:47.191277] [fujitsu] update_params: start
+[01:39:47.191288] [fujitsu] update_params: x: max=10368, page=10200, gpw=10200, res=600
+[01:39:47.191299] [fujitsu] update_params: y: max=42306, page=13200, gph=13200, res=600
+[01:39:47.191310] [fujitsu] update_params: area: tlx=0, brx=10200, tly=0, bry=13200
+[01:39:47.191322] [fujitsu] update_params: params: ppl=5100, Bpl=15300, lines=6600
+[01:39:47.191333] [fujitsu] update_params: params: format=1, depth=8, last=1
+[01:39:47.191344] [fujitsu] update_u_params: start
+[01:39:47.191354] [fujitsu] update_u_params: finish
+[01:39:47.191365] [fujitsu] update_params: finish
+[01:39:47.191376] [fujitsu] set_window: start
+[01:39:47.191388] [fujitsu] do_usb_cmd: start
+[01:39:47.191399] [fujitsu] cmd: writing 31 bytes, timeout 30000
+[01:39:47.191410] [fujitsu] cmd: >>
+[01:39:47.191425] [fujitsu] 000: 43 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C...............
+[01:39:47.191440] [fujitsu] 010: 00 00 00 24 00 00 00 00 00 00 00 48 00 00 00    ...$.......H... 
+[01:39:47.191497] [fujitsu] cmd: wrote 31 bytes, retVal 0
+[01:39:47.191537] [fujitsu] out: writing 72 bytes, timeout 30000
+[01:39:47.191572] [fujitsu] out: >>
+[01:39:47.191612] [fujitsu] 000: 00 00 00 00 00 00 00 40 00 00 02 58 02 58 00 00 .......@...X.X..
+[01:39:47.191654] [fujitsu] 010: 00 00 00 00 00 00 00 00 27 d8 00 00 33 90 00 00 ........'...3...
+[01:39:47.191694] [fujitsu] 020: 00 05 08 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+[01:39:47.191733] [fujitsu] 030: c1 00 01 00 00 00 00 00 00 00 00 00 00 c0 00 00 ................
+[01:39:47.191770] [fujitsu] 040: 27 d8 00 00 33 90 00 00                         '...3...        
+[01:39:47.191849] [fujitsu] out: wrote 72 bytes, retVal 0
+[01:39:47.191887] [fujitsu] stat: reading 13 bytes, timeout 30000
+[01:39:47.192982] [fujitsu] stat: <<
+[01:39:47.193022] [fujitsu] 000: 53 00 00 00 00 00 00 00 00 00 00 00 00          S............   
+[01:39:47.193057] [fujitsu] stat: read 13 bytes, retVal 0
+[01:39:47.193091] [fujitsu] do_usb_cmd: finish
+[01:39:47.193127] [fujitsu] set_window: finish
+[01:39:47.193159] [fujitsu] init_interlace: color_interlace: 1
+[01:39:47.193195] [fujitsu] init_interlace: finish
+[01:39:47.193228] [fujitsu] init_serial: start
+[01:39:47.193264] [fujitsu] do_usb_cmd: start
+[01:39:47.193300] [fujitsu] cmd: writing 31 bytes, timeout 30000
+[01:39:47.193337] [fujitsu] cmd: >>
+[01:39:47.193378] [fujitsu] 000: 43 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C...............
+[01:39:47.193419] [fujitsu] 010: 00 00 00 1d 00 00 00 10 00 00 00 00 00 00 00    ............... 
+[01:39:47.193498] [fujitsu] cmd: wrote 31 bytes, retVal 0
+[01:39:47.193536] [fujitsu] out: writing 16 bytes, timeout 30000
+[01:39:47.193573] [fujitsu] out: >>
+[01:39:47.193610] [fujitsu] 000: 47 45 54 20 44 45 56 49 43 45 20 49 44 20 20 20 GET DEVICE ID   
+[01:39:47.193687] [fujitsu] out: wrote 16 bytes, retVal 0
+[01:39:47.193724] [fujitsu] stat: reading 13 bytes, timeout 30000
+[01:39:47.194472] [fujitsu] stat: <<
+[01:39:47.194513] [fujitsu] 000: 53 00 00 00 00 00 00 00 00 00 00 00 00          S............   
+[01:39:47.194547] [fujitsu] stat: read 13 bytes, retVal 0
+[01:39:47.194582] [fujitsu] do_usb_cmd: finish
+[01:39:47.194614] [fujitsu] do_usb_cmd: start
+[01:39:47.194650] [fujitsu] cmd: writing 31 bytes, timeout 30000
+[01:39:47.194683] [fujitsu] cmd: >>
+[01:39:47.194720] [fujitsu] 000: 43 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C...............
+[01:39:47.194759] [fujitsu] 010: 00 00 00 1c 00 00 00 0a 00 00 00 00 00 00 00    ............... 
+[01:39:47.194849] [fujitsu] cmd: wrote 31 bytes, retVal 0
+[01:39:47.194896] [fujitsu] in: reading 10 bytes, timeout 30000
+[01:39:47.195300] [fujitsu] in: retVal 0
+[01:39:47.195318] [fujitsu] in: read 10 bytes
+[01:39:47.195329] [fujitsu] in: <<
+[01:39:47.195343] [fujitsu] 000: 00 19 f1 f1 00 00 43 38 33 48                   ......C83H      
+[01:39:47.195354] [fujitsu] stat: reading 13 bytes, timeout 30000
+[01:39:47.195572] [fujitsu] stat: <<
+[01:39:47.195611] [fujitsu] 000: 53 00 00 00 00 00 00 00 00 00 00 00 00          S............   
+[01:39:47.195646] [fujitsu] stat: read 13 bytes, retVal 0
+[01:39:47.195680] [fujitsu] do_usb_cmd: finish
+[01:39:47.195712] [fujitsu] init_serial: found sn 1700337
+[01:39:47.195748] [fujitsu] init_serial: serial_name: ScanSnap iX100:1700337
+[01:39:47.195782] [fujitsu] init_serial: finish
+[01:39:47.195817] [fujitsu] disconnect_fd: start
+[01:39:47.195849] [fujitsu] disconnecting usb device
+[01:39:47.195933] [fujitsu] disconnect_fd: finish
+[01:39:47.195970] [fujitsu] attach_one: finish
+[01:39:47.196007] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x145f'
+[01:39:47.196045] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1460'
+[01:39:47.196083] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1461'
+[01:39:47.196121] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1462'
+[01:39:47.196159] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1463'
+[01:39:47.196197] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1464'
+[01:39:47.196233] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x146b'
+[01:39:47.196268] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x146c'
+[01:39:47.196283] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x146d'
+[01:39:47.196295] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x146e'
+[01:39:47.196308] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x146f'
+[01:39:47.196320] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x14ac'
+[01:39:47.196333] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x14b8'
+[01:39:47.196345] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x14bd'
+[01:39:47.196357] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x14be'
+[01:39:47.196370] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x14df'
+[01:39:47.196382] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x14e0'
+[01:39:47.196395] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x14e1'
+[01:39:47.196407] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x14e2'
+[01:39:47.196419] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x14e3'
+[01:39:47.196432] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x14e4'
+[01:39:47.196444] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x14e5'
+[01:39:47.196457] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x14e6'
+[01:39:47.196469] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x14e7'
+[01:39:47.196481] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x14e8'
+[01:39:47.196494] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x151e'
+[01:39:47.196506] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x151f'
+[01:39:47.196518] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1520'
+[01:39:47.196531] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1521'
+[01:39:47.196543] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1522'
+[01:39:47.196555] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x159f'
+[01:39:47.196567] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x15fc'
+[01:39:47.196579] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x160a'
+[01:39:47.196592] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x160b'
+[01:39:47.196604] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1632'
+[01:39:47.196616] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x140a'
+[01:39:47.196628] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1575'
+[01:39:47.196641] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x15fd'
+[01:39:47.196653] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x15fe'
+[01:39:47.196665] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x15ff'
+[01:39:47.196678] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1600'
+[01:39:47.196690] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1601'
+[01:39:47.196702] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1602'
+[01:39:47.196714] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x162d'
+[01:39:47.196726] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x162e'
+[01:39:47.196739] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x162c'
+[01:39:47.196751] [fujitsu] sane_get_devices: looking for 'usb 0x04c5 0x1630'
+[01:39:47.196774] [fujitsu] sane_get_devices: found scanner libusb:001:003
+[01:39:47.196786] [fujitsu] sane_get_devices: found 1 scanner(s)
+[01:39:47.196798] [fujitsu] sane_get_devices: finish
+[01:39:47.196815] [dll] load: searching backend `airscan' in `/usr/lib/aarch64-linux-gnu/sane:/usr/lib/sane:/usr/lib64/sane'
+[01:39:47.196829] [dll] load: trying to load `/usr/lib/aarch64-linux-gnu/sane/libsane-airscan.so.1'
+[01:39:47.196861] [dll] load: dlopen()ing `/usr/lib/aarch64-linux-gnu/sane/libsane-airscan.so.1'
+[01:39:47.204597] [dll] init: initializing backend `airscan'
+[01:39:47.211256] [dll] init: backend `airscan' is version 1.0.0
+[01:39:48.221012] [dll] sane_get_devices: found 1 devices
+[('fujitsu:ScanSnap iX100:1700337', 'FUJITSU', 'ScanSnap iX100', 'scanner')]
+admin@pi:~ $ 

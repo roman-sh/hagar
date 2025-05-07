@@ -5,7 +5,7 @@
   "description": "AI-powered store inventory assistant",
   "scripts": {
     "start": "bun run app/main.ts",
-    "dev": "bun --watch app/main.ts",
+    "dev": "sh -c 'redis-cli ping > /dev/null 2>&1 || (echo \"Starting Redis...\" && redis-server --daemonize yes); bun --watch app/main.ts'",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

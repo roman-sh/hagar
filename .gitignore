@@ -9,9 +9,11 @@ template-app/
 template-scripts/
 
 data/
+temp/
 
 # Environment variables
 .env
+.local.config
 
 # Development config
 nodemon.json

@@ -13,7 +13,7 @@ export const pdfUploadHandler = async (c: Context) => {
    const body = await c.req.parseBody()
    
    // Get the file from the parsed body using Web standard File type
-   const file = body.pdf as File
+   const file = body.file as File
    
    // Get the file details
    const fileBuffer = await file.arrayBuffer()
@@ -21,9 +21,9 @@ export const pdfUploadHandler = async (c: Context) => {
    const contentType = file.type
    
    // Get store ID from query params and ensure it exists
-   const storeId = c.req.query('storeId')!
+   const deviceId = c.req.query('deviceId')!
    
-   const s3Key = `${storeId}/${originalFilename}`
+   const s3Key = `tmp/${deviceId}/${originalFilename}`
    
    // Upload to S3
    const uploadCommand = new PutObjectCommand({
@@ -34,6 +34,9 @@ export const pdfUploadHandler = async (c: Context) => {
    })
    
    await s3Client.send(uploadCommand)
+
+   // TODO: get storeId from db
+   const storeId = 'organi_ein_karem'
    
    // Create MongoDB document
    const doc: ScanDocument = {

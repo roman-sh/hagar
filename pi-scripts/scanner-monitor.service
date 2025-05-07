@@ -1,0 +1,27 @@
+# /etc/systemd/system/scanner-monitor.service
+
+[Unit]
+Description=Scanner Monitoring Service
+After=network.target scanbd.service
+Wants=scanbd.service
+
+[Service]
+Type=simple
+User=saned
+Group=saned
+ExecStart=/usr/bin/python3 /etc/scanbd/scripts/scan_monitor.py
+WorkingDirectory=/etc/scanbd/scripts      
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+Environment=PYTHONUNBUFFERED=1
+
+# Allow sending signals to scanbd
+CapabilityBoundingSet=CAP_KILL
+AmbientCapabilities=CAP_KILL
+
+[Install]
+WantedBy=multi-user.target
+
+

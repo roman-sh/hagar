@@ -1,0 +1,374 @@
+Command Line Usage
+By
+
+8 min. readView original
+Overview
+NAPS2, in addition to the primary GUI, also offers a command-line interface (CLI). This allows scanning and saving documents to be automated and/or scripted.
+
+Setup
+Using the CLI is slightly different depending on the platform. You can set up an alias to make it simple.
+
+Windows (Powershell)
+
+function naps2.console { . "C:\Program Files\NAPS2\NAPS2.Console.exe" $args }
+Mac
+
+alias naps2.console="/Applications/NAPS2.app/Contents/MacOS/NAPS2 console"
+Linux (deb/rpm)
+
+alias naps2.console="naps2 console"
+Linux (Flatpak)
+
+alias naps2.console="flatpak run com.naps2.Naps2 console"
+Quick Examples
+Scan with the default GUI profile:
+
+naps2.console -o "F:\scan.pdf"
+Scan with the specified profile:
+
+naps2.console -o "F:\scan.pdf" -p "Canon MP495 (color)"
+Scan with CLI settings only:
+
+naps2.console -o "F:\scan.pdf" --noprofile --driver twain --device mp495 --source feeder --dpi 300 --pagesize a4
+Scan and append to an existing file:
+
+naps2.console -i "F:\scan.pdf" -o "F:\scan.pdf" -f
+Scan and email:
+
+naps2.console -e "scan.pdf" --to "someone@example.com" --subject "Hello World"
+See available devices:
+
+naps2.console --listdevices --driver twain
+Generate a PDF from image files:
+
+naps2.console -i "F:\a.jpg;F:\b.jpg;F:\c.jpg" -n 0 -o "F:\abc.pdf"
+Run OCR on an existing PDF file:
+
+naps2.console -i "F:\doc.pdf" -o "F:\doc_ocr.pdf" -n 0 --ocrlang "eng"
+Usage
+The NAPS2 CLI uses standard unix-style options. Each option has a long form (e.g. "--output"), and some have a short form (e.g. "-o"). Some options are flags, and some are expected to be provided a value.
+
+Required Options
+At least one of these options must be specified for scanning.
+
+-o, --output {path}
+Specifies the path, name, and extension of the output file to save. The extension determines the output type (e.g. ".pdf" for a PDF file, ".jpg" for a JPEG image, etc.).
+
+naps2.console -o "F:\scan.pdf"
+-e, --email {filename}
+Specifies that an email should be sent with the scan attached with the given file name and extension. The extension determines the attachment type (e.g. ".pdf" for a PDF file, ".jpg" for a JPEG image, etc.).
+
+naps2.console -e "scan.pdf"
+-a, --autosave
+Specifies that the Auto Save settings from the selected profile should be used. The profile must have Auto Save enabled.
+
+naps2.console -a
+Secondary Functions
+Aside from scanning, there are a few other functions you can use the CLI for.
+
+--listdevices
+Lists available devices. See Specifying a Device.
+
+naps2.console --listdevices --driver twain
+--install {component}
+Installs the specified component. Possible values: "ocr-eng", "ocr-fra", etc. (see language code reference)
+
+naps2.console --install ocr-eng
+--help
+Display a help screen similar to this wiki page.
+
+naps2.console --help
+Profile Options
+-p, --profile {name}
+Specifies the name of the profile to use when scanning. Profiles are defined using the GUI. If this option is not specified, the most-recently-used profile from the GUI is selected.
+
+naps2.console -o "F:\scan.pdf" -p "Canon MP495 (color)"
+--noprofile
+Specifies that default profile settings should be used instead of a GUI profile. You can use scanning options like --source, --pagesize, etc. to customize the scan. Also see Specifying a Device.
+
+naps2.console -o "F:\scan.pdf" --noprofile --driver twain --device mp495
+Specifying a Device
+When using --noprofile, you need to specify a device on the command line. Use --listdevices to see the available devices.
+
+~> naps2.console --listdevices --driver twain
+    Canon MP495 ser
+    CanoScan LiDE 400
+Then, when scanning, use --device to pick the device.
+
+naps2.console -o "F:\scan.pdf" --noprofile --driver twain --device mp495
+Scanning Options
+These options will override any options present in the selected profile.
+
+--driver {wia|twain|escl|sane|apple}
+Specifies the driver to use when scanning (or with --listdevices). Only some drivers are available based on the platform (Windows/Mac/Linux).
+
+naps2.console -o "F:\scan.pdf" --driver twain --device mp495
+--device {name}
+The name of a device to use when scanning (as shown by --listdevices). It doesn't need to match exactly, it only needs to be a partial case-insensitive match. Requires --driver.
+
+naps2.console -o "F:\scan.pdf" --driver twain --device mp495
+--source {glass|feeder|duplex}
+Specifies the paper source to use when scanning.
+
+naps2.console -o "F:\scan.pdf" --source duplex
+--pagesize {size}
+Specifies the page size to use when scanning. This can be a well-known size ("letter", "legal", "a4", etc.) or a dimension (e.g. "8.5x11in"). Supported units are "in" (inches), "cm" (centimetres), "mm" (millimetres). Width comes first, height second.
+
+naps2.console -o "F:\scan.pdf" --pagesize a4
+naps2.console -o "F:\scan.pdf" --pagesize 210x297mm
+--dpi {#}
+Specifies the resolution (dots per inch) to use when scanning (e.g. 100, 300, 600, etc.).
+
+naps2.console -o "F:\scan.pdf" --dpi 300
+--bitdepth {color|gray|bw}
+Specifies the bit depth to use when scanning (color = 24-bit Color, gray = Grayscale, bw = Black & White).
+
+naps2.console -o "F:\scan.pdf" --bitdepth gray
+Post-Processing Options
+--deskew
+Enables automatic deskewing to straighten scanned pages.
+
+naps2.console -o "F:\scan.pdf" --deskew
+--rotate {degrees}
+Rotates pages clockwise by the specified number of degrees. If both --rotate and --deskew are specified, --rotate is applied first (e.g. you can correct the rotation by 90 degrees and then rely on auto-deskew to fix any slight misalignment after that).
+
+naps2.console -o "F:\scan.pdf" --rotate 90
+Import Options
+-i, --import {filenames}
+Specifies the name and path of one or more pdf/image files to import. Imported files are prepended to the output in the order they are specified. Multiple files are separated by a semicolon (";").
+
+naps2.console -i "F:\incomplete scan.pdf" -o "F:\complete scan.pdf"
+--importpassword {password}
+Specifies the password to be used to import any encrypted PDFs.
+
+naps2.console -i "F:\encrypted.pdf" --importpassword "123456" -o "F:\complete scan.pdf"
+Combining and Converting Files
+The -i/--import option can be used in combination with the option "-n 0" to combine multiple files together or to change the type of a file without doing any scanning.
+
+To combine multiple images into a PDF:
+
+naps2.console -i "F:\a.jpg;F:\b.jpg;F:\c.jpg" -n 0 -o "F:\abc.pdf"
+To combine multiple PDFs together:
+
+naps2.console -i "F:\a.pdf;F:\b.pdf;F:\c.pdf" -n 0 -o "F:\abc.pdf"
+To convert a TIFF into a PDF:
+
+naps2.console -i "F:\a.tiff" -n 0 -o "F:\a.pdf"
+To convert between image types:
+
+naps2.console -i "F:\a.png" -n 0 -o "F:\a.jpg"
+Slicing Imported Files
+To only import part of a PDF or TIFF file, you can use slice notation. Note: With this notation, page numbers start at 0!
+
+To get the first page:
+
+naps2.console -i "F:\abcd.pdf[0]" -n 0 -o "F:\a.pdf"
+To replace the third page:
+
+naps2.console -i "F:\abcde.pdf[:2];F:\r.pdf;F:\abcde.pdf[3:]" -n 0 -o "F:\abrde.pdf"
+First page: 	
+[0]
+Second page: 	
+[1]
+Third page: 	
+[2]
+Last page: 	
+[-1]
+Second-last page: 	
+[-2]
+First two pages: 	
+[:2]
+Skip the first two pages: 	
+[2:]
+Last two pages: 	
+[-2:]
+Skip the last two pages: 	
+[:-2]
+Skip the first/last two pages: 	
+[2:-2]
+PDF Options
+These options are only applicable if the output file is a PDF.
+
+--pdftitle {title}
+Specifies the title for generated PDF metadata.
+
+--pdfauthor {author}
+Specifies the author for generated PDF metadata.
+
+--pdfsubject {subject}
+Specifies the subject for generated PDF metadata.
+
+--pdfkeywords {keywords}
+Specifies the keywords for generated PDF metadata.
+
+naps2.console -o "F:\scan.pdf" --pdftitle "January Receipts" --pdfauthor "John Smith" --pdfsubject "Receipts" --pdfkeywords "January, Receipts"
+--usesavedmetadata
+Specifies that the metadata configured in the GUI should be used for generated PDF.
+
+naps2.console -o "F:\scan.pdf" --usesavedmetadata
+--encryptconfig {path}
+Specifies the name and path of an XML file to configure encryption for the generated PDF.
+
+naps2.console -o "F:\encrypted.pdf" --encryptconfig "F:\pdfencryption.xml"
+pdfencryption.xml:
+
+<?xml version="1.0"?>
+    <PdfEncryption xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+      <EncryptPdf>true</EncryptPdf>
+      <UserPassword>123</UserPassword>
+      <OwnerPassword>456</OwnerPassword>
+      <AllowContentCopyingForAccessibility>false</AllowContentCopyingForAccessibility>
+      <AllowAnnotations>false</AllowAnnotations>
+      <AllowDocumentAssembly>false</AllowDocumentAssembly>
+      <AllowContentCopying>false</AllowContentCopying>
+      <AllowFormFilling>false</AllowFormFilling>
+      <AllowFullQualityPrinting>false</AllowFullQualityPrinting>
+      <AllowDocumentModification>false</AllowDocumentModification>
+      <AllowPrinting>false</AllowPrinting>
+    </PdfEncryption>
+--usesavedencryptconfig
+Specifies that the encryption configured in the GUI should be used for the generated PDF.
+
+naps2.console -o "F:\encrypted.pdf" --usesavedencryptconfig
+--pdfcompat {type}
+Specifies the standard used for the generated PDF ("default", "A1-b", "A2-b", "A3-b", or "A3-u").
+
+naps2.console -o "F:\pdfa.pdf" --pdfcompat A1-b
+Image Options
+--jpegquality {#}
+(Default: 75) Specifies the quality of saved JPEG files (0-100).
+
+naps2.console -o "F:\scan.jpg" --jpegquality 90
+--tiffcomp {type}
+Specifies the type of compression used for TIFF files ("auto", "lzw", "ccitt4", or "none").
+
+naps2.console -o "F:\scan.tiff" --tiffcomp none
+Email Options
+These options are only applicable if -e/--email is specified.
+
+--to {address}
+Specifies one or more addresses (comma-separated) of the email recipients.
+
+--cc {address}
+Specifies one or more addresses (comma-separated) of the email recipients.
+
+--bcc {address}
+Specifies one or more addresses (comma-separated) of the email recipients.
+
+--subject {subject}
+Specifies the subject of the email message.
+
+--body {text}
+Specifies the body text of the email message.
+
+--autosend
+Specifies that the email should be sent without prompting the user to edit it first. Note that Outlook may not allow the email to be sent without user approval.
+
+--silentsend
+Requires --autosend. Specifies that the user should not be prompted to authenticate. This may result in an error if authentication is required. Note that Outlook may not allow the email to be sent without user approval.
+
+naps2.console -e "scan.pdf" --to "jsmith@example.com" --subject "Scanned Document" --body "Here it is." --autosend --silentsend
+OCR Options
+If OCR options aren't specified, the options from the GUI are used.
+
+--ocrlang {code}
+Specifies the three-letter code for the language used for OCR (e.g. 'eng' for English, 'fra' for French, etc.). Multiple codes can be separated by the '+' symbol. Implies --enableocr. Reference: http://www.loc.gov/standards/iso639-2/php/code_list.php
+
+naps2.console -o "F:\scan.pdf" --ocrlang "eng"
+--enableocr
+Specifies that OCR should be used when generating PDFs.
+
+naps2.console -o "F:\scan.pdf" --enableocr
+--disableocr
+Specifies that OCR should NOT be used when generating PDFs. Overrides --enableocr.
+
+naps2.console -o "F:\scan.pdf" --disableocr
+Order Options
+--interleave
+Specifies that pages should be interleaved. For example, if you scan pages in the order "1, 3, 5, 2, 4, 6", using this option will result in the order "1, 2, 3, 4, 5, 6".
+
+--altinterleave
+Specifies that pages should be interleaved in an alternative way. For example, if you scan pages in the order "1, 3, 5, 6, 4, 2", using this option will result in the order "1, 2, 3, 4, 5, 6".
+
+--deinterleave
+Specifies that pages should be deinterleaved. For example, if you have pages in the order "1, 4, 2, 5, 3, 6", using this option will result in the order "1, 2, 3, 4, 5, 6".
+
+--altdeinterleave
+Specifies that pages should be deinterleaved in an alternative way. For example, if you have pages in the order "1, 6, 2, 5, 3, 4", using this option will result in the order "1, 2, 3, 4, 5, 6".
+
+--reverse
+Specifies that pages should be reversed. For example, if you scan pages in the order "6, 5, 4, 3, 2, 1", using this option will result in the order "1, 2, 3, 4, 5, 6".
+
+Split Options
+These options are mutually exclusive.
+
+--split
+Specifies that each page should be saved to its own PDF or TIFF file.
+
+--splitscans
+Specifies that the pages from each scan should be saved to their own file. This only makes sense with the -n option.
+
+--splitpatcht
+Specifies that pages should be saved to multiple files, separated by Patch-T pages.
+
+--splitsize {#}
+Specifies that pages should be saved to multiple files, with the given number of pages per file.
+
+Other Options
+-v, --verbose
+Displays progress information. If not specified, no output will be displayed upon success.
+
+naps2.console -o "F:\scan.pdf" -v
+--progress
+Displays a graphical window for scanning progress.
+
+naps2.console -o "F:\scan.pdf" --progress
+-n, --number {#}
+(Default: 1) The number of scans to perform. This may be different from the number of pages scanned (e.g. if you have an automated document feeder).
+
+naps2.console -o "F:\scan.pdf" -n 5
+-d, --delay {#}
+(Default: 0) The delay (in milliseconds) between each scan.
+
+naps2.console -o "F:\scan.pdf" -n 5 -d 5000
+-f, --force
+Overwrite existing files. If not specified, any files that already exist will not be changed (and an error message will be displayed).
+
+naps2.console -o "F:\scan.pdf" -f
+-w, --wait
+After finishing, wait for user input (enter/return) before exiting.
+
+naps2.console -o "F:\scan.pdf" -w
+Placeholders
+Any path arguments (-o, -e, etc.) as well as some text arguments (--subject, --body) can use placeholders to timestamp and auto-number files. The following placeholders are available:
+
+$(YYYY) - The current year.
+$(YY) - The current year (00-99).
+$(MM) - The current month (01-12).
+$(DD) - The current day (01-31).
+$(hh) - The current hour (00-23).
+$(mm) - The current minute (00-59).
+$(ss) - The current second (00-59).
+$(nnnn) - A unique incrementing number (0001, 0002, etc.).
+$(nnn) - A unique incrementing number (001, 002, etc.).
+$(nn) - A unique incrementing number (01, 02, etc.).
+$(n) - A unique incrementing number (1, 2, etc.).
+
+Opening Files in the NAPS2 GUI
+To import a PDF or other file into the NAPS2 GUI you can use these commands.
+
+Windows/Linux only: Check "Single Instance" in the "Settings" window if you want to open in existing windows instead of opening a new one.
+
+Windows (Powershell)
+
+. "C:\Program Files\NAPS2\NAPS2.exe" "F:\doc.pdf"
+Mac
+
+open -a NAPS2 /path/to/doc.pdf
+Linux (deb/rpm)
+
+naps2 /path/to/doc.pdf
+Linux (Flatpak)
+
+flatpak run com.naps2.Naps2 /path/to/doc.pdf
+Back to Support

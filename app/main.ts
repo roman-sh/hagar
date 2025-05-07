@@ -16,7 +16,7 @@ try {
    initializeDatabase()
    initializeRedis()
    initializeS3()
-   whatsappClient.initialize()
+   // whatsappClient.initialize()
 
    // Initialize all queues with their processors
    initializeQueues()

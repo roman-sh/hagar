@@ -1,4 +1,6 @@
-export { scanApprovalProcessor } from './scan-approval'
+export { scanValidationProcessor } from './scan-validation'
 export { dataExtractionProcessor } from './data-extraction'
 export { dataApprovalProcessor } from './data-approval'
 export { inventoryUpdateProcessor } from './inventory-update' 
+export { inboundMessagesProcessor } from './inbound-messages'
+export { outboundMessagesProcessor } from './outbound-messages'
