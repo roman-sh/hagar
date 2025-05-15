@@ -3,13 +3,13 @@ import { Job } from 'bull'
 import { JobData, BaseJobResult } from '../types/jobs'
 
 interface ExtractedData {
-   title: string;
-   date: string;
-   content: string;
+   title: string
+   date: string
+   content: string
 }
 
 interface ExtractionJobResult extends BaseJobResult {
-   extractedData: ExtractedData;
+   extractedData: ExtractedData
 }
 
 /**
@@ -17,7 +17,9 @@ interface ExtractionJobResult extends BaseJobResult {
  * @param job - The Bull job object
  * @returns The processing result
  */
-export async function dataExtractionProcessor(job: Job<JobData>): Promise<ExtractionJobResult> {
+export async function dataExtractionProcessor(
+   job: Job<JobData>
+): Promise<ExtractionJobResult> {
    log.info(`Processing data extraction job: ${job.id}`)
 
    // Get document ID from job.id (not job.data.docId)
@@ -50,4 +52,4 @@ export async function dataExtractionProcessor(job: Job<JobData>): Promise<Extrac
       message: 'Data successfully extracted',
       extractedData
    }
-} 
+}

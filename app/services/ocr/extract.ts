@@ -1,4 +1,4 @@
-// @ts-nocheck 
+// @ts-nocheck
 /**
  * Extracts key information from Azure Document Intelligence analysis JSON
  * @param {Object} analysisResult - The analysis result from Azure Document Intelligence

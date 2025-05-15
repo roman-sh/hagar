@@ -6,33 +6,33 @@ import { DocType } from '../config/constants.ts'
 
 /**
  * Queue a document to the next processing step
- * 
+ *
  * @param storeId - The store identifier
  * @param docId - The document identifier (will be used as job ID)
  * @param currentQ - The current queue the document is in
  * @returns Promise<void>
  */
-export const q = async (storeId: string, docId: string, currentQ: QueueKey | null): Promise<void> => {
+export const q = async (
+   storeId: string,
+   docId: string,
+   currentQ: QueueKey | null
+): Promise<void> => {
    // Find the store document with its pipeline
-   const store = await db.collection(storeId).findOne(
-      { type: DocType.STORE },
-      { projection: { pipeline: 1 }}
-   )
-   
+   const store = await db
+      .collection(storeId)
+      .findOne({ type: DocType.STORE }, { projection: { pipeline: 1 } })
+
    // Use non-null assertion and type assertion
    const pipeline = store!.pipeline as QueueKey[]
-   
+
    // Find next queue in the pipeline
-   const idx = pipeline.findIndex(q => q === currentQ)
+   const idx = pipeline.findIndex((q) => q === currentQ)
    const nextQ = pipeline[idx + 1]
-   
+
    // If there's a next queue, add document to it
    if (nextQ) {
-      await queuesMap[nextQ].add(
-         { storeId } as JobData,
-         { jobId: docId }
-      )
-      
+      await queuesMap[nextQ].add({ storeId } as JobData, { jobId: docId })
+
       log.info(`Document ${docId} queued to ${nextQ}`)
    }
 }

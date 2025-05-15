@@ -10,13 +10,12 @@ import { pdfUploadHandler } from './api/pdf-upload'
 import { configureBullBoard, type BullBoardConfig } from './config/bull-board'
 import { client as whatsappClient } from './connections/whatsapp'
 
-
 try {
    // Initialize database connection
-   initializeDatabase()
-   initializeRedis()
-   initializeS3()
-   // whatsappClient.initialize()
+   await initializeDatabase()
+   await initializeRedis()
+   await initializeS3()
+   // awaitwhatsappClient.initialize()
 
    // Initialize all queues with their processors
    initializeQueues()
@@ -27,10 +26,16 @@ try {
    const bullBoardConfig: BullBoardConfig = configureBullBoard()
 
    // Register Bull Board routes
-   app.route(bullBoardConfig.basePath, bullBoardConfig.serverAdapter.registerPlugin())
+   app.route(
+      bullBoardConfig.basePath,
+      bullBoardConfig.serverAdapter.registerPlugin()
+   )
+
+   // Add redirect for trailing slash
+   bullBoardConfig.setupRedirect(app)
 
    // API routes
-   app.post('/api/pdf-upload', pdfUploadHandler)   // app's entry point
+   app.post('/api/pdf-upload', pdfUploadHandler) // app's entry point
 
    // Define a health check endpoint
    app.get('/health', (c) => c.json({ status: 'ok' }))
@@ -40,20 +45,21 @@ try {
       log.error(err, 'Error handling request')
       return c.json({ error: 'Internal server error' }, 500)
    })
-   
+
    // Start the HTTP server
    const PORT = process.env.PORT || 3000
-   
+
    // Start the Bun server
    Bun.serve({
       fetch: app.fetch,
       port: PORT as number
    })
-   
-   log.info(`Server running on port ${PORT}`)
-   log.info(`Bull Dashboard available at http://localhost:${PORT}${bullBoardConfig.basePath}`)
-   log.info('Application started successfully')
 
+   log.info(`Server running on port ${PORT}`)
+   log.info(
+      `Bull Dashboard available at http://localhost:${PORT}${bullBoardConfig.basePath}`
+   )
+   log.info('Application started successfully')
 } catch (error) {
    log.error(error as Error, 'Application Error')
-} 
+}

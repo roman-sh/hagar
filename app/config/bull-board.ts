@@ -5,8 +5,9 @@ import { serveStatic as nodeServeStatic } from '@hono/node-server/serve-static'
 import { queuesMap } from '../queues.js'
 
 export interface BullBoardConfig {
-   serverAdapter: HonoAdapter;
-   basePath: string;
+   serverAdapter: HonoAdapter
+   basePath: string
+   setupRedirect: (app: any) => void
 }
 
 /**
@@ -15,14 +16,14 @@ export interface BullBoardConfig {
  */
 export function configureBullBoard(): BullBoardConfig {
    const basePath = '/ui'
-   
+
    // Create Bull Board with Node.js serveStatic
    const serverAdapter = new HonoAdapter(nodeServeStatic)
    serverAdapter.setBasePath(basePath)
 
    // Create adapters for each queue
    const queueAdapters = Object.values(queuesMap).map(
-      queue => new BullAdapter(queue)
+      (queue) => new BullAdapter(queue)
    )
 
    createBullBoard({
@@ -30,8 +31,14 @@ export function configureBullBoard(): BullBoardConfig {
       serverAdapter
    })
 
+   // Function to set up a redirect for trailing slash
+   const setupRedirect = (app: any) => {
+      app.get(`${basePath}/`, (c: any) => c.redirect(basePath))
+   }
+
    return {
       serverAdapter,
-      basePath
+      basePath,
+      setupRedirect
    }
-} 
+}

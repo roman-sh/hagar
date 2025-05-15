@@ -1,4 +1,4 @@
-import Bull, { Queue, Job, ProcessCallbackFunction } from 'bull'
+import Bull, { Queue, Job, ProcessCallbackFunction, QueueOptions } from 'bull'
 import {
    SCAN_VALIDATION,
    DATA_EXTRACTION,
@@ -20,25 +20,61 @@ import {
 
 // Define a type for our queue keys
 export type QueueKey =
-   typeof SCAN_VALIDATION |
-   typeof DATA_EXTRACTION |
-   typeof DATA_APPROVAL |
-   typeof INVENTORY_UPDATE |
-   typeof INBOUND_MESSAGES |
-   typeof OUTBOUND_MESSAGES
+   | typeof SCAN_VALIDATION
+   | typeof DATA_EXTRACTION
+   | typeof DATA_APPROVAL
+   | typeof INVENTORY_UPDATE
+   | typeof INBOUND_MESSAGES
+   | typeof OUTBOUND_MESSAGES
+
+// Pipeline queue configuration
+const pipelineQueueConfig: QueueOptions = {
+   settings: { },
+   defaultJobOptions: {
+      attempts: 1, // Only try once, no retries
+   }
+}
+
+// Queue configuration for each queue type
+const queueConfigMap: Record<QueueKey, QueueOptions> = {
+   [SCAN_VALIDATION]: pipelineQueueConfig,
+   [DATA_EXTRACTION]: pipelineQueueConfig,
+   [DATA_APPROVAL]: pipelineQueueConfig,
+   [INVENTORY_UPDATE]: pipelineQueueConfig,
+   [INBOUND_MESSAGES]: {},
+   [OUTBOUND_MESSAGES]: {}
+}
 
 // Create the queues with proper job data typing
 export const queuesMap: Record<QueueKey, Queue<JobData>> = {
-   [SCAN_VALIDATION]: new Bull(SCAN_VALIDATION),
-   [DATA_EXTRACTION]: new Bull(DATA_EXTRACTION),
-   [DATA_APPROVAL]: new Bull(DATA_APPROVAL),
-   [INVENTORY_UPDATE]: new Bull(INVENTORY_UPDATE),
-   [INBOUND_MESSAGES]: new Bull(INBOUND_MESSAGES),
-   [OUTBOUND_MESSAGES]: new Bull(OUTBOUND_MESSAGES)
+   [SCAN_VALIDATION]: new Bull(
+      SCAN_VALIDATION,
+      queueConfigMap[SCAN_VALIDATION]
+   ),
+   [DATA_EXTRACTION]: new Bull(
+      DATA_EXTRACTION,
+      queueConfigMap[DATA_EXTRACTION]
+   ),
+   [DATA_APPROVAL]: new Bull(DATA_APPROVAL, queueConfigMap[DATA_APPROVAL]),
+   [INVENTORY_UPDATE]: new Bull(
+      INVENTORY_UPDATE,
+      queueConfigMap[INVENTORY_UPDATE]
+   ),
+   [INBOUND_MESSAGES]: new Bull(
+      INBOUND_MESSAGES,
+      queueConfigMap[INBOUND_MESSAGES]
+   ),
+   [OUTBOUND_MESSAGES]: new Bull(
+      OUTBOUND_MESSAGES,
+      queueConfigMap[OUTBOUND_MESSAGES]
+   )
 }
 
 // Map of queue names to their processors
-export const processorsMap: Record<QueueKey, ProcessCallbackFunction<JobData>> = {
+export const processorsMap: Record<
+   QueueKey,
+   ProcessCallbackFunction<JobData>
+> = {
    [SCAN_VALIDATION]: scanValidationProcessor,
    [DATA_EXTRACTION]: dataExtractionProcessor,
    [DATA_APPROVAL]: dataApprovalProcessor,
@@ -57,10 +93,12 @@ export function initializeQueues(): void {
    for (const [queueName, queue] of Object.entries(queuesMap)) {
       const processor = processorsMap[queueName as QueueKey]
 
-      // Process jobs one at a time
-      queue.process(processor)
-      log.info(`Queue ${queueName} initialized with processor`)
-      
+      // Process jobs with increased concurrency (multiple jobs at once)
+      // TODO: move this parameter to db (maybe app-config collection)
+      const concurrency = queueName === OUTBOUND_MESSAGES ? 1 : 10
+      queue.process(concurrency, processor)
+      // log.info(`Queue ${queueName} initialized with processor (concurrency: ${concurrency})`)
+
       // Set up event handlers
       setupQueueEventHandlers(queue, queueName)
    }
@@ -73,7 +111,10 @@ export function initializeQueues(): void {
  * @param queue - The Bull queue
  * @param queueName - Name of the queue
  */
-function setupQueueEventHandlers(queue: Queue<JobData>, queueName: string): void {
+function setupQueueEventHandlers(
+   queue: Queue<JobData>,
+   queueName: string
+): void {
    // Log when jobs are completed successfully
    queue.on('completed', (job: Job<JobData>, result: BaseJobResult) => {
       log.info(

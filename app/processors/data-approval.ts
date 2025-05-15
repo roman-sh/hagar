@@ -7,7 +7,9 @@ import { JobData, BaseJobResult } from '../types/jobs'
  * @param job - The Bull job object
  * @returns The processing result
  */
-export async function dataApprovalProcessor(job: Job<JobData>): Promise<BaseJobResult> {
+export async function dataApprovalProcessor(
+   job: Job<JobData>
+): Promise<BaseJobResult> {
    log.info(`Processing data approval job: ${job.id}`)
 
    // Get document ID from job.id
@@ -32,4 +34,4 @@ export async function dataApprovalProcessor(job: Job<JobData>): Promise<BaseJobR
       docId,
       message: 'Data approval notification sent'
    }
-} 
+}

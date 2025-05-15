@@ -7,14 +7,16 @@ import { JobData, BaseJobResult } from '../types/jobs'
  * @param job - The Bull job object
  * @returns The processing result
  */
-export async function inboundMessagesProcessor(job: Job<JobData>): Promise<BaseJobResult> {
+export async function inboundMessagesProcessor(
+   job: Job<JobData>
+): Promise<BaseJobResult> {
    log.info(`Processing data approval job: ${job.id}`)
 
    // Get document ID from job.id
-   const docId = job.id.toString()
-   const storeId = job.data.storeId
+   // const docId = job.id.toString()
+   // const storeId = job.data.storeId
 
-   log.info(`Document ID: ${docId}, Store ID: ${storeId}`)
+   // log.info(`Document ID: ${docId}, Store ID: ${storeId}`)
 
    // Mock processing logic - in a real implementation, this would:
    // 1. Notify relevant users about data needing approval
@@ -22,14 +24,14 @@ export async function inboundMessagesProcessor(job: Job<JobData>): Promise<BaseJ
    // 3. Update document status based on approval
 
    // Simulate processing delay
-   await new Promise((resolve) => setTimeout(resolve, 1000))
+   await new Promise((resolve) => setTimeout(resolve, 3 * 1000))
 
    // Mock update to database
-   log.info(`Updating document ${docId} status to 'pending_data_approval'`)
+   // log.info(`Updating document ${docId} status to 'pending_data_approval'`)
 
    return {
       success: true,
-      docId,
-      message: 'Data approval notification sent'
+      docId: job.id, // massages queue does not have a docId
+      message: 'Message processed'
    }
-} 
+}

@@ -24,7 +24,7 @@ client.on('ready', () => {
 })
 
 // @ts-ignore
-client.on('qr', qr => {
+client.on('qr', (qr) => {
    qrcode.generate(qr, { small: true })
 })
 
@@ -40,10 +40,10 @@ client.on('qr', qr => {
 //    }
 // })
 
-client.on('message', async message => {
+client.on('message', async (message) => {
    // Log message for analysis
    // messageAnalysisLogger.info({ message }, 'WhatsApp message structure analysis');
-   
+
    // Send a simple text response
-   await message.send('Кто там?');
+   await message.send('Кто там?')
 })

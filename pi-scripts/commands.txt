@@ -1,0 +1,11 @@
+sudo nano /etc/scanbd/scanbd.conf
+sudo nano /etc/scanbd/scripts/scan_monitor.py
+sudo nano /etc/scanbd/scripts/scan_controller.sh
+
+// services:
+sudo systemctl status scanbd
+sudo systemctl status scanner-monitor.service
+enable/start/disable/stop/restart
+
+sudo journalctl -u scanbd -f
+sudo journalctl -u scanner-monitor -f

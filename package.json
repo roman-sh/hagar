@@ -22,7 +22,7 @@
     "hono": "^4.7.5",
     "ioredis": "^5.6.0",
     "mongodb": "^6.15.0",
-    "openai": "^4.87.3",
+    "openai": "^4.98.0",
     "pino": "^9.6.0",
     "pino-pretty": "^13.0.0",
     "qrcode-terminal": "^0.12.0",

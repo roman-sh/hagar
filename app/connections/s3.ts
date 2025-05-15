@@ -2,7 +2,7 @@ import 'dotenv/config'
 import { S3Client, GetBucketPolicyCommand } from '@aws-sdk/client-s3'
 
 // S3 client instance
-export let s3Client: S3Client;
+export let s3Client: S3Client
 
 export async function initializeS3(): Promise<S3Client> {
    s3Client = new S3Client({
@@ -17,7 +17,7 @@ export async function initializeS3(): Promise<S3Client> {
    try {
       await s3Client.send(
          new GetBucketPolicyCommand({
-            Bucket: process.env.AWS_BUCKET_NAME,
+            Bucket: process.env.AWS_BUCKET_NAME
          })
       )
       log.info('S3 client initialized')
@@ -28,4 +28,4 @@ export async function initializeS3(): Promise<S3Client> {
    }
 
    return s3Client
-} 
+}

@@ -8,8 +8,9 @@ export const OUTBOUND_MESSAGES = 'outbound_messages'
 
 // Document type constants
 export enum DocType {
-  SCAN = 'scan',
-  STORE = 'store',
-  PRODUCT = 'product',
-  UPDATE = 'update'
+   SCAN = 'scan',
+   STORE = 'store',
+   PRODUCT = 'product',
+   UPDATE = 'update'
 }
+

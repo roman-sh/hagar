@@ -9,6 +9,7 @@ import subprocess
 from datetime import datetime
 import traceback
 import pdf_utils
+import signal
 
 
 # Global variables
@@ -34,28 +35,8 @@ def release_control():
     subprocess.run(["killall", "-SIGUSR2", "scanbd"])
 
 
-def scan_button_pressed():
-    """Check if scan button was pressed"""
-    trigger_file = "/tmp/scan"
-    if os.path.exists(trigger_file):
-        print("SCAN BUTTON PRESSED!")
-        os.remove(trigger_file)
-        return True
-    return False
-
-
-def page_loaded():
-    """Check if page loaded event occurred"""
-    trigger_file = "/tmp/page-loaded"
-    if os.path.exists(trigger_file):
-        print("PAGE LOADED!")
-        os.remove(trigger_file)
-        return True
-    return False
-
-
 def perform_scan(session_dir, page_num):
-    print(f"ADF mode {'is ON' if adf_mode else 'is OFF'}, starting SCAN operation")
+    print("Starting SCAN operation")
     
     take_control()
     print("Control revoked from scanbd")
@@ -83,6 +64,58 @@ def perform_scan(session_dir, page_num):
     print("Control returned to scanbd")
 
 
+
+def handle_scan_button(_signum, _frame):
+    print("SCAN BUTTON PRESSED!")
+    global adf_mode, page_num, session_dir
+
+    if not adf_mode:    # Scan first page
+        page_num = 1
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        session_dir = f"/tmp/scan_session_{timestamp}"
+        perform_scan(session_dir, page_num)
+
+    else:   # Finalize scan session
+        pdf_file = pdf_utils.create_pdf(session_dir)
+        print(f"Scan session complete, PDF created: {pdf_file}")
+
+        # Upload pdf to backend server
+        pdf_utils.upload_pdf(pdf_file)
+
+    # Toggle ADF mode after handling the current state
+    adf_mode = not adf_mode
+    
+    print(f"Scanner switched to {'ADF' if adf_mode else 'MANUAL'} mode")
+
+
+
+def handle_page_loaded(_signum, _frame):
+    print("PAGE LOADED!")
+    global adf_mode, page_num, session_dir
+    
+    # Only trigger scan if in ADF mode
+    if adf_mode:
+        page_num += 1
+        perform_scan(session_dir, page_num)
+
+
+def shutdown(code):
+    release_control()
+    sane.exit()
+    sys.exit(code)
+
+
+def handle_sigterm(_signum, _frame):
+    print("Received SIGTERM, shutting down gracefully...")
+    shutdown(0)
+
+
+# Register the signal handler
+signal.signal(signal.SIGTERM, handle_sigterm)
+signal.signal(signal.SIGUSR1, handle_scan_button)
+signal.signal(signal.SIGUSR2, handle_page_loaded)
+
+
 try:
     # Starting up
     print("Starting scanner monitor...")
@@ -105,48 +138,18 @@ try:
         else:
             # No scanners found, release control and wait before trying again
             release_control()
-            print("No scanners found. Waiting 5 seconds before retrying...")
+            print("No scanners found. Waiting 10 seconds before retrying...")
             time.sleep(10)
 
     print(f"Watching for event files...")
 
     # Main loop
     while True:
-        # Check for scan button event
-        if scan_button_pressed():
-            
-            if not adf_mode:    # Scan first page
-                page_num = 1
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                session_dir = f"/tmp/scan_session_{timestamp}"
-                perform_scan(session_dir, page_num)
+        # Will wake up on signal events
+        time.sleep(3600)
 
-            else:   # Finalize scan session
-                pdf_file = pdf_utils.create_pdf(session_dir)
-                print(f"Scan session complete, PDF created: {pdf_file}")
-
-                # Upload pdf to backend server
-                pdf_utils.upload_pdf(pdf_file)
-                
-
-            # Toggle ADF mode after handling the current state
-            adf_mode = not adf_mode
-            
-            print(f"Scanner is now in {'ADF' if adf_mode else 'MANUAL'} mode")
-        
-        # Check for page loaded event
-        if page_loaded():
-            # Only trigger scan if in ADF mode
-            if adf_mode:
-                page_num += 1
-                perform_scan(session_dir, page_num)
-        
-        # Check every half second
-        time.sleep(0.5)
 
 except Exception as e:
     print(f"CRITICAL ERROR: {type(e).__name__}: {e}")
     traceback.print_exc()
-    release_control()
-    sane.exit()
-    sys.exit(1)
+    shutdown(1)
