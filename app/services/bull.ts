@@ -1,12 +1,10 @@
-import { Job } from "bull";
+import { Job } from "bull"
 
 
-export async function moveJobToDelayed(job: Job) {
-   const farFuture = Date.now() + (365 * 24 * 60 * 60 * 1000); // ~1 year in the future
-   const jobState = await (job as any).getState();
+export async function moveJobToDelayed(job: Job, delay: number) {
+   const jobState = await job.getState()
    if (jobState === 'active') {
-      // Only try moveToDelayed if job is in active state
-      await (job as any).moveToDelayed(farFuture, true);
-      log.info({ jobId: job.id }, 'Successfully moved job to delayed state for manual handling');
+      // @ts-ignore - moveToDelayed isn't part of the official Bull Job type definition
+      await job.moveToDelayed(Date.now() + delay, true)
    }
 }

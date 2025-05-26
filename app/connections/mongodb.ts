@@ -23,7 +23,7 @@ export async function initializeDatabase(): Promise<Db> {
    const dbName = process.env.MONGO_DB_NAME || 'default'
 
    // Get a reference to the database
-   db = client.db(dbName)
+   db = client.db(dbName, { ignoreUndefined: true })
 
    // Verify the connection with a simple command
    await db.command({ ping: 1 })

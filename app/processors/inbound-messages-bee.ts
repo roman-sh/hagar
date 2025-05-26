@@ -1,0 +1,83 @@
+import { db } from '../connections/mongodb.ts'
+import { BaseJobResult, MessageRef } from '../types/jobs'
+import { setGptTrigger } from '../services/message-debouncer.ts'
+import { audio } from '../services/audio.ts'
+import { database } from '../services/db.ts'
+import { messageStore } from '../services/message-store.ts'
+import BeeQueue from 'bee-queue'
+
+/**
+ * Process an inbound message job using Bee queues
+ * @param job - The Bee job object containing message ID
+ * @returns The processing result
+ */
+export async function inboundMessagesBeeProcessor(
+   job: BeeQueue.Job<MessageRef>
+): Promise<BaseJobResult> {
+   log.info({ jobId: job.id, messageId: job.data.messageId }, 'Starting inbound message processing')
+
+   try {
+      // Retrieve the original message object from the store
+      const message = messageStore.get(job.data.messageId)
+      if (!message) {
+         log.error({ messageId: job.data.messageId }, 'Message not found in store')
+         throw new Error(`Message ${job.data.messageId} not found in store`)
+      }
+
+      const phone = message.from.split('@')[0] // Extract phone number from WhatsApp ID
+
+      // Process the message content
+      let content
+
+      switch (message.type) {
+         case 'chat':
+            content = message.body
+            break
+
+         case 'audio':
+         case 'ptt':
+            const media = await message.downloadMedia()
+            content = await audio.transcribe(media)
+            break
+
+         case 'image':
+            break
+
+         // TODO: add support for pdf files
+
+         default:
+            log.error('Unhandled message type:', message.type)
+      }
+
+      // Get contact name using the original message object
+      const contact = await message.getContact()
+      const name = (contact.name || contact.pushname || phone).replace(/[\s<|\\/>]/g, '_')
+      log.info({ phone, name }, 'Incoming message from:')
+
+      const { storeId } = await database.getStoreByPhone(phone)
+
+      // Save to chat history before passing to LLM
+      await db.collection(storeId).insertOne({
+         type: 'message',
+         role: 'user',
+         phone,
+         name,
+         content,
+         createdAt: new Date()
+      })
+
+      // Set debounce key with 1-second expiration
+      // If multiple messages arrive, this keeps extending the timeout
+      setGptTrigger({ phone, name, storeId })
+
+      return {
+         success: true,
+         docId: job.id,
+         message: 'Message processed'
+      }
+
+   } finally {
+      // Clean up message from store
+      messageStore.delete(job.data.messageId)
+   }
+} 

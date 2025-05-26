@@ -7,7 +7,7 @@ import { BaseDocument, ScanDocument, StoreDocument } from '../types/documents'
 import { DocType } from '../config/constants.ts'
 import { q } from '../helpers/q.ts'
 import { openai } from '../connections/openai.ts'
-import { resolveStoreForDevice } from '../services/db.ts'
+import { database } from '../services/db.ts'
 
 export const pdfUploadHandler = async (c: Context) => {
    // Parse the multipart form data with Hono's built-in types
@@ -39,7 +39,7 @@ export const pdfUploadHandler = async (c: Context) => {
    log.info({ s3Key }, 'File uploaded to S3')
 
    // Get the storeId for the device
-   const { storeId } = await resolveStoreForDevice(deviceId) as unknown as StoreDocument
+   const { storeId } = await database.getStoreByDevice(deviceId) as unknown as StoreDocument
 
    // Upload to OpenAI Files API
    const openaiFile = await openai.files.create({

@@ -19,11 +19,13 @@ export const q = async (
 ): Promise<void> => {
    // Find the store document with its pipeline
    const store = await db
-      .collection(storeId)
-      .findOne({ type: DocType.STORE }, { projection: { pipeline: 1 } })
+      .collection('_stores')
+      .findOne(
+         { storeId }, { projection: { pipeline: 1 } }
+      ) as unknown as StoreDocument
 
    // Use non-null assertion and type assertion
-   const pipeline = store!.pipeline as QueueKey[]
+   const pipeline = store.pipeline
 
    // Find next queue in the pipeline
    const idx = pipeline.findIndex((q) => q === currentQ)

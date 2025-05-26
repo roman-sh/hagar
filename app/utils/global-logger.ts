@@ -7,7 +7,7 @@ const logger = pino({
       options: {
          colorize: true,
          ignore: 'pid,hostname',
-         translateTime: 'SYS:HH:MM:ss'
+         translateTime: 'SYS:HH:MM:ss.l'
       }
    },
    level: process.env.LOG_LEVEL || 'debug'

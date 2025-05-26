@@ -3,27 +3,42 @@ import Redis from 'ioredis'
 
 // Redis client connection - now export as named export
 export let redisClient: Redis
+export let redisSubscriber: Redis
 
 export async function initializeRedis(): Promise<Redis> {
-   // Use REDIS_URL from env if available, otherwise ioredis defaults to localhost:6379
-   redisClient = process.env.REDIS_URL
-      ? new Redis(process.env.REDIS_URL)
-      : new Redis()
+   // ioredis defaults to localhost:6379
+   redisClient = new Redis()
+   redisSubscriber = new Redis()
 
    // Error handling
    redisClient.on('error', (error) => {
       log.error(error, 'Redis client error')
+   })
+   redisSubscriber.on('error', (error) => {
+      log.error(error, 'Redis subscriber error')
    })
 
    // Reconnection event
    redisClient.on('reconnecting', () => {
       log.warn('Redis client reconnecting')
    })
+   redisSubscriber.on('reconnecting', () => {
+      log.warn('Redis subscriber reconnecting')
+   })
 
    // Successful connection
    redisClient.on('connect', () => {
       log.info('Redis client connected')
    })
+   redisSubscriber.on('connect', () => {
+      log.info('Redis subscriber connected')
+   })
+
+   // Enable keyspace notifications for expired events
+   redisClient.config('SET', 'notify-keyspace-events', 'Ex')
+
+   // Subscribe to expired events
+   redisSubscriber.subscribe('__keyevent@0__:expired')
 
    // Ping to verify connection
    const pingResult = await redisClient.ping()

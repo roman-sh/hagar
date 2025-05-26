@@ -11,6 +11,7 @@ export enum DocType {
    SCAN = 'scan',
    STORE = 'store',
    PRODUCT = 'product',
-   UPDATE = 'update'
+   UPDATE = 'update',
+   MESSAGE = 'message'
 }
 

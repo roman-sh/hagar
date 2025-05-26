@@ -1,86 +1,55 @@
 import Bull, { Queue, Job, ProcessCallbackFunction, QueueOptions } from 'bull'
+import BeeQueue from 'bee-queue'
 import {
    SCAN_VALIDATION,
    DATA_EXTRACTION,
    DATA_APPROVAL,
    INVENTORY_UPDATE,
-   INBOUND_MESSAGES,
    OUTBOUND_MESSAGES
 } from './config/constants.ts'
-import { JobData, BaseJobResult } from './types/jobs'
-
+import { JobData, BaseJobResult, OutboundMessageJobData } from './types/jobs'
 import {
    scanValidationProcessor,
    dataExtractionProcessor,
    dataApprovalProcessor,
-   inventoryUpdateProcessor,
-   inboundMessagesProcessor,
-   outboundMessagesProcessor
+   inventoryUpdateProcessor
 } from './processors/index.ts'
+import { outboundMessagesProcessor } from './processors/outbound-messages-bee.ts'
 
-// Define a type for our queue keys
+
+// Define separate queue categories
 export type QueueKey =
    | typeof SCAN_VALIDATION
    | typeof DATA_EXTRACTION
    | typeof DATA_APPROVAL
    | typeof INVENTORY_UPDATE
-   | typeof INBOUND_MESSAGES
-   | typeof OUTBOUND_MESSAGES
+
 
 // Pipeline queue configuration
-const pipelineQueueConfig: QueueOptions = {
-   settings: { },
+const queueConfig: QueueOptions = {
+   settings: {},
    defaultJobOptions: {
       attempts: 1, // Only try once, no retries
    }
 }
 
-// Queue configuration for each queue type
-const queueConfigMap: Record<QueueKey, QueueOptions> = {
-   [SCAN_VALIDATION]: pipelineQueueConfig,
-   [DATA_EXTRACTION]: pipelineQueueConfig,
-   [DATA_APPROVAL]: pipelineQueueConfig,
-   [INVENTORY_UPDATE]: pipelineQueueConfig,
-   [INBOUND_MESSAGES]: {},
-   [OUTBOUND_MESSAGES]: {}
-}
-
-// Create the queues with proper job data typing
+// Separate queue maps
 export const queuesMap: Record<QueueKey, Queue<JobData>> = {
-   [SCAN_VALIDATION]: new Bull(
-      SCAN_VALIDATION,
-      queueConfigMap[SCAN_VALIDATION]
-   ),
-   [DATA_EXTRACTION]: new Bull(
-      DATA_EXTRACTION,
-      queueConfigMap[DATA_EXTRACTION]
-   ),
-   [DATA_APPROVAL]: new Bull(DATA_APPROVAL, queueConfigMap[DATA_APPROVAL]),
-   [INVENTORY_UPDATE]: new Bull(
-      INVENTORY_UPDATE,
-      queueConfigMap[INVENTORY_UPDATE]
-   ),
-   [INBOUND_MESSAGES]: new Bull(
-      INBOUND_MESSAGES,
-      queueConfigMap[INBOUND_MESSAGES]
-   ),
-   [OUTBOUND_MESSAGES]: new Bull(
-      OUTBOUND_MESSAGES,
-      queueConfigMap[OUTBOUND_MESSAGES]
-   )
+   [SCAN_VALIDATION]: new Bull(SCAN_VALIDATION, queueConfig),
+   [DATA_EXTRACTION]: new Bull(DATA_EXTRACTION, queueConfig),
+   [DATA_APPROVAL]: new Bull(DATA_APPROVAL, queueConfig),
+   [INVENTORY_UPDATE]: new Bull(INVENTORY_UPDATE, queueConfig)
 }
 
-// Map of queue names to their processors
-export const processorsMap: Record<
-   QueueKey,
-   ProcessCallbackFunction<JobData>
-> = {
+// Outbound messages Bee queue (single queue with concurrency 1 for rate limiting)
+export const outboundMessagesQueue = new BeeQueue<OutboundMessageJobData>(OUTBOUND_MESSAGES)
+
+// Separate processor maps
+const processorsMap: Record<QueueKey, ProcessCallbackFunction<JobData>> = {
    [SCAN_VALIDATION]: scanValidationProcessor,
    [DATA_EXTRACTION]: dataExtractionProcessor,
    [DATA_APPROVAL]: dataApprovalProcessor,
-   [INVENTORY_UPDATE]: inventoryUpdateProcessor,
-   [INBOUND_MESSAGES]: inboundMessagesProcessor,
-   [OUTBOUND_MESSAGES]: outboundMessagesProcessor
+   [INVENTORY_UPDATE]: inventoryUpdateProcessor
 }
 
 /**
@@ -89,19 +58,15 @@ export const processorsMap: Record<
 export function initializeQueues(): void {
    log.info('Initializing queues with processors...')
 
-   // Set up each queue with its processor
+   // Set up pipeline queues
    for (const [queueName, queue] of Object.entries(queuesMap)) {
       const processor = processorsMap[queueName as QueueKey]
-
-      // Process jobs with increased concurrency (multiple jobs at once)
-      // TODO: move this parameter to db (maybe app-config collection)
-      const concurrency = queueName === OUTBOUND_MESSAGES ? 1 : 10
-      queue.process(concurrency, processor)
-      // log.info(`Queue ${queueName} initialized with processor (concurrency: ${concurrency})`)
-
-      // Set up event handlers
+      queue.process(10, processor)
       setupQueueEventHandlers(queue, queueName)
    }
+
+   // Set up outbound message Bee queue
+   outboundMessagesQueue.process(1, outboundMessagesProcessor)
 
    log.info('All queues initialized successfully')
 }
@@ -112,11 +77,11 @@ export function initializeQueues(): void {
  * @param queueName - Name of the queue
  */
 function setupQueueEventHandlers(
-   queue: Queue<JobData>,
+   queue: Queue<any>,
    queueName: string
 ): void {
    // Log when jobs are completed successfully
-   queue.on('completed', (job: Job<JobData>, result: BaseJobResult) => {
+   queue.on('completed', (job: Job<any>, result: BaseJobResult) => {
       log.info(
          { jobId: job.id, queueName, result },
          'Job completed successfully'
@@ -124,7 +89,7 @@ function setupQueueEventHandlers(
    })
 
    // Log when jobs fail
-   queue.on('failed', (job: Job<JobData>, error: Error) => {
+   queue.on('failed', (job: Job<any>, error: Error) => {
       log.error(
          { jobId: job.id, queueName, errorMessage: error.message },
          'Job failed'
@@ -132,7 +97,7 @@ function setupQueueEventHandlers(
    })
 
    // Log when jobs are stalled (worker crashed or lost connection)
-   queue.on('stalled', (job: Job<JobData>) => {
+   queue.on('stalled', (job: Job<any>) => {
       log.warn({ jobId: job.id, queueName }, 'Job has stalled')
    })
 }

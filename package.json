@@ -16,6 +16,7 @@
     "@bull-board/hono": "^6.7.10",
     "@hono/node-server": "^1.14.0",
     "@types/qrcode-terminal": "^0.12.2",
+    "bee-queue": "^1.7.1",
     "bull": "^4.16.5",
     "dotenv": "^16.4.7",
     "file-type": "^20.4.1",

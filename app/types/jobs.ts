@@ -13,6 +13,30 @@ export interface JobData {
 }
 
 /**
+ * Interface for inbound message job data
+ * Contains reference to message stored in memory
+ */
+export interface MessageRef {
+   messageId: string
+}
+
+/**
+ * Interface for inbound message job data
+ */
+// export interface InboundMessageData {
+//    content: string | { [key: string]: any }
+//    storeId: string
+//    name: string
+//    phone: string
+//    createdAt: Date
+// }
+
+export type OutboundMessageJobData = {
+   phone: string
+   content: string | null
+}
+
+/**
  * Base result interface for job processors
  */
 export interface BaseJobResult {

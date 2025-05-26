@@ -8,18 +8,34 @@ import { initializeRedis } from './connections/redis.ts'
 import { initializeS3 } from './connections/s3.ts'
 import { pdfUploadHandler } from './api/pdf-upload'
 import { configureBullBoard, type BullBoardConfig } from './config/bull-board'
-import { client as whatsappClient } from './connections/whatsapp'
+import { initializeDebouncer } from './services/message-debouncer.ts'
+import { client } from "./connections/whatsapp"
+import { Message } from "whatsapp-web.js"
+import { messageStore } from './services/message-store.ts'
+import { phoneQueueManager } from './services/phone-queues-manager.ts'
+
 
 try {
    // Initialize database connection
    await initializeDatabase()
    await initializeRedis()
    await initializeS3()
-   // awaitwhatsappClient.initialize()
+   await client.initialize()
 
    // Initialize all queues with their processors
    initializeQueues()
+   initializeDebouncer()
 
+   // Listen for incoming messages
+   client.on('message', async (message: Message) => {
+      log.info({ from: message.from, type: message.type }, 'Received WhatsApp message')
+      const messageId = messageStore.store(message)
+      const phone = message.from.split('@')[0] // Extract phone number
+      
+      await phoneQueueManager.addMessage(phone, { messageId })
+   })
+
+   // Initialize Hono server app
    const app = new Hono()
 
    // Set up Bull Board
@@ -46,7 +62,6 @@ try {
       return c.json({ error: 'Internal server error' }, 500)
    })
 
-   // Start the HTTP server
    const PORT = process.env.PORT || 3000
 
    // Start the Bun server
@@ -60,6 +75,33 @@ try {
       `Bull Dashboard available at http://localhost:${PORT}${bullBoardConfig.basePath}`
    )
    log.info('Application started successfully')
+
+   // Graceful shutdown handling
+   const gracefulShutdown = async (signal: string) => {
+      log.info({ signal }, 'Received shutdown signal, starting graceful shutdown...')
+      
+      try {
+         // Close WhatsApp client gracefully
+         log.info('Closing WhatsApp client...')
+         await client.destroy()
+         log.info('WhatsApp client closed')
+         
+         // Give time for any pending operations
+         await new Promise(resolve => setTimeout(resolve, 1000))
+         
+         log.info('Graceful shutdown completed')
+         process.exit(0)
+      } catch (error) {
+         log.error(error as Error, 'Error during graceful shutdown')
+         process.exit(1)
+      }
+   }
+
+   // Handle shutdown signals
+   process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
+   process.on('SIGINT', () => gracefulShutdown('SIGINT'))
+   process.on('SIGUSR2', () => gracefulShutdown('SIGUSR2')) // nodemon restart
+
 } catch (error) {
    log.error(error as Error, 'Application Error')
 }
