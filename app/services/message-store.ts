@@ -18,10 +18,16 @@ export const messageStore = {
    /**
     * Retrieve a message by ID
     * @param messageId - The message ID
-    * @returns The original WhatsApp message object or undefined
+    * @returns The original WhatsApp message object
+    * @throws Error if message is not found in store
     */
-   get: (messageId: string): Message | undefined => {
-      return messagesMap.get(messageId)
+   get: (messageId: string): Message => {
+      const message = messagesMap.get(messageId)
+      if (!message) {
+         log.error({ messageId }, 'Message not found in store')
+         throw new Error(`Message ${messageId} not found in store`)
+      }
+      return message
    },
    
    /**

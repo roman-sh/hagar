@@ -18,7 +18,7 @@
  */
 
 import { redisClient, redisSubscriber } from '../connections/redis.ts'
-import { processWithGpt } from './gpt.ts'
+import { gpt } from './gpt.ts'
 import { UserData } from '../types/shared.ts'
 
 
@@ -34,7 +34,7 @@ export function initializeDebouncer() {
          const encodedData = key.replace(/^gpt_trigger:/, '')
          const jsonData = decodeURIComponent(encodedData)
          const userData = JSON.parse(jsonData)         
-         processWithGpt(userData)
+         gpt.process(userData)
       }
    })
 

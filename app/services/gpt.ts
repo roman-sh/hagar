@@ -26,52 +26,54 @@ interface GptState {
 }
 
 
-/**
- * Process messages for a phone/store with GPT
- * note: we have the incoming message/s in history already
- * @param userData The user data containing phone, name, and storeId
- */
-export async function processWithGpt({ phone, name, storeId }: UserData): Promise<void> {
-   log.info({ phone, name, storeId }, 'Triggered GPT processing')
+export const gpt = {
+   /**
+    * Process messages for a phone/store with GPT
+    * note: we have the incoming message/s in history already
+    * @param userData The user data containing phone, name, and storeId
+    */
+   async process({ phone, name, storeId }: UserData): Promise<void> {
+      log.info({ phone, name, storeId }, 'Triggered GPT processing')
 
-   // Get message documents from the database
-   const messageDocs = await database.getMessages(phone, storeId)
-   const history = composeHistory(messageDocs)
+      // Get message documents from the database
+      const messageDocs = await database.getMessages(phone, storeId)
+      const history = composeHistory(messageDocs)
 
-   const state: GptState = {
-      done: false,
-      messages: []
-   }
-
-   while (!state.done) {
-      // 'message' here is a response from the model
-      const { message } = (await openai.chat.completions.create({
-         model: 'o3-mini',
-         messages: [
-            getSystemMessage(),  // inject the system message dynamically to allow history truncation
-            ...history,
-            ...state.messages
-         ],
-         tools: tools
-      })).choices[0]
-
-      state.messages.push(message)
-
-      if (message.tool_calls) {
-         const toolResults = await executeTools(message.tool_calls)
-         state.messages.push(...toolResults)
+      const state: GptState = {
+         done: false,
+         messages: []
       }
-      else {
-         state.done = true
-         // Forward the gpt response to the manager
-         await outboundMessagesQueue.createJob({
-            phone,
-            content: message.content
-         }).save()
+
+      while (!state.done) {
+         // 'message' here is a response from the model
+         const { message } = (await openai.chat.completions.create({
+            model: 'o3-mini',
+            messages: [
+               getSystemMessage(),  // inject the system message dynamically to allow history truncation
+               ...history,
+               ...state.messages
+            ],
+            tools: tools
+         })).choices[0]
+
+         state.messages.push(message)
+
+         if (message.tool_calls) {
+            const toolResults = await executeTools(message.tool_calls)
+            state.messages.push(...toolResults)
+         }
+         else {
+            state.done = true
+            // Forward the gpt response to the manager
+            await outboundMessagesQueue.createJob({
+               phone,
+               content: message.content
+            }).save()
+         }
       }
+      // Save new messages to DB
+      await saveMessages(state.messages, phone, storeId)
    }
-   // Save new messages to DB
-   await saveMessages(state.messages, phone, storeId)
 }
 
 

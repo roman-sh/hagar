@@ -19,10 +19,6 @@ export async function inboundMessagesBeeProcessor(
    try {
       // Retrieve the original message object from the store
       const message = messageStore.get(job.data.messageId)
-      if (!message) {
-         log.error({ messageId: job.data.messageId }, 'Message not found in store')
-         throw new Error(`Message ${job.data.messageId} not found in store`)
-      }
 
       const phone = message.from.split('@')[0] // Extract phone number from WhatsApp ID
 
