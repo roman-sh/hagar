@@ -6,15 +6,15 @@ import {
    DATA_APPROVAL,
    INVENTORY_UPDATE,
    OUTBOUND_MESSAGES
-} from './config/constants.ts'
+} from './config/constants'
 import { JobData, BaseJobResult, OutboundMessageJobData } from './types/jobs'
 import {
    scanValidationProcessor,
    dataExtractionProcessor,
    dataApprovalProcessor,
    inventoryUpdateProcessor
-} from './processors/index.ts'
-import { outboundMessagesProcessor } from './processors/outbound-messages-bee.ts'
+} from './processors/index'
+import { outboundMessagesProcessor } from './processors/outbound-messages-bee'
 
 
 // Define separate queue categories
@@ -27,7 +27,10 @@ export type QueueKey =
 
 // Pipeline queue configuration
 const queueConfig: QueueOptions = {
-   settings: {},
+   settings: {
+      stalledInterval: 0, // never check for stalled jobs
+      // stalledInterval: 24 * 60 * 60 * 1000, // 1 day - check for stalled jobs after 24 hours
+   },
    defaultJobOptions: {
       attempts: 1, // Only try once, no retries
    }
@@ -61,7 +64,7 @@ export function initializeQueues(): void {
    // Set up pipeline queues
    for (const [queueName, queue] of Object.entries(queuesMap)) {
       const processor = processorsMap[queueName as QueueKey]
-      queue.process(10, processor)
+      queue.process(100000, processor) // 100K concurrency - tested safe limit for waiting jobs
       setupQueueEventHandlers(queue, queueName)
    }
 
@@ -98,6 +101,7 @@ function setupQueueEventHandlers(
 
    // Log when jobs are stalled (worker crashed or lost connection)
    queue.on('stalled', (job: Job<any>) => {
+      // TODO: if we set stalledInterval to 1 day, we need to handle reminders here
       log.warn({ jobId: job.id, queueName }, 'Job has stalled')
    })
 }

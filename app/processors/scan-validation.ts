@@ -1,10 +1,10 @@
 import { Job } from 'bull'
 import { JobData, BaseJobResult } from '../types/jobs'
-import { db } from '../connections/mongodb.ts'
+import { db } from '../connections/mongodb'
 import { ScanDocument, StoreDocument } from '../types/documents'
-import { moveJobToDelayed } from '../services/bull.ts'
-import { gpt } from '../services/gpt.ts'
-import { DocType } from '../config/constants.ts'
+import { moveJobToDelayed } from '../services/bull'
+import { gpt } from '../services/gpt'
+import { DocType } from '../config/constants'
 
 
 /**
@@ -18,7 +18,7 @@ export async function scanValidationProcessor(
    const docId = job.id
    const storeId = job.data.storeId
 
-   log.info({ docId, storeId }, 'Processing scan validation job')
+   log.info({ "job.id": job.id, storeId }, 'Processing scan validation job')
 
    // @ts-ignore - MongoDB typing issue with string IDs
    const scanDoc = await db.collection(storeId).findOne({ _id: docId }) as ScanDocument
@@ -35,12 +35,14 @@ export async function scanValidationProcessor(
       type: DocType.MESSAGE,
       role: 'user',
       phone: manager.phone,
-      name: manager.name,
+      name: 'scanner',
       content: {
-         type: 'file',
-         source: 'scanner',
-         filename: scanDoc.filename,
-         file_id: scanDoc.fileId // OpenAI file_id from the document
+         file_id: scanDoc.fileId, // OpenAI file_id from the document
+         meta: {
+            storeId,
+            phone: manager.phone,
+            filename: scanDoc.filename,
+         },
       },
       createdAt: new Date()
    })
@@ -48,18 +50,14 @@ export async function scanValidationProcessor(
    // Trigger GPT processing directly
    gpt.process({ 
       phone: manager.phone, 
-      name: manager.name, 
       storeId 
    })
 
    log.info({ docId, storeId, filename: scanDoc.filename }, 'PDF sent to GPT for validation')
 
-   // Use Bull's explicit API to move the job to delayed state with a very long delay
-   // This should keep it visible in the Bull UI in the "delayed" tab
-   await moveJobToDelayed(job, 1e15) // Awaits user interaction
+   job.progress(50)
 
-   // TODO: maybe save this promise to redis, and resolve it upon validation pass,
-   // instead of moving a job to completed state manually
-   return new Promise<BaseJobResult>(() => { })
+   // Job will hang untill handled by gpt tool
+   return new Promise(() => {})
 } 
 

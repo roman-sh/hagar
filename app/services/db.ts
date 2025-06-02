@@ -1,5 +1,5 @@
-import { DocType } from '../config/constants.ts'
-import { db } from '../connections/mongodb.ts'
+import { DocType } from '../config/constants'
+import { db } from '../connections/mongodb'
 import { StoreDocument, MessageDocument } from '../types/documents'
 
 export const database = {

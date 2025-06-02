@@ -32,8 +32,8 @@ export const gpt = {
     * note: we have the incoming message/s in history already
     * @param userData The user data containing phone, name, and storeId
     */
-   async process({ phone, name, storeId }: UserData): Promise<void> {
-      log.info({ phone, name, storeId }, 'Triggered GPT processing')
+   async process({ phone, storeId }: UserData): Promise<void> {
+      log.info({ phone, storeId }, 'Triggered GPT processing')
 
       // Get message documents from the database
       const messageDocs = await database.getMessages(phone, storeId)
@@ -47,9 +47,11 @@ export const gpt = {
       while (!state.done) {
          // 'message' here is a response from the model
          const { message } = (await openai.chat.completions.create({
-            model: 'o3-mini',
+            model: 'gpt-4.1-mini-2025-04-14',
+            temperature: 0.5,
+            // model: 'o3-mini',
             messages: [
-               getSystemMessage(),  // inject the system message dynamically to allow history truncation
+               getSystemMessage(storeId, phone),  // inject the system message dynamically to allow history truncation
                ...history,
                ...state.messages
             ],
@@ -81,8 +83,22 @@ function executeTools(toolCalls: ChatCompletionMessageToolCall[]) {
    return Promise.all(toolCalls.map(async call => {
       const fn = functions[call.function.name as keyof typeof functions]
       const args = JSON.parse(call.function.arguments)
+      
+      log.info({
+         tool: call.function.name,
+         arguments: args,
+         callId: call.id
+      }, 'TOOL CALL')
+      
       try {
          const result = await fn(args)
+         
+         log.info({
+            tool: call.function.name,
+            response: result,
+            callId: call.id
+         }, 'TOOL RESPONSE')
+         
          return {
             role: 'tool' as const,
             content: JSON.stringify(result),
@@ -90,7 +106,7 @@ function executeTools(toolCalls: ChatCompletionMessageToolCall[]) {
          }
       }
       catch (e) {
-         log.error({ err: e, tool: call.function.name }, 'Error executing tool')
+         log.error(e, 'TOOL ERROR')
          return {
             role: 'tool' as const,
             content: JSON.stringify({ error: (e as Error).message }),
@@ -101,10 +117,10 @@ function executeTools(toolCalls: ChatCompletionMessageToolCall[]) {
 }
 
 
-function getSystemMessage(): ChatCompletionMessageParam {
+function getSystemMessage(storeId: string, phone: string): ChatCompletionMessageParam {
    return {
       role: 'system' as const,
-      content: readFileSync(new URL('../prompts/general.txt', import.meta.url), 'utf8')
+      content: readFileSync(new URL('../prompts/generic.md', import.meta.url), 'utf8')
    }
 }
 

@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "description": "AI-powered store inventory assistant",
   "scripts": {
-    "start": "bun run app/main.ts",
-    "dev": "sh -c 'redis-cli ping > /dev/null 2>&1 || (echo \"Starting Redis...\" && redis-server --daemonize yes); bun --watch app/main.ts'",
+    "start": "tsx app/main.ts",
+    "dev": "sh -c 'redis-cli ping > /dev/null 2>&1 || (echo \"Starting Redis...\" && redis-server --daemonize yes); tsx app/main.ts'",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -14,12 +14,11 @@
     "@azure/identity": "^4.8.0",
     "@bull-board/api": "^6.7.10",
     "@bull-board/hono": "^6.7.10",
-    "@hono/node-server": "^1.14.0",
+    "@hono/node-server": "^1.14.3",
     "@types/qrcode-terminal": "^0.12.2",
     "bee-queue": "^1.7.1",
     "bull": "^4.16.5",
     "dotenv": "^16.4.7",
-    "file-type": "^20.4.1",
     "hono": "^4.7.5",
     "ioredis": "^5.6.0",
     "mongodb": "^6.15.0",
@@ -30,13 +29,9 @@
     "whatsapp-web.js": "^1.27.0"
   },
   "devDependencies": {
-    "@types/aws-sdk": "^2.7.4",
-    "@types/bull": "^4.10.4",
-    "@types/ioredis": "^5.0.0",
-    "@types/mongodb": "^4.0.7",
     "@types/node": "^22.13.14",
-    "bun-types": "^1.2.7",
-    "nodemon": "^3.1.9",
+    "esbuild": "^0.25.5",
+    "tsx": "latest",
     "typescript": "^5.3.3"
   }
 }

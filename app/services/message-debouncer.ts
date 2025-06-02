@@ -17,9 +17,9 @@
  * - Handles scenarios like WhatsApp reconnections or multi-part file uploads gracefully
  */
 
-import { redisClient, redisSubscriber } from '../connections/redis.ts'
-import { gpt } from './gpt.ts'
-import { UserData } from '../types/shared.ts'
+import { redisClient, redisSubscriber } from '../connections/redis'
+import { gpt } from './gpt'
+import { UserData } from '../types/shared'
 
 
 /**

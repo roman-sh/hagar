@@ -1,8 +1,8 @@
 export const json = {
-   stringify: (content: any) => {
-      try { return JSON.stringify(content) }
-      catch (e) { return content }
-   },
+   
+   stringify: (content: any) => 
+      typeof content === 'string' ? content : JSON.stringify(content),
+
    parse: (content: any) => {
       try { return JSON.parse(content) }
       catch (e) { return content }

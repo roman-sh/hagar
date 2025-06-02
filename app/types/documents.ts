@@ -1,6 +1,6 @@
 // Document type definitions for MongoDB collections
-import { QueueKey } from '../queues.ts'
-import { DocType } from '../config/constants.ts'
+import { QueueKey } from '../queues'
+import { DocType } from '../config/constants'
 import { ChatCompletionMessage, ChatCompletionMessageParam, ChatCompletionMessageToolCall } from 'openai/resources/chat/completions'
 
 /**

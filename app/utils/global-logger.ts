@@ -14,4 +14,4 @@ const logger = pino({
 })
 
 // Assign the logger to the global object
-global.log = logger
+;(globalThis as any).log = logger

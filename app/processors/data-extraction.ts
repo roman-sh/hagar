@@ -1,4 +1,4 @@
-import { db } from '../connections/mongodb.ts'
+import { db } from '../connections/mongodb'
 import { Job } from 'bull'
 import { JobData, BaseJobResult } from '../types/jobs'
 

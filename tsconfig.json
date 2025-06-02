@@ -2,14 +2,12 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
+    "allowImportingTsExtensions": false,
     "strict": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "types": ["bun-types"],
-    "allowImportingTsExtensions": true,
-    "noEmit": true
+    "allowSyntheticDefaultImports": true
   },
-  "include": ["app/**/*", "global.d.ts"]
-} 
+  "include": ["app/**/*"]
+}

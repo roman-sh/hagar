@@ -1,13 +1,13 @@
 import { PutObjectCommand } from '@aws-sdk/client-s3'
 import { s3Client } from '../connections/s3.js'
-import { db } from '../connections/mongodb.ts'
+import { db } from '../connections/mongodb'
 import { Context } from 'hono'
 import { Collection } from 'mongodb'
 import { BaseDocument, ScanDocument, StoreDocument } from '../types/documents'
-import { DocType } from '../config/constants.ts'
-import { q } from '../helpers/q.ts'
-import { openai } from '../connections/openai.ts'
-import { database } from '../services/db.ts'
+import { DocType } from '../config/constants'
+import { q } from '../helpers/q'
+import { openai } from '../connections/openai'
+import { database } from '../services/db'
 
 export const pdfUploadHandler = async (c: Context) => {
    // Parse the multipart form data with Hono's built-in types
@@ -18,14 +18,15 @@ export const pdfUploadHandler = async (c: Context) => {
 
    // Get the file details
    const fileBuffer = await file.arrayBuffer()
-   const originalFilename = file.name
+   const filename = file.name.replace(/\s+/g, '_')
    const contentType = file.type
 
    // Get raspberry pi device id from query params
    const deviceId = c.req.query('deviceId')!
-   log.info({ deviceId, file: originalFilename }, 'Received file from device')
+   log.info({ deviceId, file: file.name }, 'Received file from device')
 
-   const s3Key = `tmp/${deviceId}/${originalFilename}`
+   // Sanitize filename for S3 key to avoid spaces in URLs
+   const s3Key = `tmp/${deviceId}/${filename}`
 
    // Upload to S3
    const uploadCommand = new PutObjectCommand({
@@ -64,11 +65,11 @@ export const pdfUploadHandler = async (c: Context) => {
 
    // Create MongoDB document
    const doc: ScanDocument = {
-      _id: `${DocType.SCAN}:${storeId}:${originalFilename}`,
+      _id: `${DocType.SCAN}:${storeId}:${filename}`,
       type: DocType.SCAN,
       storeId,
       fileId: openaiFile.id,
-      filename: originalFilename,
+      filename: filename,
       contentType: contentType,
       url: `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`,
       createdAt: new Date()

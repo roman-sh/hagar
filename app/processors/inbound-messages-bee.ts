@@ -1,9 +1,9 @@
-import { db } from '../connections/mongodb.ts'
+import { db } from '../connections/mongodb'
 import { BaseJobResult, MessageRef } from '../types/jobs'
-import { setGptTrigger } from '../services/message-debouncer.ts'
-import { audio } from '../services/audio.ts'
-import { database } from '../services/db.ts'
-import { messageStore } from '../services/message-store.ts'
+import { setGptTrigger } from '../services/message-debouncer'
+import { audio } from '../services/audio'
+import { database } from '../services/db'
+import { messageStore } from '../services/message-store'
 import BeeQueue from 'bee-queue'
 
 /**
@@ -48,7 +48,13 @@ export async function inboundMessagesBeeProcessor(
       // Get contact name using the original message object
       const contact = await message.getContact()
       const name = (contact.name || contact.pushname || phone).replace(/[\s<|\\/>]/g, '_')
-      log.info({ phone, name }, 'Incoming message from:')
+      
+      log.info({ 
+         phone, 
+         name, 
+         messageType: message.type,
+         content: content 
+      }, 'INCOMING MESSAGE')
 
       const { storeId } = await database.getStoreByPhone(phone)
 
@@ -64,7 +70,7 @@ export async function inboundMessagesBeeProcessor(
 
       // Set debounce key with 1-second expiration
       // If multiple messages arrive, this keeps extending the timeout
-      setGptTrigger({ phone, name, storeId })
+      setGptTrigger({ phone, storeId })
 
       return {
          success: true,

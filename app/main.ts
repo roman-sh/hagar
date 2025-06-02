@@ -1,21 +1,25 @@
-/// <reference types="bun-types" />
-import './utils/suppress-warnings.ts'
-import './utils/global-logger.ts'
+import './utils/suppress-warnings.js'
+import './utils/global-logger.js'
 import { Hono } from 'hono'
-import { initializeQueues } from './queues.ts'
-import { initializeDatabase } from './connections/mongodb.ts'
-import { initializeRedis } from './connections/redis.ts'
-import { initializeS3 } from './connections/s3.ts'
-import { pdfUploadHandler } from './api/pdf-upload'
-import { configureBullBoard, type BullBoardConfig } from './config/bull-board'
-import { initializeDebouncer } from './services/message-debouncer.ts'
-import { client } from "./connections/whatsapp"
+import { serve } from '@hono/node-server'
+import { initializeQueues } from './queues.js'
+import { initializeDatabase } from './connections/mongodb.js'
+import { initializeRedis } from './connections/redis.js'
+import { initializeS3 } from './connections/s3.js'
+import { pdfUploadHandler } from './api/pdf-upload.js'
+import { configureBullBoard, type BullBoardConfig } from './config/bull-board.js'
+import { initializeDebouncer } from './services/message-debouncer.js'
+import { client } from "./connections/whatsapp.js"
 import { Message } from "whatsapp-web.js"
-import { messageStore } from './services/message-store.ts'
-import { phoneQueueManager } from './services/phone-queues-manager.ts'
+import { messageStore } from './services/message-store.js'
+import { phoneQueueManager } from './services/phone-queues-manager.js'
 
+// Declare server variable in higher scope for graceful shutdown
+let server: any
 
 try {
+   log.info('Application starting')
+   
    // Initialize database connection
    await initializeDatabase()
    await initializeRedis()
@@ -28,10 +32,10 @@ try {
 
    // Listen for incoming messages
    client.on('message', async (message: Message) => {
-      log.info({ from: message.from, type: message.type }, 'Received WhatsApp message')
+      log.debug({ from: message.from, type: message.type }, 'Received WhatsApp message')
       const messageId = messageStore.store(message)
       const phone = message.from.split('@')[0] // Extract phone number
-      
+
       await phoneQueueManager.addMessage(phone, { messageId })
    })
 
@@ -64,10 +68,10 @@ try {
 
    const PORT = process.env.PORT || 3000
 
-   // Start the Bun server
-   Bun.serve({
+   // Start the Node.js server
+   server = serve({
       fetch: app.fetch,
-      port: PORT as number
+      port: Number(PORT)
    })
 
    log.info(`Server running on port ${PORT}`)
@@ -76,32 +80,10 @@ try {
    )
    log.info('Application started successfully')
 
-   // Graceful shutdown handling
-   const gracefulShutdown = async (signal: string) => {
-      log.info({ signal }, 'Received shutdown signal, starting graceful shutdown...')
-      
-      try {
-         // Close WhatsApp client gracefully
-         log.info('Closing WhatsApp client...')
-         await client.destroy()
-         log.info('WhatsApp client closed')
-         
-         // Give time for any pending operations
-         await new Promise(resolve => setTimeout(resolve, 1000))
-         
-         log.info('Graceful shutdown completed')
-         process.exit(0)
-      } catch (error) {
-         log.error(error as Error, 'Error during graceful shutdown')
-         process.exit(1)
-      }
-   }
-
-   // Handle shutdown signals
-   process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
-   process.on('SIGINT', () => gracefulShutdown('SIGINT'))
-   process.on('SIGUSR2', () => gracefulShutdown('SIGUSR2')) // nodemon restart
-
 } catch (error) {
    log.error(error as Error, 'Application Error')
+   process.exit(1)
 }
+
+log.info('Application ready - WhatsApp client is stable on Node.js!')
+

@@ -1,8 +1,8 @@
-import { db } from '../connections/mongodb.ts'
-import { queuesMap, QueueKey } from '../queues.ts'
+import { db } from '../connections/mongodb'
+import { queuesMap, QueueKey } from '../queues'
 import { StoreDocument } from '../types/documents'
 import { JobData } from '../types/jobs'
-import { DocType } from '../config/constants.ts'
+import { DocType } from '../config/constants'
 
 /**
  * Queue a document to the next processing step

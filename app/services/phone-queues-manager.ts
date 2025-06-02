@@ -1,6 +1,6 @@
 import Queue from 'bee-queue'
 import { MessageRef } from '../types/jobs'
-import { inboundMessagesBeeProcessor } from '../processors/inbound-messages-bee.ts'
+import { inboundMessagesBeeProcessor } from '../processors/inbound-messages-bee'
 
 /**
  * Dynamic Phone Queue Manager
