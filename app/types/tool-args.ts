@@ -3,12 +3,11 @@
  */
 
 export interface SendPdfToUserArgs {
-   storeId: string
    phone: string
    fileId: string
 }
 
-export interface ScanValidationPassArgs {
+export interface completeValidationArgs {
    file_id: string
    invoiceNo: string
    supplier: string

@@ -8,16 +8,19 @@ import { ChatCompletionTool } from 'openai/resources'
 
 /**
  * Send a PDF document to a user via WhatsApp
- * @param args - Object containing storeId, phone, and fileId
+ * @param args - Object containing phone and fileId
  * @returns Object with success status and message
  */
 export async function sendPdfToUser(args: SendPdfToUserArgs) {
    try {
-      // Search for the document by fileId in the store's collection
-      const doc = await db.collection(args.storeId).findOne({
-         fileId: args.fileId,
-         type: DocType.SCAN
+      // Search for the document by fileId in the homogeneous scans collection
+      const doc = await db.collection('scans').findOne({
+         fileId: args.fileId
       }) as unknown as ScanDocument
+
+      if (!doc) {
+         throw new Error(`Document not found for fileId: ${args.fileId}`)
+      }
 
       // Create WhatsApp media from URL
       const media = await WAWebJS.MessageMedia.fromUrl(doc.url, {
@@ -50,10 +53,6 @@ export const sendPdfToUserSchema: ChatCompletionTool = {
       parameters: {
          type: 'object',
          properties: {
-            storeId: {
-               type: 'string',
-               description: 'The store ID where the document belongs (available in system message context)'
-            },
             phone: {
                type: 'string',
                description: 'The phone number to send the PDF to (available in system message context)'
@@ -63,7 +62,7 @@ export const sendPdfToUserSchema: ChatCompletionTool = {
                description: 'The OpenAI file_id of the PDF to send'
             }
          },
-         required: ['storeId', 'phone', 'fileId']
+         required: ['phone', 'fileId']
       }
    }
 } 

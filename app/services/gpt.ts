@@ -33,7 +33,7 @@ export const gpt = {
     * @param userData The user data containing phone, name, and storeId
     */
    async process({ phone, storeId }: UserData): Promise<void> {
-      log.info({ phone, storeId }, 'Triggered GPT processing')
+      log.debug({ phone, storeId }, 'Triggered GPT processing')
 
       // Get message documents from the database
       const messageDocs = await database.getMessages(phone, storeId)
@@ -168,7 +168,7 @@ async function saveMessages(
    phone: string,
    storeId: string
 ): Promise<void> {
-   const collection = db.collection(storeId)
+   const collection = db.collection('messages')
 
    for (const message of messages) {
       const messageDoc = {

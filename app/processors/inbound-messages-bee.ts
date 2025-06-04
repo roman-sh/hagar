@@ -14,7 +14,7 @@ import BeeQueue from 'bee-queue'
 export async function inboundMessagesBeeProcessor(
    job: BeeQueue.Job<MessageRef>
 ): Promise<BaseJobResult> {
-   log.info({ jobId: job.id, messageId: job.data.messageId }, 'Starting inbound message processing')
+   log.debug({ jobId: job.id, messageId: job.data.messageId }, 'Starting inbound message processing')
 
    try {
       // Retrieve the original message object from the store
@@ -50,21 +50,22 @@ export async function inboundMessagesBeeProcessor(
       const name = (contact.name || contact.pushname || phone).replace(/[\s<|\\/>]/g, '_')
       
       log.info({ 
-         phone, 
+         // phone, 
          name, 
-         messageType: message.type,
+         // messageType: message.type,
          content: content 
       }, 'INCOMING MESSAGE')
 
       const { storeId } = await database.getStoreByPhone(phone)
 
       // Save to chat history before passing to LLM
-      await db.collection(storeId).insertOne({
+      await db.collection('messages').insertOne({
          type: 'message',
          role: 'user',
          phone,
          name,
          content,
+         storeId,
          createdAt: new Date()
       })
 

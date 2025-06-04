@@ -12,7 +12,7 @@ import { client } from '../connections/whatsapp'
 export async function outboundMessagesProcessor(
    job: BeeQueue.Job<OutboundMessageJobData>
 ): Promise<BaseJobResult> {
-   log.info({ data: job.data }, 'Processing outbound message job')
+   log.info(job.data, 'Processing outbound message job')
 
    /*
     Process a job for outbound messages.

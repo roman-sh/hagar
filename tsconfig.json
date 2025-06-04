@@ -6,6 +6,7 @@
     "esModuleInterop": true,
     "allowImportingTsExtensions": false,
     "strict": true,
+    "strictNullChecks": false,
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true
   },

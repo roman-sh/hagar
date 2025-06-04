@@ -1,11 +1,12 @@
-import Bull, { Queue, Job, ProcessCallbackFunction, QueueOptions } from 'bull'
+import Bull, { Queue, Job, ProcessCallbackFunction, QueueOptions, JobStatus } from 'bull'
 import BeeQueue from 'bee-queue'
 import {
    SCAN_VALIDATION,
    DATA_EXTRACTION,
    DATA_APPROVAL,
    INVENTORY_UPDATE,
-   OUTBOUND_MESSAGES
+   OUTBOUND_MESSAGES,
+   JOB_STATUS,
 } from './config/constants'
 import { JobData, BaseJobResult, OutboundMessageJobData } from './types/jobs'
 import {
@@ -15,6 +16,8 @@ import {
    inventoryUpdateProcessor
 } from './processors/index'
 import { outboundMessagesProcessor } from './processors/outbound-messages-bee'
+import { database } from './services/db'
+import { JobResult } from './types/documents'
 
 
 // Define separate queue categories
@@ -83,25 +86,21 @@ function setupQueueEventHandlers(
    queue: Queue<any>,
    queueName: string
 ): void {
-   // Log when jobs are completed successfully
-   queue.on('completed', (job: Job<any>, result: BaseJobResult) => {
+
+   // Log when jobs become active (start processing)
+   queue.on(JOB_STATUS.ACTIVE, async (job: Job<any>) => {
+      // Update document to mark job as active/processing
+      const activeResult: JobResult = {
+         status: JOB_STATUS.ACTIVE,
+         startedAt: new Date().toLocaleString()
+      }
+
+      await database.trackJobProgress(job.id as string, queueName, activeResult)
+
       log.info(
-         { jobId: job.id, queueName, result },
-         'Job completed successfully'
+         { jobId: job.id, queueName },
+         'Job started processing'
       )
    })
 
-   // Log when jobs fail
-   queue.on('failed', (job: Job<any>, error: Error) => {
-      log.error(
-         { jobId: job.id, queueName, errorMessage: error.message },
-         'Job failed'
-      )
-   })
-
-   // Log when jobs are stalled (worker crashed or lost connection)
-   queue.on('stalled', (job: Job<any>) => {
-      // TODO: if we set stalledInterval to 1 day, we need to handle reminders here
-      log.warn({ jobId: job.id, queueName }, 'Job has stalled')
-   })
 }

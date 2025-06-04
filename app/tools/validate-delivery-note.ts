@@ -35,7 +35,7 @@ export const validateDeliveryNote = async (args: { file_id: string }) => {
                },
                {
                   type: 'text',
-                  text: 'Extract specific details from this delivery note document. Provide exact values, not descriptions. If a field cannot be determined, use "לא זוהה" (not identified).'
+                  text: 'Extract specific details from this document for inventory management purposes. Provide exact values, not descriptions. If a field cannot be determined, use "לא זוהה" (not identified). Focus on whether the document contains the necessary information for inventory updates (products, quantities, supplier, date) regardless of document type (invoice, delivery note, receipt, etc.).'
                }
             ]
          }
@@ -82,10 +82,10 @@ export const validateDeliveryNote = async (args: { file_id: string }) => {
                   overall_assessment: {
                      type: "object",
                      properties: {
-                        is_valid_delivery_note: { type: "boolean" },
+                        has_required_inventory_data: { type: "boolean" },
                         summary: { type: "string" }
                      },
-                     required: ["is_valid_delivery_note", "summary"],
+                     required: ["has_required_inventory_data", "summary"],
                      additionalProperties: false
                   }
                },

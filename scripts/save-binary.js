@@ -61,7 +61,7 @@ async function saveBinaryFile(filePath, storeId = 'organi_ein_karem') {
       }
 
       // Insert document into MongoDB
-      const result = await db.collection(storeId).insertOne(doc)
+      const result = await db.collection('scans').insertOne(doc)
 
       console.log(`Document created with ID: ${result.insertedId}`)
       console.log('File stored successfully in S3:', doc.url)

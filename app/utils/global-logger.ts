@@ -10,7 +10,7 @@ const logger = pino({
          translateTime: 'SYS:HH:MM:ss.l'
       }
    },
-   level: process.env.LOG_LEVEL || 'debug'
+   level: process.env.LOG_LEVEL || 'info'
 })
 
 // Assign the logger to the global object

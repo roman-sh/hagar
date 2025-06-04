@@ -76,7 +76,7 @@ export const pdfUploadHandler = async (c: Context) => {
    }
 
    // Insert document into MongoDB
-   const collection: Collection<BaseDocument> = db.collection(storeId)
+   const collection: Collection<ScanDocument> = db.collection('scans')
    const { insertedId } = await collection.insertOne(doc)
    log.info({ docId: insertedId }, 'Document inserted into MongoDB')
 

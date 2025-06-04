@@ -19,7 +19,7 @@ export const q = async (
 ): Promise<void> => {
    // Find the store document with its pipeline
    const store = await db
-      .collection('_stores')
+      .collection('stores')
       .findOne(
          { storeId }, { projection: { pipeline: 1 } }
       ) as unknown as StoreDocument
