@@ -1,4 +1,3 @@
-import { DocType } from '../config/constants'
 import { db } from '../connections/mongodb'
 import { StoreDocument, MessageDocument, ScanDocument, JobResult } from '../types/documents'
 
@@ -11,9 +10,9 @@ export const database = {
    getStoreByDevice: async (deviceId: string): Promise<StoreDocument> => {
       // Get a matching storeId for deviceId
       
-      const storeDoc = await db.collection('stores').findOne({
+      const storeDoc = await db.collection<StoreDocument>('stores').findOne({
          deviceId
-      }) as StoreDocument | null
+      })
       
       if (!storeDoc) {
          throw new Error(`Store not found for device: ${deviceId}`)
@@ -24,9 +23,9 @@ export const database = {
    },
 
    getStoreByPhone: async (phone: string): Promise<StoreDocument> => {
-      const storeDoc = await db.collection('stores').findOne({
+      const storeDoc = await db.collection<StoreDocument>('stores').findOne({
          'manager.phone': phone
-      }) as StoreDocument | null
+      })
       
       if (!storeDoc) {
          // TODO: Set up a demo store for unregistered phones
@@ -38,12 +37,12 @@ export const database = {
    getMessages: async (phone: string, storeId: string): Promise<MessageDocument[]> => {
       // TODO: Add a limit by message count or from_date or maybe do summorization
       // TODO: We may want to create an index to speed up the query
-      return await db.collection('messages').find({
+      return await db.collection<MessageDocument>('messages').find({
          'storeId': storeId,
          'phone': phone
       })
       .sort({ createdAt: 1 }) // Sort chronologically (oldest first)
-      .toArray() as unknown as MessageDocument[]
+      .toArray()
    },
 
    /**

@@ -68,7 +68,7 @@ When you receive a scanned delivery note PDF:
 Would you like to proceed?
 ```
 
-4. **If everything looks good** - confirm with user before calling `completeValidation` tool to finalize processing
+4. **If everything looks good** - confirm with user before calling `finalizeScanValidation` tool to finalize processing
 
 5. **If there are quality or structural issues** - explain the problems and work with the user to resolve them or determine if the document should be reprocessed
 

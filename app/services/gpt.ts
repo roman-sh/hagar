@@ -47,9 +47,10 @@ export const gpt = {
       while (!state.done) {
          // 'message' here is a response from the model
          const { message } = (await openai.chat.completions.create({
-            model: 'gpt-4.1-mini-2025-04-14',
-            temperature: 0.5,
+            model: 'gpt-4.1-2025-04-14',
+            // model: 'gpt-4.1-mini-2025-04-14',
             // model: 'o3-mini',
+            // temperature: 0.5,
             messages: [
                getSystemMessage(storeId, phone),  // inject the system message dynamically to allow history truncation
                ...history,

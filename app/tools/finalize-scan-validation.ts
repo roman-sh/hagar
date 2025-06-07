@@ -1,5 +1,5 @@
 import { ChatCompletionTool } from 'openai/resources'
-import { completeValidationArgs } from '../types/tool-args'
+import { finalizeScanValidationArgs } from '../types/tool-args'
 import { db } from '../connections/mongodb'
 import { JobResult, ScanDocument } from '../types/documents'
 import { queuesMap } from '../queues'
@@ -7,10 +7,10 @@ import { SCAN_VALIDATION, JOB_STATUS } from '../config/constants'
 import { database } from '../services/db'
 import { Job } from 'bull'
 
-export const completeValidationSchema: ChatCompletionTool = {
+export const finalizeScanValidationSchema: ChatCompletionTool = {
    type: 'function',
    function: {
-      name: 'completeValidation',
+      name: 'finalizeScanValidation',
       description: 'Call this function when a scanned delivery certificate passes validation checks',
       parameters: {
          type: 'object',
@@ -45,7 +45,7 @@ export const completeValidationSchema: ChatCompletionTool = {
    }
 }
 
-export const completeValidation = async (args: completeValidationArgs) => {
+export const finalizeScanValidation = async (args: finalizeScanValidationArgs) => {
    // Find the scan document by fileId in the homogeneous scans collection
    const scanDoc = await db.collection<ScanDocument>('scans').findOne({
       fileId: args.file_id

@@ -7,7 +7,7 @@ export interface SendPdfToUserArgs {
    fileId: string
 }
 
-export interface completeValidationArgs {
+export interface finalizeScanValidationArgs {
    file_id: string
    invoiceNo: string
    supplier: string
