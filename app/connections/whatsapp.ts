@@ -50,17 +50,18 @@ client.on('qr', (qr) => {
    qrcode.generate(qr, { small: true })
 })
 
-// Create a dedicated file transport for WhatsApp message analysis
-const messageAnalysisLogger = pino({
-   transport: {
-      target: 'pino/file',
-      options: {
-         destination: 'whatsapp-message-analysis.json',
-         mkdir: true,
-         sync: true
-      }
-   }
-})
+
+// // Create a dedicated file transport for WhatsApp message analysis
+// const messageAnalysisLogger = pino({
+//    transport: {
+//       target: 'pino/file',
+//       options: {
+//          destination: 'whatsapp-message-analysis.json',
+//          mkdir: true,
+//          sync: true
+//       }
+//    }
+// })
 
 // client.on('message', async (message) => {
 //    // Log message for analysis

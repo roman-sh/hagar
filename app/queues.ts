@@ -2,7 +2,7 @@ import Bull, { Queue, Job, ProcessCallbackFunction, QueueOptions, JobStatus } fr
 import BeeQueue from 'bee-queue'
 import {
    SCAN_VALIDATION,
-   DATA_EXTRACTION,
+   OCR_EXTRACTION,
    DATA_APPROVAL,
    INVENTORY_UPDATE,
    OUTBOUND_MESSAGES,
@@ -11,19 +11,19 @@ import {
 import { JobData, BaseJobResult, OutboundMessageJobData } from './types/jobs'
 import {
    scanValidationProcessor,
-   dataExtractionProcessor,
+   ocrExtractionProcessor,
    dataApprovalProcessor,
    inventoryUpdateProcessor
 } from './processors/index'
 import { outboundMessagesProcessor } from './processors/outbound-messages-bee'
 import { database } from './services/db'
-import { JobResult } from './types/documents'
+import { JobRecord } from './types/documents'
 
 
 // Define separate queue categories
 export type QueueKey =
    | typeof SCAN_VALIDATION
-   | typeof DATA_EXTRACTION
+   | typeof OCR_EXTRACTION
    | typeof DATA_APPROVAL
    | typeof INVENTORY_UPDATE
 
@@ -42,7 +42,7 @@ const queueConfig: QueueOptions = {
 // Separate queue maps
 export const queuesMap: Record<QueueKey, Queue<JobData>> = {
    [SCAN_VALIDATION]: new Bull(SCAN_VALIDATION, queueConfig),
-   [DATA_EXTRACTION]: new Bull(DATA_EXTRACTION, queueConfig),
+   [OCR_EXTRACTION]: new Bull(OCR_EXTRACTION, queueConfig),
    [DATA_APPROVAL]: new Bull(DATA_APPROVAL, queueConfig),
    [INVENTORY_UPDATE]: new Bull(INVENTORY_UPDATE, queueConfig)
 }
@@ -53,7 +53,7 @@ export const outboundMessagesQueue = new BeeQueue<OutboundMessageJobData>(OUTBOU
 // Separate processor maps
 const processorsMap: Record<QueueKey, ProcessCallbackFunction<JobData>> = {
    [SCAN_VALIDATION]: scanValidationProcessor,
-   [DATA_EXTRACTION]: dataExtractionProcessor,
+   [OCR_EXTRACTION]: ocrExtractionProcessor,
    [DATA_APPROVAL]: dataApprovalProcessor,
    [INVENTORY_UPDATE]: inventoryUpdateProcessor
 }
@@ -90,12 +90,12 @@ function setupQueueEventHandlers(
    // Log when jobs become active (start processing)
    queue.on(JOB_STATUS.ACTIVE, async (job: Job<any>) => {
       // Update document to mark job as active/processing
-      const activeResult: JobResult = {
+      const activeResult: JobRecord = {
          status: JOB_STATUS.ACTIVE,
-         startedAt: new Date().toLocaleString()
+         timestamp: new Date()
       }
 
-      await database.trackJobProgress(job.id as string, queueName, activeResult)
+      await database.recordJobProgress(job.id as string, queueName, activeResult)
 
       log.info(
          { jobId: job.id, queueName },

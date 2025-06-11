@@ -220,7 +220,7 @@ Job-based processing pipeline with Redis backend for reliable document workflow 
 
 **Document Processing Pipeline**
 ```javascript
-scan_validation → [planned: data_extraction → inventory_update]
+scan_validation → [planned: ocr_extraction → inventory_update]
 ```
 
 **Message Processing Queues**
@@ -379,7 +379,7 @@ stores_collection    // Store configuration
   },
   "pipeline": [                        // Document processing stages
     "scan_validation",
-    "data_extraction", 
+    "ocr_extraction", 
     "inventory_update"
   ],
   "deviceId": "10000000da1dac07"       // Raspberry Pi serial number
@@ -398,7 +398,7 @@ const history = composeHistory(messages)  // Format for OpenAI API
 **Job Progress Tracking**
 ```javascript
 // Update document with processing results
-await database.trackJobProgress(docId, jobType, result)
+await database.recordJobProgress(docId, jobType, result)
 ```
 
 ### Benefits of Design

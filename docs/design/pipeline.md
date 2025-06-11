@@ -35,7 +35,7 @@ const ocrQueue = new Queue('ocr-processing', {
   redis: { port: 6379, host: '127.0.0.1' }
 });
 
-const dataExtractionQueue = new Queue('data-extraction', {
+const ocrExtractionQueue = new Queue('data-extraction', {
   redis: { port: 6379, host: '127.0.0.1' }
 });
 ```
@@ -106,7 +106,7 @@ const redisConfig = {
 // Create queues
 const scanApprovalQueue = new Queue('scan-approval', redisConfig);
 const ocrQueue = new Queue('ocr-processing', redisConfig);
-const dataExtractionQueue = new Queue('data-extraction', redisConfig);
+const ocrExtractionQueue = new Queue('data-extraction', redisConfig);
 ```
 
 ### Monitoring with Bull Board
@@ -127,7 +127,7 @@ createBullBoard({
   queues: [
     new BullAdapter(scanApprovalQueue),
     new BullAdapter(ocrQueue),
-    new BullAdapter(dataExtractionQueue)
+    new BullAdapter(ocrExtractionQueue)
   ],
   serverAdapter
 });
@@ -218,7 +218,7 @@ ocrQueue.process(async (job) => {
     });
     
     // Add to next queue for data extraction
-    await dataExtractionQueue.add({ docId });
+    await ocrExtractionQueue.add({ docId });
     
     return { status: 'ocr_completed' };
   } catch (error) {
@@ -242,7 +242,7 @@ ocrQueue.process(async (job) => {
 });
 
 // Data Extraction Queue Processor
-dataExtractionQueue.process(async (job) => {
+ocrExtractionQueue.process(async (job) => {
   const { docId } = job.data;
   // Similar pattern to OCR processing
   // ...
@@ -436,7 +436,7 @@ createBullBoard({
     new BullAdapter(scanApprovalQueue),
     new BullAdapter(waitingApprovalQueue), // Approval waiting queue
     new BullAdapter(ocrQueue),
-    new BullAdapter(dataExtractionQueue)
+    new BullAdapter(ocrExtractionQueue)
   ],
   serverAdapter
 });

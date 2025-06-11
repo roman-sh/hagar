@@ -35,7 +35,7 @@ try {
       log.debug({ from: message.from, type: message.type }, 'Received WhatsApp message')
       const messageId = messageStore.store(message)
       const phone = message.from.split('@')[0] // Extract phone number
-
+      ;(await message.getChat()).sendStateTyping() // Show typing indicator
       await phoneQueueManager.addMessage(phone, { messageId })
    })
 

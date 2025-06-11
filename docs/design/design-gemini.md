@@ -57,7 +57,7 @@ Hagar™ is an AI-powered inventory management system that transforms physical d
 
 *   **Mechanism**: After successful storage, a job is added to a Bull queue (e.g., `scan_validation`) for asynchronous processing. Redis serves as the backend for Bull, ensuring job persistence.
 *   **Job Identification**: The MongoDB document `_id` is used as the `jobId` in Bull. This creates a direct, traceable link between the data and its processing job, simplifying lookups and monitoring via the Bull Board dashboard.
-*   **Dynamic Pipeline**: The specific queue a document enters (and subsequent steps) is determined by a `pipeline` array defined in the `stores` collection in MongoDB. This allows for configurable processing workflows per store (e.g., `["scan_validation", "data_extraction", "inventory_update"]`). The `q` helper function manages transitions between pipeline stages.
+*   **Dynamic Pipeline**: The specific queue a document enters (and subsequent steps) is determined by a `pipeline` array defined in the `stores` collection in MongoDB. This allows for configurable processing workflows per store (e.g., `["scan_validation", "ocr_extraction", "inventory_update"]`). The `q` helper function manages transitions between pipeline stages.
 
 ### B. Scan Validation Processor (`app/processors/scan-validation.ts`)
 
@@ -111,11 +111,51 @@ Hagar™ is an AI-powered inventory management system that transforms physical d
 
 ---
 
-## Flow 6: Future - OCR & Inventory Integration (Planned)
+## Flow 6: OCR Data Extraction & Inventory Matching (Implementation Plan)
 
-*   **Current State**: Basic document details are extracted using OpenAI's visual model (`o3`).
-*   **Next Stage**: The processing pipeline (defined in `stores` collection) includes a `data_extraction` step. This is planned to integrate with Azure Form Recognizer (or another specialized OCR service) to extract detailed line-item information from invoice tables.
-*   **Inventory Update**: A subsequent `inventory_update` step will then use this extracted structured data to integrate with external inventory management systems (e.g., "rexail" as noted in the `stores` document).
+This section outlines the planned implementation for the next two stages of the processing pipeline: `ocr-extraction` and `inventory-matching`. This design uses a two-queue approach to ensure separation of concerns and robustness.
+
+### A. Queue 1: `ocr-extraction`
+
+*   **Purpose**: To perform high-fidelity Optical Character Recognition (OCR) on the document to extract structured data, specifically line items from tables, and have it validated by AI before proceeding.
+*   **Trigger**: This job is added to the queue by the previous step in the pipeline (e.g., `scan-validation`).
+*   **Processor (`ocrExtractionProcessor`)**:
+    1.  **Retrieve Document URL**: The processor fetches the `ScanDocument` to get its public S3 URL.
+    2.  **Call OCR Service**: It invokes the `ocr.extractInvoiceDataFromUrl` service, which uses Azure AI Document Intelligence (`prebuilt-invoice` model) to analyze the document. The service returns a structured JSON object containing `headers` and paginated `items`.
+    3.  **GPT Validation**: The processor then sends this JSON object to the GPT-4 text model. The prompt instructs the AI to review the structured data for correctness and formatting.
+    4.  **Human-in-the-Loop for Corrections**: If the AI detects a potential issue with the extracted data (e.g., a field seems incorrect, confidence is low, or data is missing), it will not proceed directly to finalization. Instead, it will initiate a dialog with the user via WhatsApp, presenting the issue and asking for clarification or correction.
+    5.  **Tool-Based Finalization**: Once the data is either validated automatically by the AI or corrected by the user, the prompt flow will lead to the AI calling the `finalize_ocr_extraction` tool.
+    6.  **Active Wait State**: Similar to the validation flow, the processor returns `new Promise(() => {})`, keeping the Bull job in an "active" state while waiting for the AI to complete its task and call the finalization tool.
+
+### B. The Bridge: `finalize_ocr_extraction` Tool
+
+*   **Purpose**: This tool acts as the clean, programmatic link between the two queues.
+*   **Mechanism**: When GPT determines the OCR data is valid, it calls this tool. The tool's sole responsibility is to take the `docId` (which is also the `jobId`) and create a new job in the `inventory-matching` queue.
+*   **Data Integrity**: The validated, structured JSON data is already stored in the `scans` document in MongoDB, so it doesn't need to be passed through the tool. The next processor will simply retrieve it from the database.
+
+### C. Queue 2: `inventory-matching`
+
+*   **Purpose**: To reconcile the extracted and validated invoice items with the store's internal inventory system. This is where user interaction for disambiguation will occur.
+*   **Trigger**: A new job is added to this queue exclusively by the `finalize_ocr_extraction` tool.
+*   **Processor (`inventoryMatchingProcessor`) - Planned**:
+    1.  **Retrieve Data**: Fetches the `ScanDocument`, including the `extractedData` field populated by the `ocr-extraction` queue.
+    2.  **Matching Logic (Embeddings-Based)**: The system will use a multi-tiered approach for matching:
+        *   **Tier 1: Barcode Matching**: For items with a barcode, it will perform a direct lookup for an exact match. This is the fastest and most reliable method.
+        *   **Tier 2: Vector Similarity Search**: For items without a barcode (e.g., fresh produce, items sold by weight), the system will use vector embeddings.
+            *   **Embedding Generation**: When products are added to the store's master inventory, their names/descriptions are converted into numerical vector embeddings (e.g., using OpenAI's embedding models) and stored.
+            *   **Real-time Matching**: During processing, the description of an item from the invoice is converted into an embedding in real-time.
+            *   **Similarity Search**: The system then performs a vector similarity search (e.g., using cosine similarity) against the pre-computed embeddings in the inventory database to find the most semantically similar product. This is far more accurate than simple fuzzy string matching.
+    3.  **Human-in-the-Loop for Ambiguity**:
+        *   If a barcode match fails or if the top result from the vector search has a confidence score below a predefined threshold (e.g., 95% similarity), the system will not proceed automatically.
+        *   It will engage the user via WhatsApp, presenting the invoice item and the top potential match(es), asking for confirmation before finalizing the link.
+    4.  **Finalization**: Once all items are successfully matched (either automatically or with user confirmation), the job will be marked as complete, and the system can proceed to the final `inventory_update` stage of the pipeline.
+
+---
+
+## Legacy Plan (Previously "Future")
+
+*   **Previous Idea**: The initial thought was to have a monolithic `ocr_extraction` step.
+*   **Refined Approach**: The two-queue model (`ocr-extraction` -> `inventory-matching`) described above is a more robust, scalable, and maintainable architecture that better separates the distinct tasks of automated data extraction and interactive data reconciliation.
 
 ---
 

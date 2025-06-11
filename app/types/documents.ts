@@ -1,6 +1,6 @@
 // Document type definitions for MongoDB collections
 import { QueueKey } from '../queues'
-import { DocType, SCAN_VALIDATION, DATA_EXTRACTION, DATA_APPROVAL, INVENTORY_UPDATE } from '../config/constants'
+import { DocType, SCAN_VALIDATION, OCR_EXTRACTION, DATA_APPROVAL, INVENTORY_UPDATE } from '../config/constants'
 import { ChatCompletionMessage, ChatCompletionMessageParam, ChatCompletionMessageToolCall } from 'openai/resources/chat/completions'
 import { JobStatus } from 'bull'
 import { ObjectId } from 'mongodb'
@@ -9,9 +9,10 @@ import { ObjectId } from 'mongodb'
 /**
  * Base job result interface
  */
-export interface JobResult {
+export interface JobRecord {
    status: JobStatus
-   [key: string]: any
+   timestamp: Date
+   data?: any
 }
 
 /**
@@ -36,10 +37,10 @@ export interface ScanDocument extends BaseDocument {
    url: string
    
    // Optional queue processing results
-   [SCAN_VALIDATION]?: JobResult
-   [DATA_EXTRACTION]?: JobResult
-   [DATA_APPROVAL]?: JobResult
-   [INVENTORY_UPDATE]?: JobResult
+   [SCAN_VALIDATION]?: JobRecord
+   [OCR_EXTRACTION]?: JobRecord
+   [DATA_APPROVAL]?: JobRecord
+   [INVENTORY_UPDATE]?: JobRecord
 }
 
 /**
@@ -50,10 +51,7 @@ export interface StoreDocument extends BaseDocument {
    type: DocType.STORE
    system: string
    deviceId: string
-   manager: {
-      name: string
-      phone: string
-   }
+   phone: string
    pipeline: QueueKey[] // Array of queue steps from QueueKey type
 }
 
@@ -76,7 +74,7 @@ export interface StoreDocument extends BaseDocument {
 //    & { phone: string }
 
 export interface MessageDocument extends BaseDocument {
-   _id: string
+   _id: ObjectId
    phone: string
    role: 'system' | 'user' | 'assistant' | 'tool'
    content: any

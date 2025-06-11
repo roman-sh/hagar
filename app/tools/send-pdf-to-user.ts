@@ -14,13 +14,9 @@ import { ChatCompletionTool } from 'openai/resources'
 export async function sendPdfToUser(args: SendPdfToUserArgs) {
    try {
       // Search for the document by fileId in the homogeneous scans collection
-      const doc = await db.collection('scans').findOne({
+      const doc = await db.collection<ScanDocument>('scans').findOne({
          fileId: args.fileId
-      }) as unknown as ScanDocument
-
-      if (!doc) {
-         throw new Error(`Document not found for fileId: ${args.fileId}`)
-      }
+      })
 
       // Create WhatsApp media from URL
       const media = await WAWebJS.MessageMedia.fromUrl(doc.url, {

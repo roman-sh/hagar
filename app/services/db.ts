@@ -1,5 +1,5 @@
 import { db } from '../connections/mongodb'
-import { StoreDocument, MessageDocument, ScanDocument, JobResult } from '../types/documents'
+import { StoreDocument, MessageDocument, ScanDocument, JobRecord } from '../types/documents'
 
 export const database = {
    /**
@@ -9,23 +9,15 @@ export const database = {
     */
    getStoreByDevice: async (deviceId: string): Promise<StoreDocument> => {
       // Get a matching storeId for deviceId
-      
-      const storeDoc = await db.collection<StoreDocument>('stores').findOne({
-         deviceId
-      })
-      
-      if (!storeDoc) {
-         throw new Error(`Store not found for device: ${deviceId}`)
-      }
+      const storeDoc = await db.collection<StoreDocument>('stores').findOne({ deviceId })
+      if (!storeDoc) throw new Error(`Store not found for device: ${deviceId}`)
       log.info(`Device ${deviceId} mapped to store ${storeDoc.storeId}`)
-
       return storeDoc
    },
 
+
    getStoreByPhone: async (phone: string): Promise<StoreDocument> => {
-      const storeDoc = await db.collection<StoreDocument>('stores').findOne({
-         'manager.phone': phone
-      })
+      const storeDoc = await db.collection<StoreDocument>('stores').findOne({ phone })
       
       if (!storeDoc) {
          // TODO: Set up a demo store for unregistered phones
@@ -33,6 +25,7 @@ export const database = {
       }
       return storeDoc
    },
+
 
    getMessages: async (phone: string, storeId: string): Promise<MessageDocument[]> => {
       // TODO: Add a limit by message count or from_date or maybe do summorization
@@ -45,13 +38,14 @@ export const database = {
       .toArray()
    },
 
+
    /**
     * Write job status to scan document
     * @param jobId - The job ID (document _id)
     * @param queueName - The queue name to use as field name
     * @param statusData - The status data to store
     */
-   trackJobProgress: async (jobId: string, queueName: string, statusData: JobResult): Promise<void> => {
+   recordJobProgress: async (jobId: string, queueName: string, statusData: JobRecord): Promise<void> => {
       await db.collection<ScanDocument>('scans').updateOne(
          { _id: jobId } as any,
          { $set: { [queueName]: statusData } }

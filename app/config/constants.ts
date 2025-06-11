@@ -2,7 +2,7 @@ import { JobStatus } from "bull"
 
 // Queue names as string constants
 export const SCAN_VALIDATION = 'scan_validation'
-export const DATA_EXTRACTION = 'data_extraction'
+export const OCR_EXTRACTION = 'ocr_extraction'
 export const DATA_APPROVAL = 'data_approval'
 export const INVENTORY_UPDATE = 'inventory_update'
 export const INBOUND_MESSAGES = 'inbound_messages'

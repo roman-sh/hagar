@@ -1,11 +1,9 @@
 import { ChatCompletionTool } from 'openai/resources'
 import { finalizeScanValidationArgs } from '../types/tool-args'
 import { db } from '../connections/mongodb'
-import { JobResult, ScanDocument } from '../types/documents'
-import { queuesMap } from '../queues'
-import { SCAN_VALIDATION, JOB_STATUS } from '../config/constants'
-import { database } from '../services/db'
-import { Job } from 'bull'
+import { ScanDocument } from '../types/documents'
+import { pipeline } from '../services/pipeline'
+
 
 export const finalizeScanValidationSchema: ChatCompletionTool = {
    type: 'function',
@@ -45,29 +43,17 @@ export const finalizeScanValidationSchema: ChatCompletionTool = {
    }
 }
 
+
 export const finalizeScanValidation = async (args: finalizeScanValidationArgs) => {
-   // Find the scan document by fileId in the homogeneous scans collection
-   const scanDoc = await db.collection<ScanDocument>('scans').findOne({
-      fileId: args.file_id
-   }, { projection: { _id: 1 } }) as Pick<ScanDocument, '_id'>
+   // Find the scan document by fileId in the scans collection
+   const { _id: scanDocId } = await db.collection<Pick<ScanDocument, '_id'>>('scans')
+      .findOne({ fileId: args.file_id }, { projection: { _id: 1 } })
 
-   const result: JobResult = {
-      status: JOB_STATUS.COMPLETED,
-      data: { ...args }
-   }
-
-   // Complete the Bull job using the document _id as job ID
-   const job = await queuesMap[SCAN_VALIDATION].getJob(scanDoc._id)
-   job.progress(100)
-   // Bull.js expects string but displays objects better in dashboard than JSON.stringify()
-   await job.moveToCompleted(result as any, true)
-
-   // Track job completion in document
-   await database.trackJobProgress(scanDoc._id, SCAN_VALIDATION, result)
+   await pipeline.advance(scanDocId, args)
 
    return {
       success: true,
-      message: 'Scan validation completed. Document will be processed.',
-      details: result
+      message: 'Scan validation completed. Document advanced to next step in processing pipeline.',
+      details: args
    }
 } 

@@ -12,6 +12,8 @@ data/
 temp/
 scaff-node/
 hagar-bun/
+docs/aux/
+scripts/
 
 # Environment variables
 .env

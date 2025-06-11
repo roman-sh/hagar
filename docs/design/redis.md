@@ -76,7 +76,7 @@ const redisConfig = {
 // Create queues
 const scanApprovalQueue = new Queue('scan-approval', redisConfig);
 const ocrQueue = new Queue('ocr-processing', redisConfig);
-const dataExtractionQueue = new Queue('data-extraction', redisConfig);
+const ocrExtractionQueue = new Queue('data-extraction', redisConfig);
 const productMatchingQueue = new Queue('product-matching', redisConfig);
 ```
 
@@ -183,7 +183,7 @@ To optimize Redis memory usage, we implement:
      queues: [
        new BullAdapter(scanApprovalQueue),
        new BullAdapter(ocrQueue),
-       new BullAdapter(dataExtractionQueue),
+       new BullAdapter(ocrExtractionQueue),
        new BullAdapter(productMatchingQueue)
      ],
      serverAdapter

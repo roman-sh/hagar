@@ -59,4 +59,4 @@ function extractInvoiceData(analysisResult) {
 // const extractedData = extractInvoiceData(analysisResult);
 // console.log(JSON.stringify(extractedData, null, 2));
 
-module.exports = { extractInvoiceData }
+export { extractInvoiceData }

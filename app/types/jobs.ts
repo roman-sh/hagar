@@ -41,6 +41,5 @@ export type OutboundMessageJobData = {
  */
 export interface BaseJobResult {
    success: boolean
-   docId: string | number // Document ID (matches job.id)
    message: string
 }

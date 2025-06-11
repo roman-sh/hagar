@@ -6,16 +6,16 @@
 // =================================================================
 
 // Load environment variables from .env file (API key and endpoint)
-require('dotenv').config()
+import 'dotenv/config'
 
 // Import required packages
-const fs = require('fs')
-const path = require('path')
-const {
+import * as fs from 'fs'
+import * as path from 'path'
+import {
    DocumentAnalysisClient,
    AzureKeyCredential
-} = require('@azure/ai-form-recognizer')
-const { extractInvoiceData } = require('./extract')
+} from '@azure/ai-form-recognizer'
+// import { extractInvoiceData } from './extract'
 
 // Get Azure Document Intelligence credentials from environment variables
 const endpoint = process.env.FORM_RECOGNIZER_ENDPOINT || ''
@@ -59,10 +59,10 @@ async function analyzeInvoice(filePath) {
       // Save the complete analysis result to a JSON file
       // This contains ALL the data including document layout, text content, and extracted fields
       const resultPath = `${path.parse(filePath).name}_analysis.json`
-      fs.writeFileSync(resultPath, JSON.stringify(result, null, 2))
+      fs.writeFileSync(resultPath, JSON.stringify(result.tables, null, 2))
       console.log(`Analysis completed successfully`)
       console.log(`Results saved to: ${resultPath}`)
-
+/*
       // Extract structured data from the analysis result
       console.log('Extracting structured data...')
       const extractedData = extractInvoiceData(result)
@@ -71,7 +71,7 @@ async function analyzeInvoice(filePath) {
       const extractedPath = `${path.parse(filePath).name}_extracted.json`
       fs.writeFileSync(extractedPath, JSON.stringify(extractedData, null, 2))
       console.log(`Extracted data saved to: ${extractedPath}`)
-
+*/
       return result
    } catch (error) {
       console.error('Error analyzing document:', error)

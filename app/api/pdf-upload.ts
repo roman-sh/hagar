@@ -3,9 +3,9 @@ import { s3Client } from '../connections/s3.js'
 import { db } from '../connections/mongodb'
 import { Context } from 'hono'
 import { Collection } from 'mongodb'
-import { BaseDocument, ScanDocument, StoreDocument } from '../types/documents'
+import { ScanDocument, StoreDocument } from '../types/documents'
 import { DocType } from '../config/constants'
-import { q } from '../helpers/q'
+import { pipeline } from '../services/pipeline'
 import { openai } from '../connections/openai'
 import { database } from '../services/db'
 
@@ -80,10 +80,9 @@ export const pdfUploadHandler = async (c: Context) => {
    const { insertedId } = await collection.insertOne(doc)
    log.info({ docId: insertedId }, 'Document inserted into MongoDB')
 
-   // Queue the document to the next queue in the pipeline
-   q(storeId, insertedId, null)
-   // null because we are queueing to the first queue (no current queue)
-   // we on purpose do not await this because it's not a blocker for the response
+   // Start the processing pipeline for the new document
+   // We don't await this because it's not a blocker for the HTTP response
+   pipeline.start(insertedId)
 
    return c.json(
       {
