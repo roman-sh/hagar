@@ -6,16 +6,17 @@ import { initializeQueues } from './queues.js'
 import { initializeDatabase } from './connections/mongodb.js'
 import { initializeRedis } from './connections/redis.js'
 import { initializeS3 } from './connections/s3.js'
+import { client } from "./connections/whatsapp.js"
 import { pdfUploadHandler } from './api/pdf-upload.js'
 import { configureBullBoard, type BullBoardConfig } from './config/bull-board.js'
 import { initializeDebouncer } from './services/message-debouncer.js'
-import { client } from "./connections/whatsapp.js"
 import { Message } from "whatsapp-web.js"
 import { messageStore } from './services/message-store.js'
 import { phoneQueueManager } from './services/phone-queues-manager.js'
 
-// Declare server variable in higher scope for graceful shutdown
-let server: any
+
+process.on('SIGINT', shutdown)
+process.on('SIGTERM', shutdown)
 
 try {
    log.info('Application starting')
@@ -69,7 +70,7 @@ try {
    const PORT = process.env.PORT || 3000
 
    // Start the Node.js server
-   server = serve({
+   serve({
       fetch: app.fetch,
       port: Number(PORT)
    })
@@ -87,3 +88,11 @@ try {
 
 log.info('Application ready - WhatsApp client is stable on Node.js!')
 
+
+// --- Final Graceful Shutdown Handler ---
+async function shutdown(signal: string) {
+   log.info(`${signal} received. Shutting down gracefully...`)
+   await client.destroy()
+   log.info('WhatsApp client destroyed successfully.')
+   process.exit(0)
+}

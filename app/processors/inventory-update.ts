@@ -21,7 +21,6 @@ export async function inventoryUpdateProcessor(
 
    return {
       success: true,
-      docId,
       message: 'Inventory successfully updated'
    }
 }

@@ -1,10 +1,12 @@
 import { Job } from 'bull'
 import { JobData, BaseJobResult } from '../types/jobs'
 import { db } from '../connections/mongodb'
-import { JobRecord, ScanDocument } from '../types/documents'
+import { JobRecord, MessageDocument, ScanDocument, StoreDocument } from '../types/documents'
 import { ocr } from '../services/ocr'
-import { OCR_EXTRACTION, JOB_STATUS } from '../config/constants'
-
+import { OCR_EXTRACTION, JOB_STATUS, DocType } from '../config/constants'
+import { database } from '../services/db'
+import { gpt } from '../services/gpt'
+import { OptionalId } from 'mongodb'
 
 /**
  * Process a job for data extraction from a scanned document
@@ -16,39 +18,48 @@ export async function ocrExtractionProcessor(
 ): Promise<BaseJobResult> {
    const docId = job.id as string
 
-   // 1. Get the ScanDocument to find the public URL
-   const { url } = await db.collection<Pick<ScanDocument, 'url'>>('scans')
-      // @ts-expect-error - mongo driver types issue with _id being a string
-      .findOne({ _id: docId }, { projection: { url: 1 } })
+   // 1. Get all necessary scan and store details in one call
+   const { storeId, url, phone } = await database.getScanAndStoreDetails(docId)
 
    // 2. Call the OCR service with the URL
    const extractedData = await ocr.extractInvoiceDataFromUrl(url)
 
-   // Here we should pass the extracted data to gpt for approval.
-   // Upon approval, gpt will call the finalizeOcrExtraction tool
-   // to advance the document to the next step in the pipeline
-   // and update the document with the approved data
-   // All following code is temporary.
-
-   // 3. Update the document in the database upon successful extraction
-   const JobRecord: JobRecord = {
-      //  the job is actually active, but we wait for gpt to finalize
+   // 3. Save extracted data to the document
+   const jobRecord: JobRecord = {
+      // the job is actually active, but we wait for gpt to finalize
       status: JOB_STATUS.WAITING,
       timestamp: new Date(),
-      data: extractedData
+      data: extractedData,
    }
+   await db
+      .collection<ScanDocument>('scans')
+      .updateOne({ _id: docId }, { $set: { [OCR_EXTRACTION]: jobRecord } })
 
-   await db.collection<ScanDocument>('scans').updateOne(
-      { _id: docId },
-      { $set: { [OCR_EXTRACTION]: JobRecord } }
-   )
+   // 4. Send message to GPT to trigger data approval flow
+   await db.collection<OptionalId<MessageDocument>>('messages').insertOne({
+      type: DocType.MESSAGE,
+      role: 'user',
+      phone: phone,
+      name: 'app',
+      content: {
+         action: 'review_ocr_data',
+         docId,
+         extractedData,
+      },
+      storeId: storeId,
+      createdAt: new Date(),
+   })
 
-   // 4. Set progress to 50% to indicate readiness for user validation
+   // 5. Trigger GPT processing
+   gpt.process({
+      phone: phone,
+      storeId: storeId,
+   })
+
+   // 6. Set progress to 50% to indicate readiness for user validation
    await job.progress(50)
 
-   // Implement call to gpt for data approval
-
-   // Job will hang untill handled by gpt tool
+   // Job will hang until handled by a tool
    return new Promise(() => {})
 } 
 

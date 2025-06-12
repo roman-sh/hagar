@@ -3,13 +3,15 @@ import { validateDeliveryNote, validateDeliveryNoteSchema } from './validate-del
 import { finalizeScanValidationSchema, finalizeScanValidation } from './finalize-scan-validation'
 import { visualInspect, visualInspectSchema } from './visual-inspect'
 import { sendPdfToUser, sendPdfToUserSchema } from './send-pdf-to-user'
+import { finalizeOcrExtraction, finalizeOcrExtractionSchema } from './finalize-ocr-extraction'
 
 // Tool schemas for GPT
 export const tools: ChatCompletionTool[] = [
    validateDeliveryNoteSchema,
    finalizeScanValidationSchema,
    visualInspectSchema,
-   sendPdfToUserSchema
+   sendPdfToUserSchema,
+   finalizeOcrExtractionSchema,
 ]
 
 // Tool function implementations
@@ -17,5 +19,6 @@ export const functions = {
    validateDeliveryNote,
    finalizeScanValidation,
    visualInspect,
-   sendPdfToUser
-} 
+   sendPdfToUser,
+   finalizeOcrExtraction,
+}

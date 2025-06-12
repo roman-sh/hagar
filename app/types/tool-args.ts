@@ -1,3 +1,5 @@
+import { PageData } from '../services/ocr'
+
 /**
  * Shared type definitions for tool function arguments
  */
@@ -8,7 +10,7 @@ export interface SendPdfToUserArgs {
 }
 
 export interface finalizeScanValidationArgs {
-   file_id: string
+   docId: string
    invoiceNo: string
    supplier: string
    date: string
@@ -24,4 +26,9 @@ export interface ScanValidationFailArgs {
 export interface VisualInspectArgs {
    file_id: string
    prompt: string
-} 
+}
+
+export interface FinalizeOcrExtractionArgs {
+   docId: string
+   extractedData: PageData[]
+}

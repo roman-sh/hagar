@@ -13,9 +13,9 @@ export const finalizeScanValidationSchema: ChatCompletionTool = {
       parameters: {
          type: 'object',
          properties: {
-            file_id: {
+            docId: {
                type: 'string',
-               description: 'The OpenAI file_id of the validated PDF'
+               description: 'The database ID of the document being processed.'
             },
             invoiceNo: {
                type: 'string',
@@ -38,22 +38,26 @@ export const finalizeScanValidationSchema: ChatCompletionTool = {
                description: 'Detailed explanation of why the scan passed validation'
             }
          },
-         required: ['file_id', 'invoiceNo', 'supplier', 'date', 'pages', 'annotation']
+         required: ['docId', 'invoiceNo', 'supplier', 'date', 'pages', 'annotation']
       }
    }
 }
 
 
 export const finalizeScanValidation = async (args: finalizeScanValidationArgs) => {
-   // Find the scan document by fileId in the scans collection
-   const { _id: scanDocId } = await db.collection<Pick<ScanDocument, '_id'>>('scans')
-      .findOne({ fileId: args.file_id }, { projection: { _id: 1 } })
+   try {
+      await pipeline.advance(args.docId, args)
 
-   await pipeline.advance(scanDocId, args)
-
-   return {
-      success: true,
-      message: 'Scan validation completed. Document advanced to next step in processing pipeline.',
-      details: args
+      return {
+         success: true,
+         message: 'OK. Document forwarded for further processing.',
+      }
+   } catch (error) {
+      const errorMessage = `Failed to finalize scan validation for docId ${args.docId}.`
+      log.error(error, errorMessage)
+      return {
+         success: false,
+         message: `${errorMessage}\nError: ${(error as Error).message}`
+      }
    }
 } 

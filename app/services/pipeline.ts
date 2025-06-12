@@ -13,16 +13,9 @@ export const pipeline = {
     * @param {string} docId - The unique ID of the document.
     */
    start: async (docId: string) => {
-      // Get the storeId from the document first
-      const { storeId } = await db.collection<Pick<ScanDocument, 'storeId'>>('scans')
-         // @ts-expect-error - mongo driver types issue with _id being a string
-         .findOne({ _id: docId }, { projection: { storeId: 1 } })
+      const { pipeline } = await database.getStoreByDocId(docId)
 
-      const store = await db
-         .collection<Pick<StoreDocument, 'pipeline'>>('stores')
-         .findOne({ storeId }, { projection: { pipeline: 1 } })
-
-      const firstQueue = store.pipeline[0]
+      const firstQueue = pipeline[0]
       await queuesMap[firstQueue].add({} as JobData, { jobId: docId })
       log.info(`Document ${docId} queued to ${firstQueue}`)
    },
@@ -48,15 +41,15 @@ export const pipeline = {
       await database.recordJobProgress(docId, queueName, result)
 
       // 3. Get the pipeline for the store
-      const pipeline = await getPipeline(docId)
+      const { pipeline } = await database.getStoreByDocId(docId)
 
       // 4. Find the next queue and add the job
       const currentIndex = pipeline.findIndex((q) => q === queueName)
-      const nextQ = pipeline[currentIndex + 1]
+      const nextQueue = pipeline[currentIndex + 1]
 
-      if (nextQ) {
-         await queuesMap[nextQ].add({} as JobData, { jobId: docId })
-         log.info(`Document ${docId} advanced to next queue: ${nextQ}`)
+      if (nextQueue) {
+         await queuesMap[nextQueue].add({} as JobData, { jobId: docId })
+         log.info(`Document ${docId} advanced to next queue: ${nextQueue}`)
       } else {
          log.info(`Document ${docId} has completed the final stage of its pipeline.`)
       }
@@ -82,35 +75,4 @@ async function findActiveJob(jobId: string): Promise<{ job: Job; queueName: Queu
       }
    }
    throw new Error(`Could not find an active job with ID: ${jobId}`)
-}
-
-/**
- * Retrieves the processing pipeline array from a store,
- * found via the scan document ID. Uses an efficient aggregation.
- * @param {string} docId The ID of the scan document.
- * @returns {Promise<QueueKey[]>} The pipeline array.
- */
-async function getPipeline(docId: string): Promise<QueueKey[]> {
-   const aggregationResult = await db
-      .collection('scans')
-      .aggregate<Pick<StoreDocument, 'pipeline'>>([
-         { $match: { _id: docId } },
-         {
-            $lookup: {
-               from: 'stores',
-               localField: 'storeId',
-               foreignField: 'storeId',
-               as: 'store',
-            },
-         },
-         {
-            $project: {
-               _id: 0,
-               pipeline: { $first: '$store.pipeline' },
-            },
-         },
-      ])
-      .toArray()
-
-   return aggregationResult[0].pipeline
 }

@@ -4,8 +4,9 @@
   "version": "1.0.0",
   "description": "AI-powered store inventory assistant",
   "scripts": {
-    "start": "tsx app/main.ts",
+    "start": "npm run build && node dist/bundle.js",
     "dev": "sh -c 'redis-cli ping > /dev/null 2>&1 || (echo \"Starting Redis...\" && redis-server --daemonize yes); tsx app/main.ts'",
+    "build": "node build.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

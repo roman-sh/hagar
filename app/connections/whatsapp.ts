@@ -15,7 +15,8 @@ export const client = new Client({
          '--no-sandbox',
          '--disable-setuid-sandbox',
          '--unhandled-rejections=strict'
-      ]
+      ],
+      handleSIGINT: false,
    }
 })
 

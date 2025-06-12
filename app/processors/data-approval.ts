@@ -29,9 +29,10 @@ export async function dataApprovalProcessor(
    // Mock update to database
    log.info(`Updating document ${docId} status to 'pending_data_approval'`)
 
+   log.info({ docId }, 'Data approval completed successfully')
+
    return {
       success: true,
-      docId,
-      message: 'Data approval notification sent'
+      message: 'Data approved successfully'
    }
 }

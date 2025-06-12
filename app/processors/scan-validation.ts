@@ -5,6 +5,7 @@ import { OptionalId } from 'mongodb'
 import { MessageDocument, ScanDocument, StoreDocument } from '../types/documents'
 import { gpt } from '../services/gpt'
 import { DocType } from '../config/constants'
+import { database } from '../services/db'
 
 
 /**
@@ -17,10 +18,7 @@ export async function scanValidationProcessor(
 ): Promise<BaseJobResult> {
    const docId = job.id as string
 
-   const { storeId, fileId, filename } = await db.collection<ScanDocument>('scans').findOne({ _id: docId })
-
-   const { phone } = await db.collection<Pick<StoreDocument, 'phone'>>('stores')
-      .findOne({ storeId }, { projection: { phone: 1 } })
+   const { storeId, fileId, filename, phone } = await database.getScanAndStoreDetails(docId)
 
    // Save the PDF information directly to the chat history
    await db.collection<OptionalId<MessageDocument>>('messages').insertOne({
@@ -30,11 +28,9 @@ export async function scanValidationProcessor(
       name: 'scanner',
       content: {
          file_id: fileId, // OpenAI file_id from the document
-         meta: {
-            storeId,
-            phone,
-            filename
-         },
+         docId,
+         phone,
+         filename
       },
       storeId,
       createdAt: new Date()

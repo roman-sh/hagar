@@ -37,7 +37,6 @@ export async function outboundMessagesProcessor(
 
    return {
       success: true,
-      docId: job.id,
-      message: 'Outbound message sent'
+      message: `Message sent to ${job.data.phone}`
    }
 } 

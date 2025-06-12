@@ -75,7 +75,6 @@ export async function inboundMessagesBeeProcessor(
 
       return {
          success: true,
-         docId: job.id,
          message: 'Message processed'
       }
 

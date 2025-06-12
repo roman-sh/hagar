@@ -15,6 +15,9 @@ hagar-bun/
 docs/aux/
 scripts/
 
+# Build output
+dist/
+
 # Environment variables
 .env
 .local.config
