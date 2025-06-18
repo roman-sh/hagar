@@ -1,4 +1,4 @@
-import { Message } from 'whatsapp-web.js'
+import { Message, type Chat } from 'whatsapp-web.js'
 
 // In-memory store for WhatsApp message objects
 const messagesMap = new Map<string, Message>()
@@ -11,7 +11,9 @@ export const messageStore = {
     */
    store: (message: Message): string => {
       const messageId = message.id._serialized
+      const phone = message.from.split('@')[0]
       messagesMap.set(messageId, message)
+      messagesMap.set(phone, message)  // keep reference to last message for typing indicator
       return messageId
    },
    
@@ -28,6 +30,16 @@ export const messageStore = {
          throw new Error(`Message ${messageId} not found in store`)
       }
       return message
+   },
+
+   /**
+    * Retrieve the chat for a given phone number
+    * @param phone The phone number
+    * @returns The Chat object, or undefined if not found
+    */
+   getChat: async (phone: string): Promise<Chat | undefined> => {
+      const message = messagesMap.get(phone)
+      if (message) return await message.getChat()
    },
    
    /**

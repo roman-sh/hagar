@@ -35,7 +35,17 @@ export const validateDeliveryNote = async (args: { file_id: string }) => {
                },
                {
                   type: 'text',
-                  text: 'Extract specific details from this document for inventory management purposes. Provide exact values, not descriptions. If a field cannot be determined, use "לא זוהה" (not identified). Focus on whether the document contains the necessary information for inventory updates (products, quantities, supplier, date) regardless of document type (invoice, delivery note, receipt, etc.).'
+                  text: `
+Analyze the structure of this document to determine if it is a valid delivery note suitable for a later, high-resolution OCR step.
+
+**Your Task is strictly limited to high-level validation. Do NOT attempt to extract individual line items (products, quantities).**
+
+Focus on these four areas:
+1.  **Scan Quality:** Is the document clear and correctly oriented?
+2.  **Document Details:** Can you identify a supplier, a date, and a document number?
+3.  **Table Structure:** Does a structured table exist?
+4.  **Header Validation:** Critically, inspect the table's column headers. Do they contain keywords relevant to inventory updates, such as 'פריט' (item) and 'כמות' (quantity)?
+`
                }
             ]
          }

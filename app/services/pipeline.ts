@@ -1,7 +1,6 @@
-import { db } from '../connections/mongodb'
 import { queuesMap, QueueKey } from '../queues'
-import { JOB_STATUS, SCAN_VALIDATION } from '../config/constants'
-import { JobRecord, ScanDocument, StoreDocument } from '../types/documents'
+import { JOB_STATUS } from '../config/constants'
+import { JobRecord } from '../types/documents'
 import { database } from './db'
 import { Job } from 'bull'
 import { JobData } from '../types/jobs'
@@ -50,8 +49,10 @@ export const pipeline = {
       if (nextQueue) {
          await queuesMap[nextQueue].add({} as JobData, { jobId: docId })
          log.info(`Document ${docId} advanced to next queue: ${nextQueue}`)
+         return nextQueue
       } else {
          log.info(`Document ${docId} has completed the final stage of its pipeline.`)
+         return null
       }
    },
 }

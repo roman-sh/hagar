@@ -30,5 +30,5 @@ export interface VisualInspectArgs {
 
 export interface FinalizeOcrExtractionArgs {
    docId: string
-   extractedData: PageData[]
+   data?: any[]
 }

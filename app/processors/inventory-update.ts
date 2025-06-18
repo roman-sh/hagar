@@ -10,12 +10,11 @@ export async function inventoryUpdateProcessor(
    job: Job<JobData>
 ): Promise<BaseJobResult> {
    const docId = job.id
-   const storeId = job.data.storeId
 
-   log.info({ docId, storeId }, 'Processing inventory update job')
+   log.info({ docId }, 'Processing inventory update job')
 
    // Simulate processing delay
-   await new Promise((resolve) => setTimeout(resolve, 1500))
+   await new Promise((resolve) => setTimeout(resolve, 15000))
 
    log.info({ docId }, 'Inventory update completed successfully')
 

@@ -1,3 +1,5 @@
+/// <reference path="../types/declarations.d.ts" />
+
 import { MessageDocument } from "../types/documents"
 import { database } from "./db"
 import { openai } from "../connections/openai"
@@ -7,8 +9,9 @@ import { db } from "../connections/mongodb"
 import { DocType } from "../config/constants"
 import { outboundMessagesQueue } from "../queues"
 import { json } from "../utils/json"
-import { readFileSync } from 'node:fs'
+import systemPrompt from '../prompts/generic.md'
 import { UserData } from "../types/shared"
+import { messageStore } from "./message-store"
 
 
 const UTILITY_FIELDS = ['_id', 'type', 'storeId', 'createdAt', 'phone']
@@ -33,7 +36,11 @@ export const gpt = {
     * @param userData The user data containing phone, name, and storeId
     */
    async process({ phone, storeId }: UserData): Promise<void> {
+      // TODO: simplify by passing phone only. Use redis caching to get storeId maybe?
       log.debug({ phone, storeId }, 'Triggered GPT processing')
+
+      // Show typing indicator
+      ;(await messageStore.getChat(phone))?.sendStateTyping()
 
       // Get message documents from the database
       const messageDocs = await database.getMessages(phone, storeId)
@@ -121,7 +128,7 @@ function executeTools(toolCalls: ChatCompletionMessageToolCall[]) {
 function getSystemMessage(storeId: string, phone: string): ChatCompletionMessageParam {
    return {
       role: 'system' as const,
-      content: readFileSync(new URL('../prompts/generic.md', import.meta.url), 'utf8')
+      content: systemPrompt
    }
 }
 

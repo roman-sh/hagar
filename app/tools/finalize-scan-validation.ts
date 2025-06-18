@@ -1,7 +1,5 @@
 import { ChatCompletionTool } from 'openai/resources'
 import { finalizeScanValidationArgs } from '../types/tool-args'
-import { db } from '../connections/mongodb'
-import { ScanDocument } from '../types/documents'
 import { pipeline } from '../services/pipeline'
 
 
@@ -46,11 +44,11 @@ export const finalizeScanValidationSchema: ChatCompletionTool = {
 
 export const finalizeScanValidation = async (args: finalizeScanValidationArgs) => {
    try {
-      await pipeline.advance(args.docId, args)
+      const nextStage = await pipeline.advance(args.docId, args)
 
       return {
          success: true,
-         message: 'OK. Document forwarded for further processing.',
+         nextStage,
       }
    } catch (error) {
       const errorMessage = `Failed to finalize scan validation for docId ${args.docId}.`

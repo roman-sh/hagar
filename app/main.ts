@@ -25,6 +25,8 @@ try {
    await initializeDatabase()
    await initializeRedis()
    await initializeS3()
+
+   // Initialize WhatsApp client
    await client.initialize()
 
    // Initialize all queues with their processors
@@ -36,7 +38,6 @@ try {
       log.debug({ from: message.from, type: message.type }, 'Received WhatsApp message')
       const messageId = messageStore.store(message)
       const phone = message.from.split('@')[0] // Extract phone number
-      ;(await message.getChat()).sendStateTyping() // Show typing indicator
       await phoneQueueManager.addMessage(phone, { messageId })
    })
 
@@ -83,7 +84,7 @@ try {
 
 } catch (error) {
    log.error(error as Error, 'Application Error')
-   process.exit(1)
+   await shutdown('ERROR')
 }
 
 log.info('Application ready - WhatsApp client is stable on Node.js!')
@@ -92,7 +93,22 @@ log.info('Application ready - WhatsApp client is stable on Node.js!')
 // --- Final Graceful Shutdown Handler ---
 async function shutdown(signal: string) {
    log.info(`${signal} received. Shutting down gracefully...`)
-   await client.destroy()
-   log.info('WhatsApp client destroyed successfully.')
-   process.exit(0)
+
+   const shutdownTimeout = setTimeout(() => {
+      log.warn('Shutdown timeout reached. Forcing exit.')
+      process.exit(1)
+   }, 5000) // 5-second timeout
+
+   try {
+      log.info('Attempting to destroy WhatsApp client...')
+      await client.destroy()
+      log.info('WhatsApp client destroyed successfully.')
+      // Add a small delay to allow the browser process to fully close
+      await new Promise(resolve => setTimeout(resolve, 2500))
+   } catch (error) {
+      log.error(error, `Error destroying WhatsApp client during ${signal}`)
+   } finally {
+      clearTimeout(shutdownTimeout)
+      process.exit(signal === 'ERROR' ? 1 : 0)
+   }
 }

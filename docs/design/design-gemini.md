@@ -111,54 +111,44 @@ Hagar™ is an AI-powered inventory management system that transforms physical d
 
 ---
 
-## Flow 6: OCR Data Extraction & Inventory Matching (Implementation Plan)
+## Flow 6: Inventory Matching & Update (Implementation Plan)
 
-This section outlines the planned implementation for the next two stages of the processing pipeline: `ocr-extraction` and `inventory-matching`. This design uses a two-queue approach to ensure separation of concerns and robustness.
+This section details the revised design for the `inventory_update` pipeline stage. It uses a robust, pluggable architecture where each supported back-office inventory system is a self-contained module.
 
-### A. Queue 1: `ocr-extraction`
+### A. Core Architecture: Named Processors & Shared Services
 
-*   **Purpose**: To perform high-fidelity Optical Character Recognition (OCR) on the document to extract structured data, specifically line items from tables, and have it validated by AI before proceeding.
-*   **Trigger**: This job is added to the queue by the previous step in the pipeline (e.g., `scan-validation`).
-*   **Processor (`ocrExtractionProcessor`)**:
-    1.  **Retrieve Document URL**: The processor fetches the `ScanDocument` to get its public S3 URL.
-    2.  **Call OCR Service**: It invokes the `ocr.extractInvoiceDataFromUrl` service, which uses Azure AI Document Intelligence (`prebuilt-invoice` model) to analyze the document. The service returns a structured JSON object containing `headers` and paginated `items`.
-    3.  **GPT Validation**: The processor then sends this JSON object to the GPT-4 text model. The prompt instructs the AI to review the structured data for correctness and formatting.
-    4.  **Human-in-the-Loop for Corrections**: If the AI detects a potential issue with the extracted data (e.g., a field seems incorrect, confidence is low, or data is missing), it will not proceed directly to finalization. Instead, it will initiate a dialog with the user via WhatsApp, presenting the issue and asking for clarification or correction.
-    5.  **Tool-Based Finalization**: Once the data is either validated automatically by the AI or corrected by the user, the prompt flow will lead to the AI calling the `finalize_ocr_extraction` tool.
-    6.  **Active Wait State**: Similar to the validation flow, the processor returns `new Promise(() => {})`, keeping the Bull job in an "active" state while waiting for the AI to complete its task and call the finalization tool.
+The design is centered around BullMQ's **named processors**, which allows for routing jobs to specific handlers within a single queue, and the use of shared services for common, reusable logic.
 
-### B. The Bridge: `finalize_ocr_extraction` Tool
+*   **Single `inventory_update` Queue**: All inventory-related jobs are pushed to this single queue.
+*   **Job Naming**: A job's `name` property is set to the inventory system it targets (e.g., "rexail"), which directs it to the correct processor.
+*   **System-Specific Processors**: All logic for a given system is encapsulated within its own processor file in `app/processors/inventory-update/` (e.g., `rexail.ts`). On startup, these processors are dynamically registered with the queue. This makes the architecture plug-and-play.
+*   **Shared Services**: Logic that is truly generic across all systems (e.g., the core vector similarity search algorithm) is placed in a shared service (`app/services/product-matcher.ts`) that processors can import and use.
 
-*   **Purpose**: This tool acts as the clean, programmatic link between the two queues.
-*   **Mechanism**: When GPT determines the OCR data is valid, it calls this tool. The tool's sole responsibility is to take the `docId` (which is also the `jobId`) and create a new job in the `inventory-matching` queue.
-*   **Data Integrity**: The validated, structured JSON data is already stored in the `scans` document in MongoDB, so it doesn't need to be passed through the tool. The next processor will simply retrieve it from the database.
+### B. Processor Workflow Example (`rexail.ts`)
 
-### C. Queue 2: `inventory-matching`
+The workflow for any given processor is self-contained and follows a clear, two-phase process: syncing and matching.
 
-*   **Purpose**: To reconcile the extracted and validated invoice items with the store's internal inventory system. This is where user interaction for disambiguation will occur.
-*   **Trigger**: A new job is added to this queue exclusively by the `finalize_ocr_extraction` tool.
-*   **Processor (`inventoryMatchingProcessor`) - Planned**:
-    1.  **Retrieve Data**: Fetches the `ScanDocument`, including the `extractedData` field populated by the `ocr-extraction` queue.
-    2.  **Matching Logic (Embeddings-Based)**: The system will use a multi-tiered approach for matching:
-        *   **Tier 1: Barcode Matching**: For items with a barcode, it will perform a direct lookup for an exact match. This is the fastest and most reliable method.
-        *   **Tier 2: Vector Similarity Search**: For items without a barcode (e.g., fresh produce, items sold by weight), the system will use vector embeddings.
-            *   **Embedding Generation**: When products are added to the store's master inventory, their names/descriptions are converted into numerical vector embeddings (e.g., using OpenAI's embedding models) and stored.
-            *   **Real-time Matching**: During processing, the description of an item from the invoice is converted into an embedding in real-time.
-            *   **Similarity Search**: The system then performs a vector similarity search (e.g., using cosine similarity) against the pre-computed embeddings in the inventory database to find the most semantically similar product. This is far more accurate than simple fuzzy string matching.
-    3.  **Human-in-the-Loop for Ambiguity**:
-        *   If a barcode match fails or if the top result from the vector search has a confidence score below a predefined threshold (e.g., 95% similarity), the system will not proceed automatically.
-        *   It will engage the user via WhatsApp, presenting the invoice item and the top potential match(es), asking for confirmation before finalizing the link.
-    4.  **Finalization**: Once all items are successfully matched (either automatically or with user confirmation), the job will be marked as complete, and the system can proceed to the final `inventory_update` stage of the pipeline.
+1.  **Phase 1: On-Demand Catalog Sync (Internal Helper Function)**
+    *   The processor's first action is to call an internal helper function, e.g., `syncRexailCatalog()`.
+    *   This function contains all the logic for syncing the product catalog for that specific system, including:
+        *   **API Connection**: Calling the correct Rexail API endpoints with the right authentication.
+        *   **Throttling**: Checking if a sync is necessary based on a timestamp to avoid redundant API calls.
+        *   **Delta Updates**: Identifying new or changed products efficiently.
+        *   **Embedding Generation**: Creating vector embeddings for any new/updated product data.
+
+2.  **Phase 2: Product Matching (Internal Helper + Shared Service)**
+    *   Once the sync is complete, the processor calls another internal helper, e.g., `findProductMatches()`.
+    *   This function retrieves the OCR'd line items and the freshly synced product data.
+    *   It then calls the **shared `ProductMatcher` service**, passing it the data to perform the vector similarity search.
+    *   The processor receives the results (e.g., confident, ambiguous, no-match).
+
+3.  **Phase 3: AI-Driven Confirmation & Finalization**
+    *   The processor hands the categorized results to the AI to begin the confirmation dialogue with the user via WhatsApp.
+    *   When the user confirms, the AI calls the `finalizeInventoryUpdate` tool. This tool is now simpler, as it receives the fully reconciled data and is only responsible for constructing the final API payload and sending it to the correct back-office endpoint (e.g., Rexail's `.../create-or-update` endpoint).
+
+This design ensures that adding support for a new inventory system (e.g., "Odoo") is as simple as creating a new `odoo.ts` processor file in the `app/processors/inventory-update/` directory with its own internal sync logic, while reusing the same core matching and AI interaction flows.
 
 ---
-
-## Legacy Plan (Previously "Future")
-
-*   **Previous Idea**: The initial thought was to have a monolithic `ocr_extraction` step.
-*   **Refined Approach**: The two-queue model (`ocr-extraction` -> `inventory-matching`) described above is a more robust, scalable, and maintainable architecture that better separates the distinct tasks of automated data extraction and interactive data reconciliation.
-
----
-
 ## Summary of Design Achievements
 
 This flow-based architecture achieves:

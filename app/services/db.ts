@@ -1,5 +1,6 @@
 import { db } from '../connections/mongodb'
 import { StoreDocument, MessageDocument, ScanDocument, JobRecord } from '../types/documents'
+import { OCR_EXTRACTION } from '../config/constants'
 
 
 /**
@@ -43,7 +44,7 @@ export const database = {
       // TODO: We may want to create an index to speed up the query
       return await db.collection<MessageDocument>('messages').find({
          'storeId': storeId,
-         'phone': phone
+         'phone': phone // Here we can decide if we want only messages from this specific phone, or all messages for store
       })
          .sort({ createdAt: 1 }) // Sort chronologically (oldest first)
          .toArray()
@@ -51,15 +52,25 @@ export const database = {
 
 
    /**
-    * Write job status to scan document
+    * Write job progress to scan document
     * @param jobId - The job ID (document _id)
     * @param queueName - The queue name to use as field name
-    * @param statusData - The status data to store
+    * @param jobRecord - The job record to store
     */
-   recordJobProgress: async (jobId: string, queueName: string, statusData: JobRecord): Promise<void> => {
+   recordJobProgress: async (jobId: string, queueName: string, jobRecord: JobRecord): Promise<void> => {
+      // Fetch the specific job field from the document first to get existing data.
+      const doc = await db.collection<ScanDocument>('scans').findOne(
+         { _id: jobId },
+         { projection: { [queueName]: 1 } }
+      )
+
+      // Merge existing data with the new record to only update the fields that are provided.
+      const existingData = doc?.[queueName as keyof ScanDocument] as JobRecord | undefined
+      const mergedRecord = { ...existingData, ...jobRecord }
+
       await db.collection<ScanDocument>('scans').updateOne(
-         { _id: jobId } as any,
-         { $set: { [queueName]: statusData } }
+         { _id: jobId },
+         { $set: { [queueName]: mergedRecord } }
       )
    },
 
@@ -133,5 +144,24 @@ export const database = {
       )
 
       return results[0]
-   }
+   },
+
+
+   /**
+    * Retrieves the OCR data from a specific scan document.
+    *
+    * @param docId - The ID of the scan document.
+    * @returns A promise that resolves to the OCR data.
+    * @throws An error if the document or the OCR data cannot be found.
+    */
+   getOcrDataFromScan: async (docId: string) => {
+      const data = (
+         await db.collection<ScanDocument>('scans').findOne({ _id: docId })
+      )?.[OCR_EXTRACTION]?.data
+
+      if (!data) {
+         throw new Error(`Could not find existing OCR data for document ${docId}.`)
+      }
+      return data
+   },
 }

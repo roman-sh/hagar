@@ -1,6 +1,8 @@
 import { ChatCompletionTool } from 'openai/resources'
 import { pipeline } from '../services/pipeline'
 import { FinalizeOcrExtractionArgs } from '../types/tool-args'
+import { database } from '../services/db'
+
 
 export const finalizeOcrExtractionSchema: ChatCompletionTool = {
    type: 'function',
@@ -14,9 +16,9 @@ export const finalizeOcrExtractionSchema: ChatCompletionTool = {
                type: 'string',
                description: 'The database ID of the document being processed.',
             },
-            extractedData: {
+            data: {
                type: 'array',
-               description: 'The final, validated, and potentially corrected structured data extracted from the document by the OCR service.',
+               description: 'The final, validated, and potentially corrected structured data. Provide this field ONLY if you have made corrections to the data that was initially provided to you.',
                items: {
                   type: 'object',
                   properties: {
@@ -27,26 +29,37 @@ export const finalizeOcrExtractionSchema: ChatCompletionTool = {
                }
             },
          },
-         required: ['docId', 'extractedData'],
+         required: ['docId'],
       },
    }
 }
 
 /**
  * Finalizes the OCR extraction step and advances the document to the next stage in the pipeline.
- * This tool is called by the AI after it has reviewed and confirmed the extracted data.
+ *
+ * This function is called by the AI agent to finalize the OCR step. There are two main scenarios:
+ * 1. Automated Path: If the initial AI review was successful and corrected all issues, the agent calls this tool immediately without the 'data' parameter.
+ * 2. Interactive Path: If the initial review found issues it could not correct, the agent consults the user. Once the user provides corrections, the agent calls this tool WITH the full, corrected 'data'.
+ *
+ * The logic below handles both cases by using the provided data if it exists, or falling back to the data already in the database.
  * @param docId The ID of the document to finalize.
- * @param extractedData The final, validated data extracted from the document.
+ * @param data Optional. The corrected data provided by the AI after user interaction. If omitted, the data from the initial automated review is used.
  * @returns A confirmation message indicating the result of the operation.
  */
-export async function finalizeOcrExtraction({ docId, extractedData }: FinalizeOcrExtractionArgs) {
+export async function finalizeOcrExtraction(args: FinalizeOcrExtractionArgs) {
+   const { docId } = args
    try {
-      await pipeline.advance(docId, extractedData)
+      // Use the provided data, or fall back to fetching it from the database.
+      const data = args.data ?? (await database.getOcrDataFromScan(docId))
+      // Count items while skipping headers
+      const itemsCount = data.reduce((acc: number, page: { rows: any[] }) =>
+         acc + page.rows.slice(1).length, 0)
 
-      const message = `OCR extraction finalized for document ${docId}. Advanced to the next stage.`
-      log.info({ docId }, message)
+      const nextStage = await pipeline.advance(docId, data)
 
-      return { success: true, message }
+      log.info({ docId, nextStage, itemsCount }, `OCR extraction finalized.`)
+
+      return { success: true, nextStage, itemsCount }
    } catch (error) {
       const errorMessage = `Failed to finalize OCR extraction for document ${docId}.`
       log.error(error, errorMessage)

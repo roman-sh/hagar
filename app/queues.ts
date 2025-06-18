@@ -1,4 +1,4 @@
-import Bull, { Queue, Job, ProcessCallbackFunction, QueueOptions, JobStatus } from 'bull'
+import Bull, { Queue, Job, ProcessCallbackFunction, QueueOptions } from 'bull'
 import BeeQueue from 'bee-queue'
 import {
    SCAN_VALIDATION,

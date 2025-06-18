@@ -4,6 +4,7 @@ import { finalizeScanValidationSchema, finalizeScanValidation } from './finalize
 import { visualInspect, visualInspectSchema } from './visual-inspect'
 import { sendPdfToUser, sendPdfToUserSchema } from './send-pdf-to-user'
 import { finalizeOcrExtraction, finalizeOcrExtractionSchema } from './finalize-ocr-extraction'
+import { getOcrData, getOcrDataSchema } from './get-ocr-data'
 
 // Tool schemas for GPT
 export const tools: ChatCompletionTool[] = [
@@ -12,6 +13,7 @@ export const tools: ChatCompletionTool[] = [
    visualInspectSchema,
    sendPdfToUserSchema,
    finalizeOcrExtractionSchema,
+   getOcrDataSchema,
 ]
 
 // Tool function implementations
@@ -21,4 +23,5 @@ export const functions = {
    visualInspect,
    sendPdfToUser,
    finalizeOcrExtraction,
+   getOcrData,
 }

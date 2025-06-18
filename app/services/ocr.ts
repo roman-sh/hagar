@@ -1,4 +1,6 @@
 import { DocumentAnalysisClient, AzureKeyCredential, AnalyzeResult } from '@azure/ai-form-recognizer'
+import { openai } from '../connections/openai'
+import reviewPrompt from '../prompts/ocr-review.md'
 
 // Load environment variables
 const endpoint = process.env.FORM_RECOGNIZER_ENDPOINT
@@ -12,6 +14,11 @@ const client = new DocumentAnalysisClient(endpoint, new AzureKeyCredential(apiKe
 export interface PageData {
    page: number
    rows: string[][]
+}
+
+export interface OcrReviewResult {
+   data: PageData[]
+   annotation: string
 }
 
 // --- Helper Functions ---
@@ -108,6 +115,36 @@ export const ocr = {
          return extractedData
       } catch (error) {
          log.error(error, 'Error analyzing document from URL:')
+         throw error
+      }
+   },
+
+   /**
+    * Reviews and corrects OCR data using a powerful reasoning model.
+    * @param {PageData[]} extractedData - The raw data extracted by Azure OCR.
+    * @returns {Promise<OcrReviewResult>} An object containing the corrected data and a natural language annotation.
+    */
+   async review(extractedData: PageData[]): Promise<OcrReviewResult> {
+      try {
+         log.info('Reviewing and correcting OCR data with o3 model...')
+
+         const response = await openai.chat.completions.create({
+            model: 'o3',
+            messages: [
+               { role: 'system', content: reviewPrompt },
+               { role: 'user', content: JSON.stringify(extractedData, null, 2) }
+            ],
+            response_format: { type: 'json_object' },
+         })
+
+         const result = JSON.parse(response.choices[0].message.content)
+
+         log.info({ annotation: result.annotation }, 'OCR data review complete.')
+         
+         return result
+
+      } catch (error) {
+         log.error(error, 'Error reviewing OCR data:')
          throw error
       }
    }
