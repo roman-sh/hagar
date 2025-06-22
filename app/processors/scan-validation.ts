@@ -29,7 +29,7 @@ export async function scanValidationProcessor(
       content: {
          file_id: fileId, // OpenAI file_id from the document
          docId,
-         phone,
+         phone,   // TODO: redundant?
          filename
       },
       storeId,

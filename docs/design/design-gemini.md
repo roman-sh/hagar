@@ -72,7 +72,7 @@ Hagar™ is an AI-powered inventory management system that transforms physical d
 
 ### A. Multi-Model AI Strategy (OpenAI)
 
-*   **Text Model (`gpt-4.1-mini`)**: Orchestrates the conversation, understands user intent, selects appropriate tools, and formats responses. It maintains the conversation history (text-only for efficiency).
+*   **Text Model (`gpt-4.1`)**: Orchestrates the conversation, understands user intent, selects appropriate tools, and formats responses. It maintains the conversation history (text-only for efficiency).
 *   **Visual Model (`o3`)**: Used by tools like `validateDeliveryNote` and `visualInspect`. It analyzes the PDF content (via `file_id`) based on prompts from the text model, often returning structured JSON based on a predefined schema.
 *   **Audio Model (`gpt-4o-transcribe`)**: Used by the `audio.transcribe` service to convert WhatsApp voice messages into text.
 
@@ -111,7 +111,42 @@ Hagar™ is an AI-powered inventory management system that transforms physical d
 
 ---
 
-## Flow 6: Inventory Matching & Update (Implementation Plan)
+## Flow 6: OCR Extraction & AI-Assisted Correction
+
+This flow begins after a document has successfully passed the initial `scan_validation` stage and is queued for the `ocr_extraction` pipeline step. Its purpose is to convert the document image into structured, validated data, with a human-in-the-loop for quality assurance.
+
+### A. Automated OCR & Data Sanitation (`ocr_extraction` Processor)
+
+*   **Job Activation**: A Bull queue worker picks up the `ocr_extraction` job.
+*   **High-Resolution OCR**: The processor sends the document PDF to a high-resolution OCR service to extract all line items into a structured JSON array, where each object represents a page.
+*   **Automated AI Review**: The raw OCR output is immediately passed to a specialized, non-conversational AI model guided by the `ocr-review.md` prompt. This AI acts as a data sanitation layer:
+    *   **Structural Integrity**: Its most critical task is to handle multi-page documents. It uses the header row of the first page as the canonical header and ensures it is present on all subsequent pages, inserting it if necessary. It also identifies and **deletes** entire pages that have a different, incompatible structure, re-numbering subsequent pages to maintain sequence.
+    *   **Transcription Correction**: It reviews data for common OCR mistakes (e.g., "I" for "1", "O" for "0") and corrects them if it has high confidence.
+*   **Annotated Handoff**: The sanitation AI returns the cleaned data along with a natural-language `annotation` that summarizes all actions taken (e.g., "Added headers to page 2") and explicitly lists any issues it could not resolve (e.g., "Row 5 has an unreadable quantity"). The processor then saves this result.
+
+### B. AI-Mediated User Review & Correction
+
+Based on the content of the `annotation`, the process forks:
+
+*   **Path 1: Fully Automated (No Issues)**
+    *   If the annotation indicates the data is clean or was successfully auto-corrected, the processor calls the `finalizeOcrExtraction` tool directly. The job is marked "completed," and the document proceeds to the `inventory_update` stage without any human involvement.
+
+*   **Path 2: Human-in-the-Loop (Unresolved Issues)**
+    *   If the annotation flags unresolved issues, the processor does not complete the job. Instead, it triggers the main conversational AI by adding a message to the user's conversation with an action to `review_ocr_annotation`.
+    *   The conversational AI (guided by `generic.md`) is now responsible for resolving the issues. It uses tools to:
+        1.  `getOcrData`: Retrieve the partially cleaned data.
+        2.  Present the problem to the user on WhatsApp, using the annotation for context.
+        3.  Work with the user to fix the data conversationally.
+        4.  Once resolved, call `finalizeOcrExtraction` with the final, corrected data.
+
+### C. Completion and Persistence
+
+*   The `finalizeOcrExtraction` tool marks the Bull job as "completed", passing the final, validated data as the job's return value.
+*   The `ocr_extraction` field in the MongoDB `scans` document is updated with the status "completed" and the structured line-item data. This data is now ready for the final `inventory_update` stage.
+
+---
+
+## Flow 7: Inventory Matching & Update (Implementation Plan)
 
 This section details the revised design for the `inventory_update` pipeline stage. It uses a robust, pluggable architecture where each supported back-office inventory system is a self-contained module.
 
