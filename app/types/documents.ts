@@ -55,6 +55,16 @@ export interface StoreDocument extends BaseDocument {
    deviceId: string
    phone: string
    pipeline: QueueKey[] // Array of queue steps from QueueKey type
+   backoffice: {
+      url: string
+      username: string
+      password: string
+      token?: string
+   }
+   catalog: {
+      lastSync?: Date
+      hash?: string
+   }
 }
 
 
