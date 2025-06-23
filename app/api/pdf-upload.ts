@@ -1,94 +1,38 @@
-import { PutObjectCommand } from '@aws-sdk/client-s3'
-import { s3Client } from '../connections/s3.js'
-import { db } from '../connections/mongodb'
 import { Context } from 'hono'
-import { Collection } from 'mongodb'
-import { ScanDocument, StoreDocument } from '../types/documents'
-import { DocType } from '../config/constants'
-import { pipeline } from '../services/pipeline'
-import { openai } from '../connections/openai'
 import { database } from '../services/db'
+import { document } from '../services/document'
 
 export const pdfUploadHandler = async (c: Context) => {
-   // Parse the multipart form data with Hono's built-in types
+   // Parse the multipart form data
    const body = await c.req.parseBody()
-
-   // Get the file from the parsed body using Web standard File type
    const file = body.file as File
 
-   // Get the file details
+   // Get file details
    const fileBuffer = await file.arrayBuffer()
-   const filename = file.name.replace(/\s+/g, '_')
+   const filename = file.name
    const contentType = file.type
 
-   // Get raspberry pi device id from query params
-   const deviceId = c.req.query('deviceId')!
-   log.info({ deviceId, file: file.name }, 'Received file from device')
+   // Get device and store details
+   const deviceId = c.req.query('deviceId')
+   const { storeId } = await database.getStoreByDevice(deviceId)
 
-   // Sanitize filename for S3 key to avoid spaces in URLs
-   const s3Key = `tmp/${deviceId}/${filename}`
-
-   // Upload to S3
-   const uploadCommand = new PutObjectCommand({
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key: s3Key,
-      Body: new Uint8Array(fileBuffer), // Convert ArrayBuffer to Uint8Array for S3
-      ContentType: contentType
-   })
-
-   await s3Client.send(uploadCommand)
-   log.info({ s3Key }, 'File uploaded to S3')
-
-   // Get the storeId for the device
-   const { storeId } = await database.getStoreByDevice(deviceId) as unknown as StoreDocument
-
-   // Upload to OpenAI Files API
-   const openaiFile = await openai.files.create({
-      file,
-      purpose: 'user_data'
-   })
-   log.info(
-      { file: openaiFile.filename, fileId: openaiFile.id },
-      'File uploaded to openai'
-   )
-   // openaiFile: {
-   //    "object": "file",
-   //    "id": "file-KLgKoWqGpaBe3gWcBjqFC8",
-   //    "purpose": "user_data",
-   //    "filename": "invoice_4.pdf",
-   //    "bytes": 437025,
-   //    "created_at": 1746999973,
-   //    "expires_at": null,
-   //    "status": "processed",
-   //    "status_details": null
-   //  }
-
-   // Create MongoDB document
-   const doc: ScanDocument = {
-      _id: `${DocType.SCAN}:${storeId}:${filename}`,
-      type: DocType.SCAN,
+   // Onboard the document using the new service
+   const result = await document.onboard({
+      fileBuffer: Buffer.from(fileBuffer),
+      filename,
+      contentType,
       storeId,
-      fileId: openaiFile.id,
-      filename: filename,
-      contentType: contentType,
-      url: `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`,
-      createdAt: new Date()
-   }
+      channel: 'scanner',
+      author: 'scanner'
+   })
 
-   // Insert document into MongoDB
-   const collection: Collection<ScanDocument> = db.collection('scans')
-   const { insertedId } = await collection.insertOne(doc)
-   log.info({ docId: insertedId }, 'Document inserted into MongoDB')
-
-   // Start the processing pipeline for the new document
-   // We don't await this because it's not a blocker for the HTTP response
-   pipeline.start(insertedId)
+   log.info({ deviceId, file: filename, docId: result.docId }, 'File from device onboarded')
 
    return c.json(
       {
          message: 'PDF uploaded successfully',
-         docId: doc._id,
-         url: doc.url
+         docId: result.docId,
+         url: result.url
       },
       201
    )

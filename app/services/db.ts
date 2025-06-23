@@ -1,6 +1,7 @@
 import { db } from '../connections/mongodb'
 import { StoreDocument, MessageDocument, ScanDocument, JobRecord } from '../types/documents'
 import { OCR_EXTRACTION } from '../config/constants'
+import { redisClient } from '../connections/redis'
 
 
 /**
@@ -28,14 +29,28 @@ export const database = {
    },
 
 
-   getStoreByPhone: async (phone: string): Promise<StoreDocument> => {
-      const storeDoc = await db.collection<StoreDocument>('stores').findOne({ phone })
+   getStoreIdByPhone: async (phone: string): Promise<StoreDocument['storeId']> => {
+      const cacheKey = `storeId:phone:${phone}`
+      const cachedStoreId = await redisClient.get(cacheKey)
 
-      if (!storeDoc) {
-         // TODO: Set up a demo store for unregistered phones
-         throw new Error(`Store not found for phone: ${phone}`)
+      if (cachedStoreId) {
+         log.debug({ phone }, 'Store ID found in cache')
+         return cachedStoreId
       }
-      return storeDoc
+
+      const { storeId } = await db.collection<StoreDocument>('stores')
+         .findOne({ phone }, { projection: { storeId: 1 } })
+
+      if (!storeId) {
+         // TODO: Set up a demo store for unregistered phones
+         throw new Error(`StoreId not found for phone: ${phone}`)
+      }
+
+      // Cache the store ID for 24 hours
+      await redisClient.set(cacheKey, storeId, 'EX', 60 * 60 * 24)
+      log.debug({ phone }, 'Store ID cached in Redis')
+
+      return storeId
    },
 
 

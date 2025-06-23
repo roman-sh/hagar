@@ -35,6 +35,8 @@ export interface ScanDocument extends BaseDocument {
    filename: string
    contentType: string
    url: string
+   author: 'scanner' | string
+   channel: 'scanner' | 'whatsapp'
    
    // Optional queue processing results
    [SCAN_VALIDATION]?: JobRecord

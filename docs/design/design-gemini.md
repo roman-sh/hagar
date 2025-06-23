@@ -32,19 +32,28 @@ Hagar™ is an AI-powered inventory management system that transforms physical d
 *   **Mechanism**: The Python script on the Raspberry Pi uploads the generated PDF directly to the backend Node.js server via an HTTP POST request to the `/api/pdf-upload` endpoint.
 *   **Identification**: The Raspberry Pi's unique serial number is included as a query parameter (`deviceId`) for store identification.
 
+### C. Direct Upload via WhatsApp
+
+*   **Mechanism**: Store managers can also upload delivery notes by sending a PDF file directly to the system's WhatsApp number.
+*   **Processing**: An inbound message processor (`inbound-messages-bee.ts`) detects messages with PDF attachments (`message.type === 'document'`).
+*   **Identification**: The user's phone number is used to look up their associated `storeId`. Their WhatsApp name is used as the `author` for the document.
+
 ---
 
-## Flow 2: Backend Reception & Initial Storage
+## Flow 2: Backend Reception & Unified Onboarding
 
-### A. API Handling (Node.js + Hono)
+This flow describes how documents from all ingestion channels are processed and stored in a consistent manner.
 
-*   **Endpoint**: The `/api/pdf-upload` endpoint in the Node.js backend (built with Hono framework) receives the multipart form data containing the PDF file and `deviceId`.
+### A. Centralized Onboarding Service (`document.onboard`)
+
+*   **Unified Entry Point**: All document uploads, whether from the Raspberry Pi (via `/api/pdf-upload`) or WhatsApp (via the message processor), are routed to a single, centralized `document.onboard` service. This ensures consistent processing for all incoming files.
+*   **Arguments**: This service accepts a standardized object containing the `fileBuffer`, `filename`, `contentType`, `storeId`, `channel` ('scanner' or 'whatsapp'), and `author`.
 
 ### B. Multi-Layer Storage Strategy
 
 1.  **AWS S3**: The PDF file buffer is immediately uploaded to an AWS S3 bucket. This provides durable, scalable, and cost-effective long-term storage for the original document.
 2.  **OpenAI Files API**: The same file buffer is also uploaded to the OpenAI Files API. This makes the file accessible to OpenAI's AI models for analysis. OpenAI returns a `file_id`.
-3.  **MongoDB**: Metadata about the scan (including the S3 URL, OpenAI `file_id`, `storeId` (mapped from `deviceId`), filename, etc.) is stored in a `scans` collection in MongoDB.
+3.  **MongoDB**: Metadata about the scan (including the S3 URL, OpenAI `file_id`, `storeId`, `channel`, `author`, filename, etc.) is stored in a `scans` collection in MongoDB.
     *   The document `_id` in MongoDB is a composite key like `scan:<storeId>:<filename>`, providing a direct link between the stored data and the physical scan.
 
 *   **Design Rationale**: This triple-storage approach ensures data persistence (S3), optimized AI accessibility (OpenAI Files), and fast metadata querying (MongoDB).

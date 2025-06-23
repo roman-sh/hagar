@@ -5,6 +5,8 @@ import { audio } from '../services/audio'
 import { database } from '../services/db'
 import { messageStore } from '../services/message-store'
 import BeeQueue from 'bee-queue'
+import { document } from '../services/document'
+import { Message } from 'whatsapp-web.js'
 
 /**
  * Process an inbound message job using Bee queues
@@ -14,71 +16,85 @@ import BeeQueue from 'bee-queue'
 export async function inboundMessagesBeeProcessor(
    job: BeeQueue.Job<MessageRef>
 ): Promise<BaseJobResult> {
-   log.debug({ jobId: job.id, messageId: job.data.messageId }, 'Starting inbound message processing')
-
+   const
+      messageId = job.data.messageId,
+      jobId = job.id
+   
+   log.debug({ jobId, messageId }, 'Starting inbound message processing')
+   
    try {
       // Retrieve the original message object from the store
-      const message = messageStore.get(job.data.messageId)
-
+      const message = messageStore.get(messageId)
       const phone = message.from.split('@')[0] // Extract phone number from WhatsApp ID
-
-      // Process the message content
-      let content
+      const contact = await message.getContact()
+      const author = (contact.name || contact.pushname || phone).replace(/[\s<|\\/>]/g, '_')
+      const storeId = await database.getStoreIdByPhone(phone)
+      let content: Message['body'] | undefined
 
       switch (message.type) {
-         case 'chat':
+         case 'document': {
+            const media = await message.downloadMedia()
+            if (media.mimetype === 'application/pdf') {
+               await document.onboard({
+                  fileBuffer: Buffer.from(media.data, 'base64'),
+                  filename: media.filename,
+                  contentType: media.mimetype,
+                  storeId,
+                  channel: 'whatsapp',
+                  author
+               })
+               log.info({ phone, author, file: media.filename }, 'PDF from WhatsApp onboarded')
+               return { success: true, message: 'Document onboarded successfully.' }
+            } else {
+               throw new Error('Unsupported file type. Please send a PDF document.')
+            }
+         }
+
+         case 'chat': {
             content = message.body
             break
+         }
 
          case 'audio':
-         case 'ptt':
+         case 'ptt': {
             const media = await message.downloadMedia()
             content = await audio.transcribe(media)
             break
+         }
 
-         case 'image':
-            break
+         case 'image': {
+            // break
+         }
 
-         // TODO: add support for pdf files
-
-         default:
-            log.error('Unhandled message type:', message.type)
+         default: {
+            throw new Error(`Unsupported message type: ${message.type}`)
+         }
       }
 
-      // Get contact name using the original message object
-      const contact = await message.getContact()
-      const name = (contact.name || contact.pushname || phone).replace(/[\s<|\\/>]/g, '_')
-      
-      log.info({ 
-         // phone, 
-         name, 
-         // messageType: message.type,
-         content: content 
-      }, 'INCOMING MESSAGE')
+      log.info({ name: author, content }, 'INCOMING MESSAGE')
 
-      const { storeId } = await database.getStoreByPhone(phone)
-
-      // Save to chat history before passing to LLM
       await db.collection('messages').insertOne({
          type: 'message',
          role: 'user',
          phone,
-         name,
+         name: author,
          content,
          storeId,
          createdAt: new Date()
       })
 
-      // Set debounce key with 1-second expiration
-      // If multiple messages arrive, this keeps extending the timeout
       setGptTrigger({ phone, storeId })
 
       return {
          success: true,
          message: 'Message processed'
       }
-
-   } finally {
+   }
+   catch (error) {
+      log.error(error, `Failed to process inbound message`, { jobId, messageId })
+      throw error // Re-throw to fail the job in the queue
+   }
+   finally {
       // Clean up message from store
       messageStore.delete(job.data.messageId)
    }
