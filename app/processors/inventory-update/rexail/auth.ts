@@ -5,11 +5,6 @@ import puppeteer from 'puppeteer'
 import { Db } from 'mongodb'
 import { updateStoreToken } from './token'
 
-const log = {
-   info: (obj: any, msg?: string) => console.log(obj, msg || ''),
-   error: (obj: any, msg?: string) => console.error(obj, msg || ''),
-   debug: (obj: any, msg?: string) => console.log(obj, msg || '')
-}
 
 /**
  * Uses Puppeteer to log in to the back-office and retrieve a new authentication token.
@@ -24,9 +19,7 @@ const log = {
 export async function getAuthToken(storeId: string, db: Db = dbConnection): Promise<string> {
    const store = await db.collection<StoreDocument>('stores').findOne({ storeId })
 
-   if (!store) {
-      throw new Error(`Store not found for storeId: ${storeId}`)
-   }
+   if (!store) throw new Error(`Store not found for storeId: ${storeId}`)
 
    log.info({ storeId }, 'Launching Puppeteer to authenticate and fetch a new token.')
 

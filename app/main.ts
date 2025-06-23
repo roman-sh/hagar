@@ -14,22 +14,16 @@ import { Message } from "whatsapp-web.js"
 import { messageStore } from './services/message-store.js'
 import { phoneQueueManager } from './services/phone-queues-manager.js'
 
-
-process.on('SIGINT', shutdown)
-process.on('SIGTERM', shutdown)
-
-try {
-   log.info('Application starting')
+export async function buildApp() {
+   log.info('Building application...')
    
-   // Initialize database connection
+   // Initialize database connections
    await initializeDatabase()
    await initializeRedis()
    await initializeS3()
 
-   // Initialize WhatsApp client
+   // Initialize WhatsApp client, queues, etc.
    await client.initialize()
-
-   // Initialize all queues with their processors
    initializeQueues()
    initializeDebouncer()
 
@@ -68,27 +62,36 @@ try {
       return c.json({ error: 'Internal server error' }, 500)
    })
 
-   const PORT = process.env.PORT || 3000
-
-   // Start the Node.js server
-   serve({
-      fetch: app.fetch,
-      port: Number(PORT)
-   })
-
-   log.info(`Server running on port ${PORT}`)
-   log.info(
-      `Bull Dashboard available at http://localhost:${PORT}${bullBoardConfig.basePath}`
-   )
-   log.info('Application started successfully')
-
-} catch (error) {
-   log.error(error as Error, 'Application Error')
-   await shutdown('ERROR')
+   return { app, bullBoardConfig }
 }
 
-log.info('Application ready - WhatsApp client is stable on Node.js!')
+async function startServer() {
+   process.on('SIGINT', shutdown)
+   process.on('SIGTERM', shutdown)
 
+   try {
+      const { app, bullBoardConfig } = await buildApp()
+      const PORT = process.env.PORT || 3000
+
+      // Start the Node.js server
+      serve({
+         fetch: app.fetch,
+         port: Number(PORT)
+      })
+
+      log.info(`Server running on port ${PORT}`)
+      log.info(
+         `Bull Dashboard available at http://localhost:${PORT}${bullBoardConfig.basePath}`
+      )
+      log.info('Application started successfully')
+
+   } catch (error) {
+      log.error(error as Error, 'Application Startup Error')
+      await shutdown('ERROR')
+   }
+
+   log.info('Application ready - WhatsApp client is stable on Node.js!')
+}
 
 // --- Final Graceful Shutdown Handler ---
 async function shutdown(signal: string) {
@@ -111,4 +114,18 @@ async function shutdown(signal: string) {
       clearTimeout(shutdownTimeout)
       process.exit(signal === 'ERROR' ? 1 : 0)
    }
+}
+
+// --- Conditional Server Start ---
+// The following block allows this file to have a dual personality.
+//
+// 1. If the file is executed directly (e.g., `node dist/bundle.js` or `tsx app/main.ts`),
+//    the `if` condition will be true, and the `startServer()` function will be called,
+//    launching the application server as normal. This is the behavior for `npm start` and `npm run dev`.
+//
+// 2. If the file is imported by another module (e.g., a test file like `test/rexail-api.test.ts`),
+//    the `if` condition will be false. This allows us to import `buildApp` to create an
+//    in-memory instance of the application for testing without actually starting a live server.
+if (import.meta.url.startsWith('file://') && process.argv[1] === new URL(import.meta.url).pathname) {
+   startServer()
 }

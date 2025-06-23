@@ -6,6 +6,7 @@
   "scripts": {
     "start": "npm run build && node dist/bundle.js",
     "dev": "sh -c 'redis-cli ping > /dev/null 2>&1 || (echo \"Starting Redis...\" && redis-server --daemonize yes); tsx app/main.ts'",
+    "test": "vitest",
     "build": "node build.mjs",
     "typecheck": "tsc --noEmit"
   },
