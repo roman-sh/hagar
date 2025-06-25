@@ -1,5 +1,5 @@
 import { queuesMap, QueueKey } from '../queues'
-import { JOB_STATUS } from '../config/constants'
+import { INVENTORY_UPDATE, JOB_STATUS } from '../config/constants'
 import { JobRecord } from '../types/documents'
 import { database } from './db'
 import { Job } from 'bull'
@@ -12,11 +12,9 @@ export const pipeline = {
     * @param {string} docId - The unique ID of the document.
     */
    start: async (docId: string) => {
-      const { pipeline } = await database.getStoreByDocId(docId)
-
-      const firstQueue = pipeline[0]
-      await queuesMap[firstQueue].add({} as JobData, { jobId: docId })
-      log.info(`Document ${docId} queued to ${firstQueue}`)
+      const { pipeline, system } = await database.getStoreByDocId(docId)
+      const firstQueue = pipeline[0] as QueueKey
+      await enqueueJob(docId, firstQueue, system, 'queued')
    },
 
    /**
@@ -40,18 +38,19 @@ export const pipeline = {
       await database.recordJobProgress(docId, queueName, result)
 
       // 3. Get the pipeline for the store
-      const { pipeline } = await database.getStoreByDocId(docId)
+      const { pipeline, system } = await database.getStoreByDocId(docId)
 
       // 4. Find the next queue and add the job
       const currentIndex = pipeline.findIndex((q) => q === queueName)
       const nextQueue = pipeline[currentIndex + 1]
 
       if (nextQueue) {
-         await queuesMap[nextQueue].add({} as JobData, { jobId: docId })
-         log.info(`Document ${docId} advanced to next queue: ${nextQueue}`)
+         await enqueueJob(docId, nextQueue, system, 'advanced')
          return nextQueue
       } else {
-         log.info(`Document ${docId} has completed the final stage of its pipeline.`)
+         log.info(
+            `Document ${docId} has completed the final stage of its pipeline.`
+         )
          return null
       }
    },
@@ -60,12 +59,43 @@ export const pipeline = {
 // --- Helper Functions ---
 
 /**
+ * Adds a job to the specified queue, handling named processors for INVENTORY_UPDATE.
+ * @param docId The document ID.
+ * @param queueName The name of the queue to add the job to.
+ * @param system The system name, used for named processors.
+ * @param action The type of action for logging purposes.
+ */
+async function enqueueJob(
+   docId: string,
+   queueName: QueueKey,
+   system: string,
+   action: 'queued' | 'advanced'
+) {
+   const logPrefix =
+      action === 'queued'
+         ? 'queued to'
+         : 'advanced to'
+   if (queueName === INVENTORY_UPDATE) {
+      // using named job to induce the related system's processor
+      await queuesMap[queueName].add(system, {} as JobData, { jobId: docId })
+      log.info(
+         `Document ${docId} ${logPrefix} ${queueName} with processor '${system}'`
+      )
+   } else {
+      await queuesMap[queueName].add({} as JobData, { jobId: docId })
+      log.info(`Document ${docId} ${logPrefix} ${queueName}`)
+   }
+}
+
+/**
  * Finds which Bull queue a job belongs to by checking all registered queues.
  * This is necessary because Bull doesn't have a global "find job" method.
  * @param {string} jobId The ID of the job to find.
  * @returns {Promise<{job: Job, queueName: QueueKey}>}
  */
-async function findActiveJob(jobId: string): Promise<{ job: Job; queueName: QueueKey }> {
+async function findActiveJob(
+   jobId: string
+): Promise<{ job: Job; queueName: QueueKey }> {
    for (const queueName in queuesMap) {
       const qk = queueName as QueueKey
       const queue = queuesMap[qk]

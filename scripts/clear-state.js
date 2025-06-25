@@ -10,6 +10,7 @@ const db = mongoClient.db(process.env.MONGO_DB_NAME, { ignoreUndefined: true })
 // Clear MongoDB collections
 await db.collection('messages').deleteMany({})
 await db.collection('scans').deleteMany({})
+await db.collection('products').deleteMany({})
 
 // Clear Bull queues from Redis
 exec('redis-cli --scan --pattern "bull:*" | xargs redis-cli DEL')

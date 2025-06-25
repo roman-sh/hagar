@@ -1,7 +1,8 @@
 import { db } from '../connections/mongodb'
-import { StoreDocument, MessageDocument, ScanDocument, JobRecord } from '../types/documents'
+import { StoreDocument, MessageDocument, ScanDocument, JobRecord, ProductDocument } from '../types/documents'
 import { OCR_EXTRACTION } from '../config/constants'
 import { redisClient } from '../connections/redis'
+import { FindOptions } from 'mongodb'
 
 
 /**
@@ -53,6 +54,62 @@ export const database = {
       return storeId
    },
 
+   getStore: async (storeId: string): Promise<StoreDocument> => {
+      const store = await db.collection<StoreDocument>('stores').findOne({ storeId })
+      if (!store) throw new Error(`Store not found for storeId: ${storeId}`)
+      return store
+   },
+
+   // only update fields we send as data, like this:
+   // updateStore(storeId, { catalog: { hash: newHash } })
+   updateStore: async (storeId: string, data: Partial<StoreDocument>): Promise<void> => {
+      await db.collection('stores').updateOne({ storeId }, { $set: data })
+   },
+
+   /**
+    * Retrieves all product documents for a specific store.
+    * @param {string} storeId - The ID of the store.
+    * @param {FindOptions<ProductDocument>} [options={}] - Optional MongoDB find options (e.g., for projection).
+    * @returns {Promise<ProductDocument[]>} A promise that resolves to an array of product documents.
+    */
+   getProductsByStoreId: async (storeId: string, options: FindOptions<ProductDocument> = {}): Promise<ProductDocument[]> => {
+      return db.collection<ProductDocument>('products').find({ storeId }, options).toArray()
+   },
+
+   /**
+    * Performs a batch update to overwrite existing products with new data.
+    * For each provided product document, it finds the corresponding document in the DB
+    * (by storeId and productId) and updates all fields with the new values.
+    * @param {ProductDocument[]} products - An array of product documents to update.
+    * @returns {Promise<void>}
+    */
+   updateProducts: async (products: ProductDocument[]): Promise<void> => {
+      const operations = products.map(product => ({
+         updateOne: {
+            filter: { storeId: product.storeId, productId: product.productId },
+            update: { $set: product },
+         },
+      }))
+
+      await db.collection<ProductDocument>('products').bulkWrite(operations)
+   },
+
+   /**
+    * Deletes multiple products for a specific store based on their product IDs.
+    * @param {string} storeId - The ID of the store from which to delete products.
+    * @param {number[]} productIds - An array of product IDs to delete.
+    * @returns {Promise<void>}
+    */
+   deleteProductsByIds: async (storeId: string, productIds: number[]): Promise<void> => {
+      await db.collection<ProductDocument>('products').deleteMany({
+         storeId,
+         productId: { $in: productIds },
+      })
+   },
+
+   insertProducts: async (products: ProductDocument[]): Promise<void> => {
+      await db.collection<ProductDocument>('products').insertMany(products)
+   },
 
    getMessages: async (phone: string, storeId: string): Promise<MessageDocument[]> => {
       // TODO: Add a limit by message count or from_date or maybe do summorization

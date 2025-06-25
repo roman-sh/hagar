@@ -1,10 +1,20 @@
 // Document type definitions for MongoDB collections
 import { QueueKey } from '../queues'
-import { DocType, SCAN_VALIDATION, OCR_EXTRACTION, DATA_APPROVAL, INVENTORY_UPDATE } from '../config/constants'
-import { ChatCompletionMessage, ChatCompletionMessageParam, ChatCompletionMessageToolCall } from 'openai/resources/chat/completions'
+import { SCAN_VALIDATION, OCR_EXTRACTION, DATA_APPROVAL, INVENTORY_UPDATE } from '../config/constants'
+import { ChatCompletionMessage, ChatCompletionMessageToolCall } from 'openai/resources/chat/completions'
 import { JobStatus } from 'bull'
 import { ObjectId } from 'mongodb'
 
+/**
+ * Enum for document types, to be used in discriminator key
+ * This is used to differentiate between different document types in the same collection
+ */
+export enum DocType {
+   STORE = 'store',
+   SCAN = 'scan',
+   MESSAGE = 'message',
+   PRODUCT = 'product',
+}
 
 /**
  * Base job result interface
@@ -63,10 +73,26 @@ export interface StoreDocument extends BaseDocument {
    }
    catalog: {
       lastSync?: Date
-      hash?: string
+      syncCooldownMinutes?: number
    }
 }
 
+/**
+ * Product document representing a product from a store's catalog
+ */
+export interface ProductDocument extends BaseDocument {
+   _id: string
+   type: DocType.PRODUCT
+   storeId: string
+   productId: number
+   name: string
+   description: string | null
+   unit?: string
+   barcodes: string[]
+   embedding: number[]
+   fingerprint: string
+   createdAt: Date
+}
 
 /**
  * Message document representing a message in DB
@@ -94,3 +120,5 @@ export interface MessageDocument extends BaseDocument {
    tool_call_id?: string  // for tool messages
    name?: string  // optional participant name
 }
+
+export type AnyDocument = StoreDocument | ScanDocument | ProductDocument | MessageDocument

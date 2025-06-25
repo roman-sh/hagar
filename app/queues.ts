@@ -13,8 +13,8 @@ import {
    scanValidationProcessor,
    ocrExtractionProcessor,
    dataApprovalProcessor,
-   inventoryUpdateProcessor
-} from './processors/index'
+} from './processors'
+import { inventoryProcessors } from './processors/inventory-update'
 import { outboundMessagesProcessor } from './processors/outbound-messages-bee'
 import { database } from './services/db'
 import { JobRecord } from './types/documents'
@@ -51,11 +51,13 @@ export const queuesMap: Record<QueueKey, Queue<JobData>> = {
 export const outboundMessagesQueue = new BeeQueue<OutboundMessageJobData>(OUTBOUND_MESSAGES)
 
 // Separate processor maps
-const processorsMap: Record<QueueKey, ProcessCallbackFunction<JobData>> = {
+const processorsMap: Record<
+   Exclude<QueueKey, typeof INVENTORY_UPDATE>,
+   ProcessCallbackFunction<JobData>
+> = {
    [SCAN_VALIDATION]: scanValidationProcessor,
    [OCR_EXTRACTION]: ocrExtractionProcessor,
    [DATA_APPROVAL]: dataApprovalProcessor,
-   [INVENTORY_UPDATE]: inventoryUpdateProcessor
 }
 
 /**
@@ -64,12 +66,21 @@ const processorsMap: Record<QueueKey, ProcessCallbackFunction<JobData>> = {
 export function initializeQueues(): void {
    log.info('Initializing queues with processors...')
 
-   // Set up pipeline queues
-   for (const [queueName, queue] of Object.entries(queuesMap)) {
-      const processor = processorsMap[queueName as QueueKey]
-      queue.process(100000, processor) // 100K concurrency - tested safe limit for waiting jobs
+   // Set up pipeline queues with static, unnamed processors
+   for (const queueName of Object.keys(processorsMap) as Array<keyof typeof processorsMap>) {
+      const queue = queuesMap[queueName]
+      const processor = processorsMap[queueName]
+      queue.process(100000, processor)
       setupQueueEventHandlers(queue, queueName)
    }
+
+   // Register named processors for the inventory update queue
+   const inventoryUpdateQueue = queuesMap[INVENTORY_UPDATE]
+   for (const [name, processor] of Object.entries(inventoryProcessors)) {
+      inventoryUpdateQueue.process(name, 100000, processor)
+      log.info(`Registered inventory update processor: '${name}'`)
+   }
+   setupQueueEventHandlers(inventoryUpdateQueue, INVENTORY_UPDATE)
 
    // Set up outbound message Bee queue
    outboundMessagesQueue.process(1, outboundMessagesProcessor)
@@ -100,6 +111,14 @@ function setupQueueEventHandlers(
       log.info(
          { jobId: job.id, queueName },
          'Job started processing'
+      )
+   })
+
+   // Log when jobs fail
+   queue.on(JOB_STATUS.FAILED, (job: Job<any>, error: Error) => {
+      log.error(
+         error,
+         `Job ${job.id} failed in queue ${queueName}`
       )
    })
 

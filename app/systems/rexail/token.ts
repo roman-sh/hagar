@@ -1,6 +1,6 @@
-import { db } from '../../../connections/mongodb'
-import { redisClient } from '../../../connections/redis'
-import { StoreDocument } from '../../../types/documents'
+import { db } from '../../connections/mongodb'
+import { redisClient } from '../../connections/redis'
+import { StoreDocument } from '../../types/documents'
 
 const TOKEN_CACHE_PREFIX = 'token:rexail:'
 

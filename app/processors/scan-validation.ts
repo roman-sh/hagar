@@ -2,9 +2,8 @@ import { Job } from 'bull'
 import { JobData, BaseJobResult } from '../types/jobs'
 import { db } from '../connections/mongodb'
 import { OptionalId } from 'mongodb'
-import { MessageDocument, ScanDocument, StoreDocument } from '../types/documents'
+import { MessageDocument, DocType } from '../types/documents'
 import { gpt } from '../services/gpt'
-import { DocType } from '../config/constants'
 import { database } from '../services/db'
 
 

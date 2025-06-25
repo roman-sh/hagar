@@ -1,7 +1,6 @@
 import { db } from '../connections/mongodb'
 import { client } from '../connections/whatsapp'
 import WAWebJS from 'whatsapp-web.js'
-import { DocType } from '../config/constants'
 import { ScanDocument } from '../types/documents'
 import { SendPdfToUserArgs } from '../types/tool-args'
 import { ChatCompletionTool } from 'openai/resources'

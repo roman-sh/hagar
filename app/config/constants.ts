@@ -18,12 +18,4 @@ export const JOB_STATUS = {
    PAUSED: 'paused'
 } as const
 
-// Document type constants
-export enum DocType {
-   SCAN = 'scan',
-   STORE = 'store',
-   PRODUCT = 'product',
-   UPDATE = 'update',
-   MESSAGE = 'message'
-}
 

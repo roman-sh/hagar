@@ -1,12 +1,11 @@
 /// <reference path="../types/declarations.d.ts" />
 
-import { MessageDocument } from "../types/documents"
+import { MessageDocument, DocType } from "../types/documents"
 import { database } from "./db"
 import { openai } from "../connections/openai"
 import { ChatCompletionMessage, ChatCompletionMessageParam, ChatCompletionMessageToolCall, ChatCompletionToolMessageParam } from "openai/resources/chat/completions"
 import { functions, tools } from "../tools/tools"
 import { db } from "../connections/mongodb"
-import { DocType } from "../config/constants"
 import { outboundMessagesQueue } from "../queues"
 import { json } from "../utils/json"
 import systemPrompt from '../prompts/generic.md'

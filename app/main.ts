@@ -17,13 +17,14 @@ import { phoneQueueManager } from './services/phone-queues-manager.js'
 export async function buildApp() {
    log.info('Building application...')
    
-   // Initialize database connections
-   await initializeDatabase()
-   await initializeRedis()
-   await initializeS3()
+   // Initialize services
+   await Promise.all([
+      initializeDatabase(),
+      initializeRedis(),
+      initializeS3(),
+      client.initialize(), // whatsapp client
+   ])
 
-   // Initialize WhatsApp client, queues, etc.
-   await client.initialize()
    initializeQueues()
    initializeDebouncer()
 

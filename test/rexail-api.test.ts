@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { Hono } from 'hono'
 import { buildApp } from '../app/main'
-import rexailApi from '../app/processors/inventory-update/rexail/api'
-import { updateStoreToken } from '../app/processors/inventory-update/rexail/token'
+import rexailApi from '../app/systems/rexail/api'
+import { updateStoreToken } from '../app/systems/rexail/token'
 
 describe('Rexail API Interceptor', () => {
    let app: Hono

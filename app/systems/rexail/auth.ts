@@ -1,8 +1,7 @@
-import { db as dbConnection } from '../../../connections/mongodb'
-import { StoreDocument } from '../../../types/documents'
-import { cryptoService } from '../../../services/crypto'
+import { StoreDocument } from '../../types/documents'
+import { cryptoService } from '../../services/crypto'
 import puppeteer from 'puppeteer'
-import { Db } from 'mongodb'
+import { db } from '../../connections/mongodb'
 import { updateStoreToken } from './token'
 
 
@@ -13,10 +12,9 @@ import { updateStoreToken } from './token'
  * It performs a fresh login and saves the new token to the database and cache.
  *
  * @param {string} storeId - The ID of the store to get a token for.
- * @param {Db} [db=dbConnection] - The database instance to use.
  * @returns {Promise<string>} A promise that resolves to a new, valid auth token.
  */
-export async function getAuthToken(storeId: string, db: Db = dbConnection): Promise<string> {
+export async function getAuthToken(storeId: string): Promise<string> {
    const store = await db.collection<StoreDocument>('stores').findOne({ storeId })
 
    if (!store) throw new Error(`Store not found for storeId: ${storeId}`)
