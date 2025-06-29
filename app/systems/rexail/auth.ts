@@ -71,7 +71,7 @@ export async function getAuthToken(storeId: string): Promise<string> {
 
       // 4. Save the new token to the database and cache
       await updateStoreToken(storeId, token)
-      log.info({ storeId }, 'Successfully saved new auth token')
+      log.debug({ storeId }, 'Successfully saved new auth token')
 
       return token
 

@@ -93,7 +93,7 @@ function executeTools(toolCalls: ChatCompletionMessageToolCall[]) {
       
       log.info({
          tool: call.function.name,
-         arguments: args,
+         ...args,
          callId: call.id
       }, 'TOOL CALL')
       

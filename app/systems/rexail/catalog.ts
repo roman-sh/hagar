@@ -60,12 +60,12 @@ export const catalog = {
          }
 
          // 2. Get the fresh catalog from Rexail and existing from DB
-         log.info({ storeId }, 'Fetching fresh catalog from API and existing from DB.')
+         log.debug({ storeId }, 'Fetching fresh catalog from API and existing from DB.')
          const [rexailProducts, existingProducts] = await Promise.all([
             this.fetch(storeId),
             database.getProductsByStoreId(storeId, { projection: { productId: 1, fingerprint: 1 } }),
          ])
-         log.info({ storeId, rexailCount: rexailProducts.length, dbCount: existingProducts.length }, 'Catalogs fetched.')
+         log.debug({ storeId, rexailCount: rexailProducts.length, dbCount: existingProducts.length }, 'Catalogs fetched.')
 
          // 3. Create maps for efficient lookups
          const existingProductsMap = new Map(existingProducts.map(p => [p.productId, p.fingerprint]))
@@ -103,18 +103,18 @@ export const catalog = {
             return
          }
 
-         log.info({ storeId, add: toAdd.length, update: toUpdate.length, remove: toDeleteIds.length }, 'Catalog changes identified.')
+         log.debug({ storeId, add: toAdd.length, update: toUpdate.length, remove: toDeleteIds.length }, 'Catalog changes identified.')
 
          // 5. Process embeddings for new and updated products
          const productsToEmbed = [...toAdd, ...toUpdate]
          let embeddingsMap = new Map<number, number[]>()
 
          if (productsToEmbed.length > 0) {
-            log.info({ storeId, count: productsToEmbed.length }, 'Generating embeddings for new/updated products...')
+            log.debug({ storeId, count: productsToEmbed.length }, 'Generating embeddings for new/updated products...')
             const embedStart = Date.now()
             const textsToEmbed = productsToEmbed.map(p => p.fullName)
             const embeddings = await createEmbedding(textsToEmbed)
-            log.info({ storeId, durationMs: Date.now() - embedStart }, 'Finished generating embeddings.')
+            log.debug({ storeId, durationMs: Date.now() - embedStart }, 'Finished generating embeddings.')
             
             embeddingsMap = new Map(productsToEmbed.map((p, i) => [p.nonObfuscatedId, embeddings[i]]))
          }
@@ -126,20 +126,20 @@ export const catalog = {
          if (toAdd.length > 0) {
             const newDocs = toAdd.map(p => transformProduct(p, storeId, embeddingsMap.get(p.nonObfuscatedId)!))
             promises.push(database.insertProducts(newDocs))
-            log.info({ storeId, count: newDocs.length }, 'Adding new products.')
+            log.debug({ storeId, count: newDocs.length }, 'Adding new products.')
          }
 
          // Update existing products
          if (toUpdate.length > 0) {
             const updatedDocs = toUpdate.map(p => transformProduct(p, storeId, embeddingsMap.get(p.nonObfuscatedId)!))
             promises.push(database.updateProducts(updatedDocs))
-            log.info({ storeId, count: updatedDocs.length }, 'Updating existing products.')
+            log.debug({ storeId, count: updatedDocs.length }, 'Updating existing products.')
          }
 
          // Delete stale products
          if (toDeleteIds.length > 0) {
             promises.push(database.deleteProductsByIds(storeId, toDeleteIds))
-            log.info({ storeId, count: toDeleteIds.length }, 'Deleting stale products.')
+            log.debug({ storeId, count: toDeleteIds.length }, 'Deleting stale products.')
          }
 
          await Promise.all(promises)

@@ -3,6 +3,11 @@ import { StoreDocument, MessageDocument, ScanDocument, JobRecord, ProductDocumen
 import { OCR_EXTRACTION } from '../config/constants'
 import { redisClient } from '../connections/redis'
 import { FindOptions } from 'mongodb'
+import {
+   JobFailedPayload,
+   JobWaitingPayloads,
+   JobCompletedPayloads,
+} from '../types/jobs'
 
 
 /**
@@ -13,6 +18,18 @@ type ScanAndStoreDetails
    = Pick<ScanDocument, 'storeId' | 'fileId' | 'filename' | 'url'>
    & Pick<StoreDocument, 'phone'>
 
+
+interface RecordJobProgressArgsBase {
+   jobId: string
+   queueName: string
+}
+
+type RecordJobProgressArgs = RecordJobProgressArgsBase & (
+   | { status: 'active' }
+   | ({ status: 'failed' } & JobFailedPayload)
+   | ({ status: 'waiting' } & JobWaitingPayloads)
+   | ({ status: 'completed' } & JobCompletedPayloads)
+)
 
 
 export const database = {
@@ -125,20 +142,29 @@ export const database = {
 
    /**
     * Write job progress to scan document
-    * @param jobId - The job ID (document _id)
-    * @param queueName - The queue name to use as field name
-    * @param jobRecord - The job record to store
+    * @param {object} params - The parameters for recording job progress.
+    * @param {string} params.jobId - The job ID (document _id).
+    * @param {string} params.queueName - The queue name to use as a field name.
+    * @param {JobRecord['status']} params.status - The status of the job.
+    * @param {object} [params.payload={}] - The data to store with the record.
     */
-   recordJobProgress: async (jobId: string, queueName: string, jobRecord: JobRecord): Promise<void> => {
+   recordJobProgress: async (args: RecordJobProgressArgs): Promise<void> => {
+      const { jobId, queueName, status, ...payload } = args
+
       // Fetch the specific job field from the document first to get existing data.
       const doc = await db.collection<ScanDocument>('scans').findOne(
          { _id: jobId },
          { projection: { [queueName]: 1 } }
       )
+      const existingData = doc?.[queueName as keyof ScanDocument] as JobRecord | undefined
 
       // Merge existing data with the new record to only update the fields that are provided.
-      const existingData = doc?.[queueName as keyof ScanDocument] as JobRecord | undefined
-      const mergedRecord = { ...existingData, ...jobRecord }
+      const mergedRecord = {
+         ...existingData,
+         status,
+         timestamp: new Date(),
+         ...payload,
+      }
 
       await db.collection<ScanDocument>('scans').updateOne(
          { _id: jobId },
@@ -223,17 +249,23 @@ export const database = {
     * Retrieves the OCR data from a specific scan document.
     *
     * @param docId - The ID of the scan document.
-    * @returns A promise that resolves to the OCR data.
+    * @returns A promise that resolves to the OCR data. The shape of the data is defined by payload types like {@link OcrExtractionJobCompletedPayload}.
     * @throws An error if the document or the OCR data cannot be found.
     */
    getOcrDataFromScan: async (docId: string) => {
-      const data = (
-         await db.collection<ScanDocument>('scans').findOne({ _id: docId })
-      )?.[OCR_EXTRACTION]?.data
+      try {
+         const scan = await db.collection<ScanDocument>('scans').findOne(
+            { _id: docId },
+            { projection: { [OCR_EXTRACTION]: 1 } }
+         )
 
-      if (!data) {
-         throw new Error(`Could not find existing OCR data for document ${docId}.`)
+         /** The data location is defined by {@link OcrExtractionJobCompletedPayload}. */
+         // @ts-ignore - We are intentionally bypassing type checks for direct access.
+         return scan[OCR_EXTRACTION].data
       }
-      return data
-   },
+      catch (error) {
+         log.error(error, `Could not find OCR data for document ${docId}.`)
+         throw error
+      }
+   }
 }

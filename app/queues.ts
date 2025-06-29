@@ -101,12 +101,11 @@ function setupQueueEventHandlers(
    // Log when jobs become active (start processing)
    queue.on(JOB_STATUS.ACTIVE, async (job: Job<any>) => {
       // Update document to mark job as active/processing
-      const activeResult: JobRecord = {
+      await database.recordJobProgress({
+         jobId: job.id as string,
+         queueName,
          status: JOB_STATUS.ACTIVE,
-         timestamp: new Date()
-      }
-
-      await database.recordJobProgress(job.id as string, queueName, activeResult)
+      })
 
       log.info(
          { jobId: job.id, queueName },
@@ -115,7 +114,16 @@ function setupQueueEventHandlers(
    })
 
    // Log when jobs fail
-   queue.on(JOB_STATUS.FAILED, (job: Job<any>, error: Error) => {
+   queue.on(JOB_STATUS.FAILED, async (job: Job<any>, error: Error) => {
+      // Record the failure in the database
+
+      await database.recordJobProgress({
+         jobId: job.id as string,
+         queueName,
+         status: JOB_STATUS.FAILED,
+         error: error.message,
+      })
+
       log.error(
          error,
          `Job ${job.id} failed in queue ${queueName}`

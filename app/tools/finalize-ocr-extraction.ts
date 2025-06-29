@@ -22,10 +22,12 @@ export const finalizeOcrExtractionSchema: ChatCompletionTool = {
                items: {
                   type: 'object',
                   properties: {
+                     table: { type: 'number' },
                      page: { type: 'number' },
+                     header: { type: 'array', items: { type: 'string' } },
                      rows: { type: 'array', items: { type: 'array', items: { type: 'string' } } },
                   },
-                  required: ['page', 'rows'],
+                  required: ['table', 'page', 'header', 'rows'],
                }
             },
          },
@@ -51,11 +53,10 @@ export async function finalizeOcrExtraction(args: FinalizeOcrExtractionArgs) {
    try {
       // Use the provided data, or fall back to fetching it from the database.
       const data = args.data ?? (await database.getOcrDataFromScan(docId))
-      // Count items while skipping headers
-      const itemsCount = data.reduce((acc: number, page: { rows: any[] }) =>
-         acc + page.rows.slice(1).length, 0)
+      // Count items by summing the number of rows in each table object
+      const itemsCount = data.reduce((acc: number, table: { rows: any[] }) => acc + table.rows.length, 0)
 
-      const nextStage = await pipeline.advance(docId, data)
+      const nextStage = await pipeline.advance(docId, { data })
 
       log.info({ docId, nextStage, itemsCount }, `OCR extraction finalized.`)
 

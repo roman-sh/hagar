@@ -1,4 +1,5 @@
 import { Job } from 'bull'
+import { TableData } from '../services/ocr'
 
 /**
  * Common job data interface used across all queue processors
@@ -20,17 +21,6 @@ export interface MessageRef {
    messageId: string
 }
 
-/**
- * Interface for inbound message job data
- */
-// export interface InboundMessageData {
-//    content: string | { [key: string]: any }
-//    storeId: string
-//    name: string
-//    phone: string
-//    createdAt: Date
-// }
-
 export type OutboundMessageJobData = {
    phone: string
    content: string | null
@@ -43,3 +33,49 @@ export interface BaseJobResult {
    success: boolean
    message: string
 }
+
+
+// --- Specific Job Payloads ---
+
+export type ScanValidationJobCompletedPayload = {
+   invoiceNo: string
+   supplier: string
+   date: string
+   pages: number
+   annotation: string
+}
+
+export type OcrExtractionJobCompletedPayload = {
+   data: TableData[]
+   /**
+    * The annotation from the initial OCR review (for debugging purposes). 
+    * This field is preserved from the 'waiting' state record when the 'completed'
+    * state is merged into it by the `database.recordJobProgress` function.
+    */
+   annotation?: string
+}
+
+export type InventoryUpdateJobCompletedPayload = {
+   [key: string]: any
+}
+
+export type OcrExtractionJobWaitingPayload = {
+   data: TableData[]
+   annotation: string
+}
+
+
+// --- Granular Payloads for Job States ---
+
+export type JobFailedPayload = {
+   error: string
+}
+
+export type JobWaitingPayloads =
+   | OcrExtractionJobWaitingPayload
+   // Future waiting payloads can be added here
+
+export type JobCompletedPayloads =
+   | ScanValidationJobCompletedPayload
+   | OcrExtractionJobCompletedPayload
+   | InventoryUpdateJobCompletedPayload

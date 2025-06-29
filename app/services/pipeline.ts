@@ -24,18 +24,28 @@ export const pipeline = {
     */
    advance: async (docId: string, recordData: any) => {
       // 1. Find the active job across all queues
-      const jobDetails = await findActiveJob(docId)
-      const { job, queueName } = jobDetails!
+      const { job, queueName } = await findActiveJob(docId)
 
       // 2. Mark the job as completed with final data
       const result: JobRecord = {
          status: JOB_STATUS.COMPLETED,
-         timestamp: new Date(),
-         data: recordData,
+         ...recordData,
       }
+
       await job.progress(100)
+
+      // The `true` argument sets `ignoreLock`. This is essential because our processors
+      // hang and hold a lock on the job. `ignoreLock: true` allows this external
+      // `advance` function to override the lock and forcibly mark the job as
+      // completed, which is the core of our tool-driven workflow.
       await job.moveToCompleted(result as any, true)
-      await database.recordJobProgress(docId, queueName, result)
+
+      await database.recordJobProgress({
+         jobId: docId,
+         queueName,
+         status: JOB_STATUS.COMPLETED,
+         ...recordData,
+      })
 
       // 3. Get the pipeline for the store
       const { pipeline, system } = await database.getStoreByDocId(docId)

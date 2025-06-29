@@ -2,8 +2,12 @@
 import { QueueKey } from '../queues'
 import { SCAN_VALIDATION, OCR_EXTRACTION, DATA_APPROVAL, INVENTORY_UPDATE } from '../config/constants'
 import { ChatCompletionMessage, ChatCompletionMessageToolCall } from 'openai/resources/chat/completions'
-import { JobStatus } from 'bull'
 import { ObjectId } from 'mongodb'
+import {
+   JobFailedPayload,
+   JobWaitingPayloads,
+   JobCompletedPayloads,
+} from './jobs'
 
 /**
  * Enum for document types, to be used in discriminator key
@@ -19,11 +23,23 @@ export enum DocType {
 /**
  * Base job result interface
  */
-export interface JobRecord {
-   status: JobStatus
+export interface BaseJobRecord {
    timestamp: Date
-   data?: any
 }
+
+/**
+ * Defines the structure of a job record stored in the database.
+ * This is a discriminated union based on the `status` field.
+ * It uses intersections (`&`) to create a "flattened" structure where
+ * the properties of a job's state (e.g., `error` for a failed job)
+ * are at the same level as `status` and `timestamp`.
+ */
+export type JobRecord = BaseJobRecord & (
+   | { status: 'active' }
+   | ({ status: 'failed' } & JobFailedPayload)
+   | ({ status: 'waiting' } & JobWaitingPayloads)
+   | ({ status: 'completed' } & JobCompletedPayloads)
+)
 
 /**
  * Base document interface with common fields for all document types
@@ -51,7 +67,6 @@ export interface ScanDocument extends BaseDocument {
    // Optional queue processing results
    [SCAN_VALIDATION]?: JobRecord
    [OCR_EXTRACTION]?: JobRecord
-   [DATA_APPROVAL]?: JobRecord
    [INVENTORY_UPDATE]?: JobRecord
 }
 

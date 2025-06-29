@@ -11,13 +11,15 @@ const client = new DocumentAnalysisClient(endpoint, new AzureKeyCredential(apiKe
 
 // --- Type Definitions ---
 
-export interface PageData {
+export interface TableData {
+   table: number
    page: number
+   header: string[]
    rows: string[][]
 }
 
 export interface OcrReviewResult {
-   data: PageData[]
+   data: TableData[]
    annotation: string
 }
 
@@ -39,54 +41,43 @@ const sanitize = (text: string) => {
  * It assumes one table per page and formats the output into a simple list
  * of page objects, each containing its rows. This format is ideal for GPT processing.
  * @param {AnalyzeResult} analysisResult - The raw result from the Azure service.
- * @returns {PageData[]} An array of page data objects.
- * [
- *    {
- *       "page": 1,
- *       "rows": [
- *          ["#", "תיאור", "כמות"],
- *          ["1", "תפוח עץ גאלה אורגני", "15"]
- *       ]
- *    },
- *    {
- *       "page": 2,
- *       "rows": [
- *          ["50", "שוקולד מריר 70% אורגני", "25"]
- *       ]
- *    }
- * ]
+ * @returns {TableData[]} An array of page data objects.
  */
-const extractPageData = (analysisResult: AnalyzeResult): PageData[] => {
-   if (!analysisResult.tables || analysisResult.tables.length === 0) {
-      return []
+const extractPageData = (analysisResult: AnalyzeResult): TableData[] => {
+   if (!analysisResult.tables?.length) return []
+
+   const tablesData: TableData[] = []
+
+   for (const [tableIndex, table] of analysisResult.tables.entries()) {
+      const newTable: TableData = {
+         table: tableIndex + 1,
+         page: table.boundingRegions[0].pageNumber,
+         header: new Array(table.columnCount).fill(''),
+         rows: [],
+      }
+
+      // Populate header and rows from cells
+      for (const cell of table.cells) {
+         if (cell.kind === 'columnHeader') {
+            newTable.header[cell.columnIndex] = sanitize(cell.content)
+         } else if (cell.kind === 'content') {
+            // Ensure the row exists
+            if (!newTable.rows[cell.rowIndex]) {
+               newTable.rows[cell.rowIndex] = new Array(table.columnCount).fill('')
+            }
+            newTable.rows[cell.rowIndex][cell.columnIndex] = sanitize(cell.content)
+         }
+      }
+
+      // Filter out empty rows that were created for headers
+      newTable.rows = newTable.rows.filter(row => row)
+
+      if (newTable.rows.length) {
+         tablesData.push(newTable)
+      }
    }
 
-   const pageDataList: PageData[] = []
-
-   // Iterate over each table, treating its index as the page number.
-   analysisResult.tables.forEach((table, index) => {
-      const { columnCount, cells } = table
-      const pageNumber = index + 1 // Use table index as page number
-      const rows: string[][] = []
-
-      const currentRow: string[] = []
-      cells.forEach((cell, cellIndex) => {
-         currentRow.push(sanitize(cell.content))
-
-         // When we reach the end of a row, add it to the rows list and reset.
-         if ((cellIndex + 1) % columnCount === 0) {
-            rows.push([...currentRow])
-            currentRow.length = 0 // Clear the row for the next iteration.
-         }
-      })
-
-      pageDataList.push({
-         page: pageNumber,
-         rows,
-      })
-   })
-
-   return pageDataList
+   return tablesData
 }
 
 
@@ -96,9 +87,9 @@ export const ocr = {
    /**
     * Analyzes an invoice from a public URL and extracts a list of page data.
     * @param {string} url - The public URL of the document to analyze.
-    * @returns {Promise<PageData[]>} The extracted data as an array of page objects.
+    * @returns {Promise<TableData[]>} The extracted data as an array of page objects.
     */
-   async extractInvoiceDataFromUrl(url: string): Promise<PageData[]> {
+   async extractInvoiceDataFromUrl(url: string): Promise<TableData[]> {
       try {
          log.info(`Analyzing document from URL: ${url}`)
 
@@ -121,10 +112,10 @@ export const ocr = {
 
    /**
     * Reviews and corrects OCR data using a powerful reasoning model.
-    * @param {PageData[]} extractedData - The raw data extracted by Azure OCR.
+    * @param {TableData[]} extractedData - The raw data extracted by Azure OCR.
     * @returns {Promise<OcrReviewResult>} An object containing the corrected data and a natural language annotation.
     */
-   async review(extractedData: PageData[]): Promise<OcrReviewResult> {
+   async review(extractedData: TableData[]): Promise<OcrReviewResult> {
       try {
          log.info('Reviewing and correcting OCR data with o3 model...')
 

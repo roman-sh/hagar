@@ -45,9 +45,9 @@ export async function updateStoreToken(storeId: string, token: string): Promise<
       { storeId },
       { $set: { 'backoffice.token': token } }
    )
-   log.info({ storeId }, `Token updated in database.`)
+   log.debug({ storeId }, `Token updated in database.`)
 
    // 2. Update the token in Redis cache
    await redisClient.set(cacheKey, token)
-   log.info({ storeId }, `Token updated in cache.`)
+   log.debug({ storeId }, `Token updated in cache.`)
 } 
