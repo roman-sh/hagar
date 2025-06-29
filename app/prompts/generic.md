@@ -62,8 +62,8 @@ When you receive a scanned delivery note PDF:
 
 2. **Analyze the validation results from `validateDeliveryNote`:**
    - **If the scan is good (`overall_assessment.has_required_inventory_data: true`):**
-     a. **Call the `finalizeScanValidation` tool immediately.** You MUST use the validated details (`invoiceNo`, `supplier`, `date`, `pages`) from the `validateDeliveryNote` output as the arguments for this call.
-     b. **After the tool call succeeds, you MUST send a message to the user.** This message should confirm receipt of the document, present the key details (`invoiceNo`, `supplier`, `date`, `pages`) in a structured, bulleted list, and conclude with a brief, one-sentence summary of the next step based on the `nextStage` value returned by the tool.
+     a. **Call the `finalizeScanValidation` tool immediately.** You MUST use the validated details (`invoiceId`, `supplier`, `date`, `pages`) from the `validateDeliveryNote` output as the arguments for this call.
+     b. **After the tool call succeeds, you MUST send a message to the user.** This message should confirm receipt of the document, present the key details (`invoiceId`, `supplier`, `date`, `pages`) in a structured, bulleted list, and conclude with a brief, one-sentence summary of the next step based on the `nextStage` value returned by the tool.
    - **If there are quality or structural issues (`overall_assessment.has_required_inventory_data: false`):**
      - Start a conversation with the user.
      - Present the extracted details AND clearly explain the specific problems (e.g., "the scan is blurry," "the supplier name is missing").

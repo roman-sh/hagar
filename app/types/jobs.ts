@@ -38,7 +38,7 @@ export interface BaseJobResult {
 // --- Specific Job Payloads ---
 
 export type ScanValidationJobCompletedPayload = {
-   invoiceNo: string
+   invoiceId: string
    supplier: string
    date: string
    pages: number

@@ -15,7 +15,7 @@ export const finalizeScanValidationSchema: ChatCompletionTool = {
                type: 'string',
                description: 'The database ID of the document being processed.'
             },
-            invoiceNo: {
+            invoiceId: {
                type: 'string',
                description: 'The certificate/document number extracted from the document'
             },
@@ -36,7 +36,7 @@ export const finalizeScanValidationSchema: ChatCompletionTool = {
                description: 'Detailed explanation of why the scan passed validation'
             }
          },
-         required: ['docId', 'invoiceNo', 'supplier', 'date', 'pages', 'annotation']
+         required: ['docId', 'invoiceId', 'supplier', 'date', 'pages', 'annotation']
       }
    }
 }

@@ -11,7 +11,7 @@ export interface SendPdfToUserArgs {
 
 export interface finalizeScanValidationArgs {
    docId: string
-   invoiceNo: string
+   invoiceId: string
    supplier: string
    date: string
    pages: number
