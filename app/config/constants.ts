@@ -1,4 +1,5 @@
 import { JobStatus } from "bull"
+import { InvoiceMeta } from "../types/inventory"
 
 // Queue names as string constants
 export const SCAN_VALIDATION = 'scan_validation'
@@ -14,8 +15,33 @@ export const JOB_STATUS = {
    FAILED: 'failed',
    ACTIVE: 'active',
    WAITING: 'waiting',
-   STALLED: 'stalled',
-   PAUSED: 'paused'
+   PAUSED: 'paused',
+   DELAYED: 'delayed',
+} as const satisfies {
+   [K in JobStatus as Uppercase<K>]: JobStatus
+}
+
+// Metadata keys as string constants
+export const META_KEYS = [
+   'invoiceId',
+   'supplier',
+   'date',
+   'pages',
+] as const satisfies readonly (keyof InvoiceMeta)[]
+
+// Inventory update headers
+export const H = {
+   ROW_NUMBER: 'row_number',
+   SUPPLIER_ITEM_NAME: 'supplier_item_name',
+   QUANTITY: 'quantity',
+   UNIT: 'unit',
+   BARCODE: 'barcode',
+   INVENTORY_ITEM_ID: 'inventory_item_id',
+   INVENTORY_ITEM_NAME: 'inventory_item_name',
+   MATCH_TYPE: 'match_type'
 } as const
+
+
+export const INVENTORY_UPDATE_HEADERS = Object.values(H)
 
 

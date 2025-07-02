@@ -1,13 +1,17 @@
 import { db } from '../connections/mongodb'
 import { StoreDocument, MessageDocument, ScanDocument, JobRecord, ProductDocument } from '../types/documents'
-import { OCR_EXTRACTION } from '../config/constants'
+import { OCR_EXTRACTION, SCAN_VALIDATION, META_KEYS } from '../config/constants'
 import { redisClient } from '../connections/redis'
 import { FindOptions } from 'mongodb'
 import {
    JobFailedPayload,
    JobWaitingPayloads,
    JobCompletedPayloads,
+   ScanValidationJobCompletedPayload,
+   OcrExtractionJobCompletedPayload,
 } from '../types/jobs'
+import { TableData } from './ocr'
+import { InvoiceMeta } from '../types/inventory'
 
 
 /**
@@ -249,7 +253,7 @@ export const database = {
     * Retrieves the OCR data from a specific scan document.
     *
     * @param docId - The ID of the scan document.
-    * @returns A promise that resolves to the OCR data. The shape of the data is defined by payload types like {@link OcrExtractionJobCompletedPayload}.
+    * @returns A promise that resolves to the OCR data.
     * @throws An error if the document or the OCR data cannot be found.
     */
    getOcrDataFromScan: async (docId: string) => {
@@ -259,13 +263,56 @@ export const database = {
             { projection: { [OCR_EXTRACTION]: 1 } }
          )
 
-         /** The data location is defined by {@link OcrExtractionJobCompletedPayload}. */
-         // @ts-ignore - We are intentionally bypassing type checks for direct access.
-         return scan[OCR_EXTRACTION].data
+         const { data } = scan[OCR_EXTRACTION] as OcrExtractionJobCompletedPayload
+         if (!data) throw new Error(`No OCR data found for document ${docId}.`)
+         return data
       }
       catch (error) {
-         log.error(error, `Could not find OCR data for document ${docId}.`)
+         log.error(error, `Could not retrieve OCR data for document ${docId}.`)
          throw error
+      }
+   },
+
+
+   /**
+  * Retrieves the metadata from a specific scan document.
+  *
+  * @param docId - The ID of the scan document.
+  * @returns A promise that resolves to the metadata.
+  * @throws An error if the document cannot be found.
+  */
+   getMetadataFromScan: async (docId: string): Promise<InvoiceMeta> => {
+      try {
+         // 1. Fetch ONLY the scan-validation sub-document that holds invoice metadata
+         const scan = await db.collection<ScanDocument>('scans').findOne(
+            { _id: docId },
+            { projection: { [SCAN_VALIDATION]: 1 } }
+         )
+
+         // 2. Coerce the nested object to our expected payload type
+         const payload = scan[SCAN_VALIDATION] as ScanValidationJobCompletedPayload
+
+         // 3. DRY *three-line* build of the meta object -----------------
+         //
+         //     • META_KEYS  → ['invoiceId', 'supplier', 'date', 'pages']
+         //     • .map(...)  → [ ['invoiceId', payload.invoiceId], … ]
+         //     • fromEntries → { invoiceId: '…', supplier: '…', date: '…', pages: n }
+         //
+         //     The final `as InvoiceMeta` is safe because META_KEYS is declared to
+         //     satisfy `readonly (keyof InvoiceMeta)[]`, so the resulting object
+         //     can have *only* those four keys.
+         //
+         return Object.fromEntries(
+            META_KEYS.map(
+               k => [k, payload[k as keyof ScanValidationJobCompletedPayload]]
+            )
+         ) as InvoiceMeta
+      }
+      catch (error) {
+         const errorMessage = `Could not retrieve metadata for document ${docId}.`
+         log.error(error, errorMessage)
+         // Preserve the original error as the cause (Node 16+ supports the 'cause' option).
+         throw new Error(errorMessage, { cause: error })
       }
    }
 }

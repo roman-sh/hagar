@@ -1,5 +1,6 @@
 import { Job } from 'bull'
 import { TableData } from '../services/ocr'
+import { InvoiceMeta } from './inventory'
 
 /**
  * Common job data interface used across all queue processors
@@ -37,13 +38,8 @@ export interface BaseJobResult {
 
 // --- Specific Job Payloads ---
 
-export type ScanValidationJobCompletedPayload = {
-   invoiceId: string
-   supplier: string
-   date: string
-   pages: number
-   annotation: string
-}
+export type ScanValidationJobCompletedPayload =
+   InvoiceMeta & { annotation: string }
 
 export type OcrExtractionJobCompletedPayload = {
    data: TableData[]

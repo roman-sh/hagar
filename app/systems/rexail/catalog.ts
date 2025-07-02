@@ -110,11 +110,11 @@ export const catalog = {
          let embeddingsMap = new Map<number, number[]>()
 
          if (productsToEmbed.length > 0) {
-            log.debug({ storeId, count: productsToEmbed.length }, 'Generating embeddings for new/updated products...')
+            log.info({ storeId, count: productsToEmbed.length }, 'Generating embeddings for new/updated products...')
             const embedStart = Date.now()
             const textsToEmbed = productsToEmbed.map(p => p.fullName)
             const embeddings = await createEmbedding(textsToEmbed)
-            log.debug({ storeId, durationMs: Date.now() - embedStart }, 'Finished generating embeddings.')
+            log.info({ storeId, durationMs: Date.now() - embedStart }, 'Finished generating embeddings.')
             
             embeddingsMap = new Map(productsToEmbed.map((p, i) => [p.nonObfuscatedId, embeddings[i]]))
          }

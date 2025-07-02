@@ -1,22 +1,18 @@
-import { PageData } from '../services/ocr'
-
 /**
  * Shared type definitions for tool function arguments
  */
+
+import { InvoiceMeta } from "./inventory"
 
 export interface SendPdfToUserArgs {
    phone: string
    fileId: string
 }
 
-export interface finalizeScanValidationArgs {
+export interface finalizeScanValidationArgs extends InvoiceMeta {
    docId: string
-   invoiceId: string
-   supplier: string
-   date: string
-   pages: number
    annotation: string
-}
+ }
 
 export interface ScanValidationFailArgs {
    file_id: string

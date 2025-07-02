@@ -25,5 +25,13 @@ export const DEFAULT_SYNC_COOLDOWN_MINUTES = 30
  */
 export const EMBEDDING_MODEL_CONFIG = {
    model: 'text-embedding-3-large',
-   dimensions: 256,
+   // dimensions: 256,
 }
+
+/**
+ * The model identifier for auxiliary, non-conversational AI tasks.
+ * This model is used for powerful, one-off operations like data structuring,
+ * review, and mapping, where a direct, structured response is required.
+ * We use 'o3' for these tasks, as it is cost-effective and powerful.
+ */
+export const AUX_MODEL = 'o3'
