@@ -50,7 +50,6 @@ export const inventory = {
                type: 'json_schema',
                json_schema: getHeaderMappingSchema()
             },
-            temperature: 0 // We want deterministic output for the same input
          })
 
          const result = response.choices[0].message.content
@@ -126,7 +125,8 @@ const getHeaderMappingSchema = (): ResponseFormatJSONSchema.JSONSchema => {
       schema: {
          type: 'object',
          properties,
-         required: SUPPLIER_HEADERS_TO_FIND
+         required: SUPPLIER_HEADERS_TO_FIND,
+         additionalProperties: false
       }
    }
 }

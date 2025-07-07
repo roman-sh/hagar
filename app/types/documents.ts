@@ -18,6 +18,7 @@ export enum DocType {
    SCAN = 'scan',
    MESSAGE = 'message',
    PRODUCT = 'product',
+   JOB_ARTEFACT = 'job_artefact',
 }
 
 /**
@@ -136,4 +137,20 @@ export interface MessageDocument extends BaseDocument {
    name?: string  // optional participant name
 }
 
-export type AnyDocument = StoreDocument | ScanDocument | ProductDocument | MessageDocument
+/**
+ * Job artefact document for storing job-related data blobs.
+ * The _id of this document is the same as the originating ScanDocument _id.
+ * It uses a mapped type over QueueKey to dynamically create properties
+ * for each pipeline stage (e.g., 'scan_validation', 'inventory_update'),
+ * allowing each stage to store multiple, keyed data artefacts.
+ */
+export type JobArtefactDocument = {
+   _id: string
+   type: DocType.JOB_ARTEFACT
+   storeId: string
+   createdAt: Date
+} & {
+   [K in QueueKey]?: Record<string, any>
+}
+
+export type AnyDocument = StoreDocument | ScanDocument | ProductDocument | MessageDocument | JobArtefactDocument

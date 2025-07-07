@@ -24,11 +24,32 @@ export async function ocrExtractionProcessor(
 
    // 2. Call the OCR service to get raw data
    const rawData = await ocr.extractInvoiceDataFromUrl(url)
+
+   // Save extracted raw data as a job artefact
+   await database.saveArtefact({
+      docId,
+      storeId,
+      queue: OCR_EXTRACTION,
+      key: 'extracted-data-from-azure-ocr',
+      data: rawData,
+   })
+
    await job.progress(33)
 
    // 3. Call the review service to get corrected data and annotation
    const { data: reviewedData, annotation } = await ocr.review(rawData)
 
+   // Save data after o3 review / modification as a job artefact
+   await database.saveArtefact({
+      docId,
+      storeId,
+      queue: OCR_EXTRACTION,
+      key: 'data-after-o3-review',
+      data: { data: reviewedData, annotation },
+      flatten: true,
+   })
+
+   // TODO: remove this. This data is now available as a job artefact.
    // 4. Save the final reviewed data and annotation
    const reviewedRecord: JobRecord & { annotation: string } = {
       status: JOB_STATUS.WAITING, // The job is now waiting for user/AI validation

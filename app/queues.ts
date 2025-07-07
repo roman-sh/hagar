@@ -113,6 +113,21 @@ function setupQueueEventHandlers(
       )
    })
 
+   // Log when jobs are completed
+   queue.on('global:completed', (jobId: string, result: string) => {
+      let parsedResult: any
+      try {
+         parsedResult = JSON.parse(result)
+      }
+      catch (e) {
+         parsedResult = result
+      }
+      log.info(
+         { jobId, queueName, result: parsedResult },
+         'Job completed successfully'
+      )
+   })
+
    // Log when jobs fail
    queue.on(JOB_STATUS.FAILED, async (job: Job<any>, error: Error) => {
       // Record the failure in the database

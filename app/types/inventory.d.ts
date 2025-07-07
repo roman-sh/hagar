@@ -1,6 +1,7 @@
 import { type ScanValidationJobCompletedPayload } from './jobs'
 import { type H } from '../config/constants'
 
+
 /**
  * Represents a single, structured item from a supplier's document after parsing.
  * The keys are derived from the master Headers constant for consistency.
@@ -13,7 +14,8 @@ export type InventoryItem = {
    [H.BARCODE]?: string
    [H.INVENTORY_ITEM_ID]?: string // Our internal product ID
    [H.INVENTORY_ITEM_NAME]?: string // Our internal product name
-   [H.MATCH_TYPE]?: 'barcode' | 'name'
+   [H.MATCH_TYPE]?: MatchType
+   candidates?: { productId: string; name: string; unit?: string }[] // for non-exact matches
    pageNumber?: number   // metadata per item
 }
 
@@ -31,3 +33,12 @@ export type InvoiceMeta = {
    date: string
    pages: number
 }
+
+export type PassArgs = {
+   doc: InventoryDocument
+   storeId: string
+   docId: string
+   passName?: MatchType
+}
+
+export type MatchType = 'barcode' | 'barcode-collision' | 'vector' | 'regex'

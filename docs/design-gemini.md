@@ -181,69 +181,42 @@ This flow details how Hagar connects to a back-office system (using Rexail as an
 
 ---
 
-## Flow 8: Inventory Update Architecture
+## Flow 8: Inventory Update & Matching Workflow
 
 This section details the revised design for the `inventory_update` pipeline stage. It uses a robust, pluggable architecture where each supported back-office inventory system is a self-contained module.
 
-### A. Core Architecture: Named Processors & Shared Services
-
-The design is centered around BullMQ's **named processors**, which allows for routing jobs to specific handlers within a single queue, and the use of shared services for common, reusable logic.
+### A. Core Architecture: Pluggable Modules & A Multi-Pass System
+The design uses Bull's **named processors** to route jobs to specific handlers within a single queue, enabling a pluggable architecture for supporting different back-office systems.
 
 *   **Single `inventory_update` Queue**: All inventory-related jobs are pushed to this single queue.
-*   **Job Naming**: A job's `name` property is set to the inventory system it targets (e.g., "rexail"), which directs it to the correct processor.
-*   **System-Specific Processors**: All logic for a given system is encapsulated within its own processor file in `app/processors/inventory-update/` (e.g., `rexail.ts`). On startup, these processors are dynamically registered with the queue. This makes the architecture plug-and-play.
-*   **Shared Services**: Logic that is truly generic across all systems (e.g., the core vector similarity search algorithm) is placed in a shared service (`app/services/product-matcher.ts`) that processors can import and use.
+*   **Job Naming**: A job's `name` property is set to the inventory system it targets (e.g., "rexail"), which directs it to the correct processor handler.
+*   **Standardized Processor, Pluggable Modules**: While each system (like Rexail) has a named processor, the core logic within these processors is standardized. The key to the plug-and-play design lies in system-specific modules that are imported by the processor. For each system, there are dedicated modules for `catalog.sync` and final `inventory.update`. This means the processor itself follows the same sequence of operations for every system, but calls out to the specific implementation for that system's catalog and API.
+*   **Generic Multi-Pass Matching**: The core matching workflow is broken down into a series of modular, system-agnostic "passes" (`barcodePass`, `vectorPass`, `aiPass`). Every processor calls these same passes in the same sequence. This decouples the sophisticated matching logic from the system-specific integration details.
+*   **Future Refinement: The Registry Pattern**: A known limitation of the current approach is that it requires creating a separate, near-identical processor file for each back-office system, violating the DRY (Don't Repeat Yourself) principle. A superior, bundler-friendly solution has been designed and is documented in `docs/registry_pattern.md`. This "Registry Pattern" will allow for a single, generic processor that dynamically uses the correct system-specific modules at runtime, eliminating code duplication and improving maintainability. This is the intended direction for a future refactor.
 
-### B. Processor Workflow Example (`rexail.ts`)
+### B. Processor Workflow Example: The Journey of the Cheese Invoice
 
-The workflow for any given processor is self-contained and follows a clear, two-phase process: syncing and matching.
+To illustrate the architecture in action, let's follow a real invoice (`cheese.pdf`) with 8 line items as it moves through the `rexail` processor.
 
-1.  **Phase 1: On-Demand Catalog Sync (Internal Helper Function)**
-    *   The processor's first action is to call an internal helper function, e.g., `syncRexailCatalog()`.
-    *   This function contains all the logic for syncing the product catalog for that specific system, as detailed in the `Back-Office Integration` flow.
+1.  **Phase 1: On-Demand Catalog Sync**
+    *   **Action**: The processor's first job is to ensure the local product catalog is up-to-date by calling the `catalog.sync` service.
+    *   **Rationale**: The accuracy of all subsequent matching depends on a fresh and complete catalog. The sync is throttled to avoid unnecessary API calls, but for this example, it proceeds, ensuring the local MongoDB `products` collection is a mirror of the Rexail back-office, complete with vector embeddings for all items.
 
-2.  **Phase 2: Product Matching (Internal Helper + Shared Service)**
-    *   Once the sync is complete, the processor calls another internal helper, e.g., `findProductMatches()`.
-    *   This function retrieves the OCR'd line items and the freshly synced product data.
-    *   It then calls the **shared `ProductMatcher` service**, which implements the detailed workflow described in the `Inventory Matching Workflow` section.
-    *   The processor receives the results (e.g., confident, ambiguous, no-match).
+2.  **Phase 2: The Multi-Pass Matching Cascade**
+    *   **Rationale**: The system uses a cascading series of "passes," moving from the most certain matching method to the most sophisticated. This is efficient and maximizes accuracy. An item resolved in an early pass is removed from consideration in later passes.
+    *   **Action (`barcodePass`)**: The processor first sends all 8 items to the `barcodePass`. 7 of the items have barcodes that match a single, unique product in the catalog. They are immediately resolved. One item, "קפרינו רומנו - מנות", has a barcode that is not found in the catalog, so it remains unresolved. If a partial barcode (often the last 7 digits of a full barcode, used for brevity on invoices) were to match multiple products, those products would be added as candidates for the first `aiPass` to resolve.
+    *   **Action (`vectorPass`)**: The single unresolved item is passed to the `vectorPass`. It generates a vector embedding for the name and finds the top 3-5 most semantically similar products, attaching them to the item as a `candidates` array. The purpose of this pass is to efficiently generate a small, relevant set of potential matches for the subsequent AI-driven resolution step.
+    *   **Action (`aiPass`)**: The item, now enriched with its candidate list, proceeds to the `aiPass`. Here, a prompt is constructed showing the AI the original name and its candidates. To provide richer context and help differentiate between items sold by weight versus by unit, both the original item name and the candidate names are enhanced with their unit of measurement where available. The AI is prompted to return its selection in a structured, machine-readable format. It correctly identifies the best match and returns its selection. If the AI determines that no candidate is a suitable match, it is instructed to indicate this, leaving the item unresolved for a subsequent processing step.
+    *   **(Future Enhancement) Regex Fallback**: The design allows for a future enhancement where, if the AI determines all vector candidates are unsuitable, it could be trained to call a `runRegexSearch` tool to perform a keyword-based search as a final attempt before giving up.
 
-3.  **Phase 3: AI-Driven Confirmation & Finalization**
-    *   The processor hands the categorized results to the AI to begin the confirmation dialogue with the user via WhatsApp.
-    *   When the user confirms, the AI calls the `finalizeInventoryUpdate` tool. This tool is now simpler, as it receives the fully reconciled data and is only responsible for constructing the final API payload and sending it to the correct back-office endpoint (e.g., Rexail's `.../create-or-update` endpoint).
+3.  **Phase 3: Finalization**
+    *   **Action**: With all 8 items now resolved (7 by barcode, 1 by the vector/AI flow), the processor can proceed to the finalization stage.
+    *   **Rationale**: The fully resolved data is now ready to be presented to the user for final confirmation, after which it will be sent to the Rexail back-office system to update the official inventory.
 
-This design ensures that adding support for a new inventory system (e.g., "Odoo") is as simple as creating a new `odoo.ts` processor file in the `app/processors/inventory-update/` directory with its own internal sync logic, while reusing the same core matching and AI interaction flows.
-
----
-
-## Flow 9: Inventory Matching Workflow
-
-This flow details the step-by-step logic used within an inventory update processor to match items from a supplier's document against the store's product catalog. It prioritizes accuracy and efficiency by using a multi-layered approach with an AI-driven fallback mechanism.
-
-1.  **Phase 1: Barcode Matching (Authoritative)**
-    *   The processor first extracts all available barcodes from the OCR'd line items.
-    *   It executes a single, efficient query against the `products` collection to find all documents that have a matching barcode in their `barcodes` array.
-    *   These matches are considered definitive and are moved to a "confirmed" list. Unmatched rows are passed to the next phase.
-
-2.  **Phase 2: Vector Search (Candidate Generation)**
-    *   For each remaining (unmatched) line item, the system generates a vector embedding from its name.
-    *   A vector similarity search is performed against the `products` collection to find the top 3-5 most similar products, which become the "candidates" for that item.
-    *   **Pre-processing Note**: Based on testing, it has been observed that weights and measures (e.g., "1 ק״ג", "120 גרם") can pollute the vector search. A simple, non-AI regex will be used to strip these patterns from item names before generating the embedding to improve search quality.
-
-3.  **Phase 3: AI Review & Regex Fallback (AI-in-the-Loop)**
-    *   The original item name and its list of vector search candidates are passed to the main conversational AI.
-    *   The AI is instructed to perform one of the following actions using a set of provided tools:
-        *   **Confirm Match**: If a candidate is a clear match (e.g., "Organic Red Pepper" matches "פלפל אדום אורגני"), the AI confirms it.
-        *   **Request Regex Search**: If all candidates are poor matches (e.g., searching for fresh coriander returns ground spices), the AI is prompted to extract the core keywords (e.g., "coriander") and call a `runRegexSearch` tool. The results of this new database query are returned to the AI for a final decision.
-        *   **Classify Item**: If both vector and regex searches fail to yield a confident match, the AI classifies the item as "New Product" or "Non-Inventory Item" (e.g., "Crate Fee").
-
-4.  **Phase 4: Finalization & User Confirmation**
-    *   The AI presents a summary of its findings to the user on WhatsApp (e.g., "Matched 15 items, found 2 new products, and identified 1 crate fee. Please approve.").
-    *   Upon user confirmation, the `finalizeInventoryUpdate` tool is called. It constructs the final API payload for the back-office system (e.g., Rexail) and sends it.
-
-This workflow ensures high accuracy by using the best tool for each situation—barcodes for certainty, vector search for semantic similarity, and targeted regex search as a smart, AI-guided fallback for complex cases.
+This design ensures that adding support for a new inventory system (e.g., "Odoo") is as simple as creating a new `odoo.ts` processor file in the `app/processors/inventory-update/` directory with its own internal sync logic, while reusing the same core multi-pass matching and AI interaction flows.
 
 ---
+
 ## Summary of Design Achievements
 
 This flow-based architecture achieves:

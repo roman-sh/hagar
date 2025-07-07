@@ -1,6 +1,7 @@
 import { DocumentAnalysisClient, AzureKeyCredential, AnalyzeResult } from '@azure/ai-form-recognizer'
 import { openai } from '../connections/openai'
 import reviewPrompt from '../prompts/ocr-review.md'
+import { AUX_MODEL } from '../config/settings'
 
 // Load environment variables
 const endpoint = process.env.FORM_RECOGNIZER_ENDPOINT
@@ -120,7 +121,7 @@ export const ocr = {
          log.info('Reviewing and correcting OCR data with o3 model...')
 
          const response = await openai.chat.completions.create({
-            model: 'o3',
+            model: AUX_MODEL,
             messages: [
                { role: 'system', content: reviewPrompt },
                { role: 'user', content: JSON.stringify(extractedData, null, 2) }

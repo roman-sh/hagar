@@ -13,20 +13,16 @@ export const DEFAULT_SYNC_COOLDOWN_MINUTES = 30
 
 /**
  * Configuration for the OpenAI embedding model used for product catalog vector search.
- *
- * - `model`: We use `text-embedding-3-large` as it provides the highest accuracy.
- * - `dimensions`: We have explicitly set this to 256. According to OpenAI's benchmarks,
- *   this offers a massive reduction in vector size (from 3072) and cost, while resulting
- *   in only a minor drop in retrieval accuracy (MTEB score 64.6 -> 62.0). This provides
- *   an excellent balance of performance and precision for our use case. If this property
- *   is removed, the model will default to its full 3072 dimensions.
- *
- * @see https://openai.com/blog/new-embedding-models-and-api-updates
+ * Do not reduce the dimensions default of 3072.
  */
 export const EMBEDDING_MODEL_CONFIG = {
    model: 'text-embedding-3-large',
-   // dimensions: 256,
 }
+
+/**
+ * The name of the MongoDB vector search index for product embeddings.
+ */
+export const VECTOR_SEARCH_INDEX_NAME = 'name_embedding_index_3072'
 
 /**
  * The model identifier for auxiliary, non-conversational AI tasks.
@@ -34,4 +30,4 @@ export const EMBEDDING_MODEL_CONFIG = {
  * review, and mapping, where a direct, structured response is required.
  * We use 'o3' for these tasks, as it is cost-effective and powerful.
  */
-export const AUX_MODEL = 'o3'
+export const AUX_MODEL = 'o3' // do not change this

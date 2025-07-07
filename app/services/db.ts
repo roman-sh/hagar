@@ -1,5 +1,5 @@
 import { db } from '../connections/mongodb'
-import { StoreDocument, MessageDocument, ScanDocument, JobRecord, ProductDocument } from '../types/documents'
+import { StoreDocument, MessageDocument, ScanDocument, JobRecord, ProductDocument, JobArtefactDocument } from '../types/documents'
 import { OCR_EXTRACTION, SCAN_VALIDATION, META_KEYS } from '../config/constants'
 import { redisClient } from '../connections/redis'
 import { FindOptions } from 'mongodb'
@@ -10,8 +10,8 @@ import {
    ScanValidationJobCompletedPayload,
    OcrExtractionJobCompletedPayload,
 } from '../types/jobs'
-import { TableData } from './ocr'
 import { InvoiceMeta } from '../types/inventory'
+import { QueueKey } from '../queues'
 
 
 /**
@@ -35,8 +35,51 @@ type RecordJobProgressArgs = RecordJobProgressArgsBase & (
    | ({ status: 'completed' } & JobCompletedPayloads)
 )
 
+interface SaveArtefactArgs {
+   docId: string
+   storeId: string
+   queue: QueueKey
+   key: string
+   data: any
+   flatten?: boolean
+}
+
 
 export const database = {
+   /**
+    * Saves a data blob (artefact) related to a specific job stage.
+    * This function performs an upsert operation on the `job_artefacts` collection.
+    * If a document with the given `docId` doesn't exist, it creates one,
+    * setting the `_id`, `storeId`, and `createdAt` fields.
+    * It then uses dot notation to set the artefact data in a nested object
+    * corresponding to the job stage, ensuring that multiple artefacts for the
+    * same job can be stored without overwriting each other.
+    *
+    * @param {SaveArtefactArgs} args - The arguments for saving the artefact.
+    */
+   saveArtefact: async (
+      { docId, storeId, queue, key, data, flatten = false }: SaveArtefactArgs
+   ): Promise<void> => {
+      const collection = db.collection<JobArtefactDocument>('job_artefacts')
+      key = key.replace(/-/g, '_')
+
+      const payload = flatten
+         ? { timestamp: new Date(), ...data }
+         : { timestamp: new Date(), data }
+
+      const filter = { _id: docId }
+      const update = {
+         $set: { [`${queue}.${key}`]: payload },
+         $setOnInsert: {
+            _id: docId,
+            storeId,
+            createdAt: new Date(),
+         }
+      }
+
+      await collection.updateOne(filter, update, { upsert: true })
+   },
+
    /**
     * Map a deviceId to a storeId
     * @param deviceId - The deviceId to map
