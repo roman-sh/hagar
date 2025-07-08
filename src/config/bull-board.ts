@@ -2,7 +2,7 @@ import { createBullBoard } from '@bull-board/api'
 import { BullAdapter } from '@bull-board/api/bullAdapter.js'
 import { HonoAdapter } from '@bull-board/hono'
 import { serveStatic as nodeServeStatic } from '@hono/node-server/serve-static'
-import { queuesMap } from '../queues.js'
+import { queuesMap } from '../queues-base.js'
 
 export interface BullBoardConfig {
    serverAdapter: HonoAdapter

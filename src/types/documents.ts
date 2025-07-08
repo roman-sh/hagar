@@ -1,5 +1,5 @@
 // Document type definitions for MongoDB collections
-import { QueueKey } from '../queues'
+import { QueueKey } from '../queues-base'
 import { SCAN_VALIDATION, OCR_EXTRACTION, DATA_APPROVAL, INVENTORY_UPDATE } from '../config/constants'
 import { ChatCompletionMessage, ChatCompletionMessageToolCall } from 'openai/resources/chat/completions'
 import { ObjectId } from 'mongodb'

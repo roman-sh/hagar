@@ -1,5 +1,5 @@
 import rexailApi from './api'
-import { RexailObfuscatedCatalogResponse, RexailProduct } from './rexail.d'
+import { RexailObfuscatedCatalogResponse, RexailProduct } from './rexail'
 import { database } from '../../services/db'
 import { DocType, ProductDocument } from '../../types/documents'
 import crypto from 'crypto'

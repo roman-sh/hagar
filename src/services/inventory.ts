@@ -1,6 +1,6 @@
 import { openai } from '../connections/openai'
 import { H } from '../config/constants'
-import headerMappingPrompt from '../prompts/header-mapping.md'
+import headerMappingPrompt from '../prompts/header-mapping.txt'
 import { AUX_MODEL } from '../config/settings'
 import { type ResponseFormatJSONSchema } from 'openai/resources/shared'
 import { type InventoryItem, type InventoryDocument } from '../types/inventory'

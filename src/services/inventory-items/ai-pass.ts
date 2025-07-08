@@ -1,9 +1,9 @@
 import { InventoryDocument, PassArgs } from '../../types/inventory'
 import { openai } from '../../connections/openai'
 import { H, INVENTORY_UPDATE } from '../../config/constants'
-import resolveCandidatesPrompt from '../../prompts/resolve-candidates.md'
+import resolveCandidatesPrompt from '../../prompts/resolve-candidates.txt'
 import { AUX_MODEL } from '../../config/settings'
-import { database } from '../../services/db'
+import { database } from '../db'
 
 /**
  * Resolves ambiguous inventory items using an AI model.

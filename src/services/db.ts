@@ -11,7 +11,7 @@ import {
    OcrExtractionJobCompletedPayload,
 } from '../types/jobs'
 import { InvoiceMeta } from '../types/inventory'
-import { QueueKey } from '../queues'
+import { QueueKey } from '../queues-base'
 
 
 /**

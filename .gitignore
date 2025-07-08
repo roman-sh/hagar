@@ -28,6 +28,8 @@ nodemon.json
 
 # Other
 .DS_Store
+.cursor
+.editorconfig
 
 # redis backup
 dump.rdb

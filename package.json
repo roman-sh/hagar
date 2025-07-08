@@ -3,11 +3,23 @@
   "type": "module",
   "version": "1.0.0",
   "description": "AI-powered store inventory assistant",
+  "main": "dist/index.mjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs"
+    }
+  },
   "scripts": {
-    "start": "npm run build && node dist/bundle.js",
+    "start": "npm run build && node dist/index.mjs",
     "dev": "sh -c 'redis-cli ping > /dev/null 2>&1 || (echo \"Starting Redis...\" && redis-server --daemonize yes); tsx app/main.ts'",
     "test": "vitest",
-    "build": "node build.mjs",
+    "build": "bunchee --format esm",
+    "dev:build": "bunchee --watch --format esm",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -30,13 +42,15 @@
     "pdf-to-img": "^4.5.0",
     "pino": "^9.6.0",
     "pino-pretty": "^13.0.0",
+    "puppeteer-core": "18.2.1",
     "qrcode-terminal": "^0.12.0",
     "sharp": "^0.34.2",
     "whatsapp-web.js": "^1.27.0"
   },
   "devDependencies": {
     "@types/node": "^22.13.14",
-    "esbuild": "^0.25.5",
+    "bunchee": "^6.5.4",
+    "rollup-plugin-string": "^3.0.0",
     "tsx": "latest",
     "typescript": "^5.3.3",
     "vitest": "^3.2.4"

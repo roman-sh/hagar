@@ -1,14 +1,6 @@
-import Bull, { Queue, Job, ProcessCallbackFunction, QueueOptions } from 'bull'
-import BeeQueue from 'bee-queue'
-import {
-   SCAN_VALIDATION,
-   OCR_EXTRACTION,
-   DATA_APPROVAL,
-   INVENTORY_UPDATE,
-   OUTBOUND_MESSAGES,
-   JOB_STATUS,
-} from './config/constants'
-import { JobData, BaseJobResult, OutboundMessageJobData } from './types/jobs'
+import { Job, ProcessCallbackFunction, Queue } from 'bull'
+import { JOB_STATUS, SCAN_VALIDATION, OCR_EXTRACTION, DATA_APPROVAL, INVENTORY_UPDATE } from './config/constants'
+import { JobData } from './types/jobs'
 import {
    scanValidationProcessor,
    ocrExtractionProcessor,
@@ -17,38 +9,9 @@ import {
 import { inventoryProcessors } from './processors/inventory-update'
 import { outboundMessagesProcessor } from './processors/outbound-messages-bee'
 import { database } from './services/db'
+import { queuesMap, outboundMessagesQueue, QueueKey } from './queues-base'
 import { JobRecord } from './types/documents'
 
-
-// Define separate queue categories
-export type QueueKey =
-   | typeof SCAN_VALIDATION
-   | typeof OCR_EXTRACTION
-   | typeof DATA_APPROVAL
-   | typeof INVENTORY_UPDATE
-
-
-// Pipeline queue configuration
-const queueConfig: QueueOptions = {
-   settings: {
-      stalledInterval: 0, // never check for stalled jobs
-      // stalledInterval: 24 * 60 * 60 * 1000, // 1 day - check for stalled jobs after 24 hours
-   },
-   defaultJobOptions: {
-      attempts: 1, // Only try once, no retries
-   }
-}
-
-// Separate queue maps
-export const queuesMap: Record<QueueKey, Queue<JobData>> = {
-   [SCAN_VALIDATION]: new Bull(SCAN_VALIDATION, queueConfig),
-   [OCR_EXTRACTION]: new Bull(OCR_EXTRACTION, queueConfig),
-   [DATA_APPROVAL]: new Bull(DATA_APPROVAL, queueConfig),
-   [INVENTORY_UPDATE]: new Bull(INVENTORY_UPDATE, queueConfig)
-}
-
-// Outbound messages Bee queue (single queue with concurrency 1 for rate limiting)
-export const outboundMessagesQueue = new BeeQueue<OutboundMessageJobData>(OUTBOUND_MESSAGES)
 
 // Separate processor maps
 const processorsMap: Record<

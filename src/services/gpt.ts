@@ -6,9 +6,9 @@ import { openai } from "../connections/openai"
 import { ChatCompletionMessage, ChatCompletionMessageParam, ChatCompletionMessageToolCall, ChatCompletionToolMessageParam } from "openai/resources/chat/completions"
 import { functions, tools } from "../tools/tools"
 import { db } from "../connections/mongodb"
-import { outboundMessagesQueue } from "../queues"
+import { outboundMessagesQueue } from "../queues-base"
 import { json } from "../utils/json"
-import systemPrompt from '../prompts/generic.md'
+import systemPrompt from '../prompts/generic.txt'
 import { UserData } from "../types/shared"
 import { messageStore } from "./message-store"
 
