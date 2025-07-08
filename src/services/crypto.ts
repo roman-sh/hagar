@@ -1,5 +1,5 @@
-import 'dotenv/config'
 import crypto from 'crypto'
+
 
 const ALGORITHM = 'aes-192-cbc'
 

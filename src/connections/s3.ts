@@ -1,4 +1,3 @@
-import 'dotenv/config'
 import { S3Client, GetBucketPolicyCommand } from '@aws-sdk/client-s3'
 
 // S3 client instance

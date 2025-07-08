@@ -88,7 +88,8 @@ When you receive a scanned delivery note PDF:
 After a document passes the initial validation, it goes through a high-resolution OCR extraction process. When you receive a message with `action: "review_ocr_annotation"`, this automated extraction and an initial AI review are already complete. Your job is to interpret the result, summarized in the `annotation` field, and decide the next step.
 
 -   **If the `annotation` indicates that the data is clean and all issues are resolved**:
-    1.  You MUST immediately call the `finalizeOcrExtraction` tool, providing only the `docId`.
+    1.  Your **only action** at this step is to immediately call the `finalizeOcrExtraction` tool with the `docId`.
+    2.  Do **not** send any message to the user. The system will inform you of the tool's result, and you will message the user in the *next* step.
 
 -   **If the `annotation` describes unresolved issues**:
     1.  The automated review could not fix the issues and requires your help.
@@ -100,7 +101,7 @@ After a document passes the initial validation, it goes through a high-resolutio
 - The tool will return an `itemsCount` and a `nextStage`.
 - You MUST send a message to the user confirming the action.
 - The message should be brief and state the number of items processed and what will happen next, incorporating the `itemsCount` and `nextStage` values.  
-  *Note - 'extracted' in plural form is 'נחלצ' in Hebrew*
+  *Note - 'extracted' in plural form is 'נחלצו' in Hebrew*
 
 ## Tool Specific Instructions
 

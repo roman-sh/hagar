@@ -1,5 +1,4 @@
 import { MongoClient, Db } from 'mongodb'
-import 'dotenv/config'
 
 // MongoDB client and db connection with proper typing
 export let db: Db

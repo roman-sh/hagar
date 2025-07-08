@@ -12,9 +12,9 @@ export const pipeline = {
     * @param {string} docId - The unique ID of the document.
     */
    start: async (docId: string) => {
-      const { pipeline, system } = await database.getStoreByDocId(docId)
+      const { pipeline } = await database.getStoreByDocId(docId)
       const firstQueue = pipeline[0] as QueueKey
-      await enqueueJob(docId, firstQueue, system, 'queued')
+      await enqueueJob(docId, firstQueue, 'queued')
    },
 
    /**
@@ -48,14 +48,14 @@ export const pipeline = {
       })
 
       // 3. Get the pipeline for the store
-      const { pipeline, system } = await database.getStoreByDocId(docId)
+      const { pipeline } = await database.getStoreByDocId(docId)
 
       // 4. Find the next queue and add the job
       const currentIndex = pipeline.findIndex((q) => q === queueName)
       const nextQueue = pipeline[currentIndex + 1]
 
       if (nextQueue) {
-         await enqueueJob(docId, nextQueue, system, 'advanced')
+         await enqueueJob(docId, nextQueue, 'advanced')
          return nextQueue
       } else {
          log.info(
@@ -72,29 +72,20 @@ export const pipeline = {
  * Adds a job to the specified queue, handling named processors for INVENTORY_UPDATE.
  * @param docId The document ID.
  * @param queueName The name of the queue to add the job to.
- * @param system The system name, used for named processors.
  * @param action The type of action for logging purposes.
  */
 async function enqueueJob(
    docId: string,
    queueName: QueueKey,
-   system: string,
    action: 'queued' | 'advanced'
 ) {
    const logPrefix =
       action === 'queued'
          ? 'queued to'
          : 'advanced to'
-   if (queueName === INVENTORY_UPDATE) {
-      // using named job to induce the related system's processor
-      await queuesMap[queueName].add(system, {} as JobData, { jobId: docId })
-      log.info(
-         `Document ${docId} ${logPrefix} ${queueName} with processor '${system}'`
-      )
-   } else {
-      await queuesMap[queueName].add({} as JobData, { jobId: docId })
-      log.info(`Document ${docId} ${logPrefix} ${queueName}`)
-   }
+
+   await queuesMap[queueName].add({} as JobData, { jobId: docId })
+   log.info(`Document ${docId} ${logPrefix} ${queueName}`)
 }
 
 /**

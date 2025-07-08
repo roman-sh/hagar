@@ -1,7 +1,7 @@
 import { InventoryDocument, PassArgs } from '../../types/inventory'
 import { openai } from '../../connections/openai'
 import { H, INVENTORY_UPDATE } from '../../config/constants'
-import resolveCandidatesPrompt from '../../prompts/resolve-candidates.txt'
+import resolveCandidatesPrompt from '../../prompts/resolve-candidates.md'
 import { AUX_MODEL } from '../../config/settings'
 import { database } from '../db'
 

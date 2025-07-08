@@ -5,8 +5,8 @@ import {
    scanValidationProcessor,
    ocrExtractionProcessor,
    dataApprovalProcessor,
+   inventoryUpdateProcessor,
 } from './processors'
-import { inventoryProcessors } from './processors/inventory-update'
 import { outboundMessagesProcessor } from './processors/outbound-messages-bee'
 import { database } from './services/db'
 import { queuesMap, outboundMessagesQueue, QueueKey } from './queues-base'
@@ -15,12 +15,13 @@ import { JobRecord } from './types/documents'
 
 // Separate processor maps
 const processorsMap: Record<
-   Exclude<QueueKey, typeof INVENTORY_UPDATE>,
+   QueueKey,
    ProcessCallbackFunction<JobData>
 > = {
    [SCAN_VALIDATION]: scanValidationProcessor,
    [OCR_EXTRACTION]: ocrExtractionProcessor,
    [DATA_APPROVAL]: dataApprovalProcessor,
+   [INVENTORY_UPDATE]: inventoryUpdateProcessor,
 }
 
 /**
@@ -36,14 +37,6 @@ export function initializeQueues(): void {
       queue.process(100000, processor)
       setupQueueEventHandlers(queue, queueName)
    }
-
-   // Register named processors for the inventory update queue
-   const inventoryUpdateQueue = queuesMap[INVENTORY_UPDATE]
-   for (const [name, processor] of Object.entries(inventoryProcessors)) {
-      inventoryUpdateQueue.process(name, 100000, processor)
-      log.info(`Registered inventory update processor: '${name}'`)
-   }
-   setupQueueEventHandlers(inventoryUpdateQueue, INVENTORY_UPDATE)
 
    // Set up outbound message Bee queue
    outboundMessagesQueue.process(1, outboundMessagesProcessor)

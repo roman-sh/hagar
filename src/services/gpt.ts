@@ -3,12 +3,17 @@
 import { MessageDocument, DocType } from "../types/documents"
 import { database } from "./db"
 import { openai } from "../connections/openai"
-import { ChatCompletionMessage, ChatCompletionMessageParam, ChatCompletionMessageToolCall, ChatCompletionToolMessageParam } from "openai/resources/chat/completions"
+import {
+   type ChatCompletionMessage,
+   type ChatCompletionMessageParam,
+   type ChatCompletionMessageToolCall,
+   type ChatCompletionToolMessageParam
+} from "openai/resources/chat/completions"
 import { functions, tools } from "../tools/tools"
 import { db } from "../connections/mongodb"
 import { outboundMessagesQueue } from "../queues-base"
 import { json } from "../utils/json"
-import systemPrompt from '../prompts/generic.txt'
+import systemPrompt from '../prompts/generic.md'
 import { UserData } from "../types/shared"
 import { messageStore } from "./message-store"
 

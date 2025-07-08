@@ -1,8 +1,8 @@
 import { DocumentAnalysisClient, AzureKeyCredential, AnalyzeResult } from '@azure/ai-form-recognizer'
 import { openai } from '../connections/openai'
-import reviewPrompt from '../prompts/ocr-review.txt'
+import reviewPrompt from '../prompts/ocr-review.md'
 import { AUX_MODEL } from '../config/settings'
-import { finalizeOcrExtraction } from '../tools/finalize-ocr-extraction'
+
 
 // Load environment variables
 const endpoint = process.env.FORM_RECOGNIZER_ENDPOINT
