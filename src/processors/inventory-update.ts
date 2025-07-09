@@ -8,6 +8,7 @@ import {
    PassArgs,
    CatalogModule,
 } from '../types/inventory.js'
+import { INVENTORY_UPDATE } from '../config/constants.js'
 
 /**
  * A generic Bull processor for the 'inventory_update' queue.
@@ -49,6 +50,15 @@ export async function inventoryUpdateProcessor(
       if (inventoryReady(doc)) break
       await pass({ doc, storeId, docId })
    }
+
+   await database.saveArtefact({
+      docId,
+      storeId,
+      queue: INVENTORY_UPDATE,
+      key: 'resolved_inventory_document',
+      data: doc,
+   })
+   log.info({ docId, storeId }, 'Resolved inventory document saved to artefacts')
 
    // The job will hang here until completed by an external trigger.
    return new Promise(() => { })
