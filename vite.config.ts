@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite'
 import { stringPlugin } from 'vite-string-plugin'
-import { globSync } from 'glob'
 import nodeExternals from 'rollup-plugin-node-externals'
 
 export default defineConfig({
@@ -10,13 +9,7 @@ export default defineConfig({
       outDir: 'dist',
       emptyOutDir: true,
       rollupOptions: {
-         input: globSync('src/**/*.ts'),
-         output: {
-            preserveModules: true,
-            preserveModulesRoot: 'src',
-            entryFileNames: '[name].js',
-         },
-         preserveEntrySignatures: 'strict',
+         input: 'src/main.ts',
       },
    },
    plugins: [nodeExternals(), stringPlugin()],

@@ -185,14 +185,15 @@ This flow details how Hagar connects to a back-office system (using Rexail as an
 
 This section details the revised design for the `inventory_update` pipeline stage. It uses a robust, pluggable architecture where each supported back-office inventory system is a self-contained module.
 
-### A. Core Architecture: Pluggable Modules & A Multi-Pass System
-The design uses Bull's **named processors** to route jobs to specific handlers within a single queue, enabling a pluggable architecture for supporting different back-office systems.
+### A. Core Architecture: Pluggable Module System
 
-*   **Single `inventory_update` Queue**: All inventory-related jobs are pushed to this single queue.
-*   **Job Naming**: A job's `name` property is set to the inventory system it targets (e.g., "rexail"), which directs it to the correct processor handler.
-*   **Standardized Processor, Pluggable Modules**: While each system (like Rexail) has a named processor, the core logic within these processors is standardized. The key to the plug-and-play design lies in system-specific modules that are imported by the processor. For each system, there are dedicated modules for `catalog.sync` and final `inventory.update`. This means the processor itself follows the same sequence of operations for every system, but calls out to the specific implementation for that system's catalog and API.
-*   **Generic Multi-Pass Matching**: The core matching workflow is broken down into a series of modular, system-agnostic "passes" (`barcodePass`, `vectorPass`, `aiPass`). Every processor calls these same passes in the same sequence. This decouples the sophisticated matching logic from the system-specific integration details.
-*   **Future Refinement: The Registry Pattern**: A known limitation of the current approach is that it requires creating a separate, near-identical processor file for each back-office system, violating the DRY (Don't Repeat Yourself) principle. A superior, bundler-friendly solution has been designed and is documented in `docs/registry_pattern.md`. This "Registry Pattern" will allow for a single, generic processor that dynamically uses the correct system-specific modules at runtime, eliminating code duplication and improving maintainability. This is the intended direction for a future refactor.
+The `inventory_update` stage is built on a flexible architecture that avoids code duplication and allows for easy integration of new back-office systems.
+
+*   **Single Generic Processor**: All inventory update jobs, regardless of the target system (e.g., Rexail), are handled by a single, generic processor. This eliminates the need for system-specific processor files.
+
+*   **Dynamic Module Loading**: The processor achieves its flexibility using dynamic imports. At runtime, it identifies the store's back-office system and loads the corresponding module. This approach relies on a simple file-based convention, making the system truly pluggable.
+
+*   **Decoupled Matching Logic**: The core product matching logic is implemented as a series of system-agnostic "passes" (e.g., `barcodePass`, `vectorPass`). This powerful matching engine is reused by the processor for every job after the system-specific catalog has been synced.
 
 ### B. Processor Workflow Example: The Journey of the Cheese Invoice
 
@@ -213,7 +214,7 @@ To illustrate the architecture in action, let's follow a real invoice (`cheese.p
     *   **Action**: With all 8 items now resolved (7 by barcode, 1 by the vector/AI flow), the processor can proceed to the finalization stage.
     *   **Rationale**: The fully resolved data is now ready to be presented to the user for final confirmation, after which it will be sent to the Rexail back-office system to update the official inventory.
 
-This design ensures that adding support for a new inventory system (e.g., "Odoo") is as simple as creating a new `odoo.ts` processor file in the `app/processors/inventory-update/` directory with its own internal sync logic, while reusing the same core multi-pass matching and AI interaction flows.
+This architecture ensures that adding support for a new inventory system (e.g., "Odoo") is as simple as creating a new module directory (e.g., `src/systems/odoo/`) with the required `catalog.ts` implementation. The generic processor and matching passes handle the rest automatically.
 
 ---
 

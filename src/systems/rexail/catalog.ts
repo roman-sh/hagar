@@ -2,34 +2,18 @@ import rexailApi from './api'
 import { RexailObfuscatedCatalogResponse, RexailProduct } from './rexail'
 import { database } from '../../services/db'
 import { DocType, ProductDocument } from '../../types/documents'
+import { CatalogService } from '../../types/inventory'
 import crypto from 'crypto'
 import { openai } from '../../connections/openai'
-import { DEFAULT_SYNC_COOLDOWN_MINUTES, EMBEDDING_MODEL_CONFIG } from '../../config/settings'
+import {
+   DEFAULT_SYNC_COOLDOWN_MINUTES,
+   EMBEDDING_MODEL_CONFIG,
+} from '../../config/settings'
 
 /**
  * Service object for interacting with the Rexail catalog.
  */
-export const catalog = {
-   /**
-    * Fetches the full, store-specific product catalog from the Rexail API.
-    * This was previously named 'getObfuscated'.
-    * @param {string} storeId - The ID of the store for which to fetch the catalog.
-    * @returns {Promise<RexailProduct[]>} A promise that resolves to the array of products.
-    */
-   async fetch(storeId: string): Promise<RexailProduct[]> {
-      log.info({ storeId }, 'Fetching catalog from Rexail API.')
-
-      const response = await rexailApi.get<RexailObfuscatedCatalogResponse>('catalog/obfuscated/get', {
-         params: {
-            inheritFromMaster: false,
-         },
-         storeId,
-      })
-
-      log.info({ storeId, productCount: response.data.data.length }, 'Successfully fetched catalog.')
-      return response.data.data
-   },
-
+export const catalog: CatalogService = {
    /**
     * Syncs the Rexail catalog for a given store with the local database.
     *
@@ -62,14 +46,14 @@ export const catalog = {
          // 2. Get the fresh catalog from Rexail and existing from DB
          log.debug({ storeId }, 'Fetching fresh catalog from API and existing from DB.')
          const [rexailProducts, existingProducts] = await Promise.all([
-            this.fetch(storeId),
+            fetch(storeId),
             database.getProductsByStoreId(storeId, { projection: { productId: 1, fingerprint: 1 } }),
          ])
          log.debug({ storeId, rexailCount: rexailProducts.length, dbCount: existingProducts.length }, 'Catalogs fetched.')
 
          // 3. Create maps for efficient lookups
          const existingProductsMap = new Map(existingProducts.map(p => [p.productId, p.fingerprint]))
-         const rexailProductsMap = new Map(rexailProducts.map(p => [p.nonObfuscatedId, p]))
+         const rexailProductsMap = new Map(rexailProducts.map((p: RexailProduct) => [p.nonObfuscatedId, p]))
 
          // 4. Determine changes
          const toAdd: RexailProduct[] = []
@@ -116,7 +100,7 @@ export const catalog = {
             const embeddings = await createEmbedding(textsToEmbed)
             log.info({ storeId, durationMs: Date.now() - embedStart }, 'Finished generating embeddings.')
             
-            embeddingsMap = new Map(productsToEmbed.map((p, i) => [p.nonObfuscatedId, embeddings[i]]))
+            embeddingsMap = new Map(productsToEmbed.map((p: RexailProduct, i) => [p.nonObfuscatedId, embeddings[i]]))
          }
 
          // 6. Execute database operations
@@ -161,6 +145,26 @@ export const catalog = {
 // ===================================================================================
 // Private Helper Functions
 // ===================================================================================
+
+/**
+ * Fetches the full, store-specific product catalog from the Rexail API.
+ * This was previously named 'getObfuscated'.
+ * @param {string} storeId - The ID of the store for which to fetch the catalog.
+ * @returns {Promise<RexailProduct[]>} A promise that resolves to the array of products.
+ */
+async function fetch(storeId: string): Promise<RexailProduct[]> {
+   log.info({ storeId }, 'Fetching catalog from Rexail API.')
+
+   const response = await rexailApi.get<RexailObfuscatedCatalogResponse>('catalog/obfuscated/get', {
+      params: {
+         inheritFromMaster: false,
+      },
+      storeId,
+   })
+
+   log.info({ storeId, productCount: response.data.data.length }, 'Successfully fetched catalog.')
+   return response.data.data
+}
 
 /**
  * Extracts all valid barcodes from a raw Rexail product object.

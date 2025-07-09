@@ -42,3 +42,11 @@ export type PassArgs = {
 }
 
 export type MatchType = 'barcode' | 'barcode-collision' | 'vector' | 'regex'
+
+export interface CatalogService {
+   sync(storeId: string, options?: { force?: boolean }): Promise<void>
+}
+
+export interface CatalogModule {
+   catalog: CatalogService
+}

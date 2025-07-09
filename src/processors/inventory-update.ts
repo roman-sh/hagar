@@ -3,12 +3,11 @@ import { JobData } from '../types/jobs.js'
 import { database } from '../services/db.js'
 import { inventory } from '../services/inventory.js'
 import { barcodePass, vectorPass, aiPass } from '../services/inventory-items/index.js'
-import { InventoryDocument, PassArgs } from '../types/inventory.js'
-
-
-export interface CatalogService {
-   sync(storeId: string): Promise<void>
-}
+import {
+   InventoryDocument,
+   PassArgs,
+   CatalogModule,
+} from '../types/inventory.js'
 
 /**
  * A generic Bull processor for the 'inventory_update' queue.
@@ -27,16 +26,18 @@ export async function inventoryUpdateProcessor(
    // 1. Get the store and system details from the database.
    const { storeId, system } = await database.getStoreByDocId(docId)
 
-   // 2. Dynamically import the catalog service for the specific system and sync.
+   // 2. Dynamically import the catalog service for the specific system (vite specific syntax).
    const modules = import.meta.glob('../systems/*/catalog.ts')
    const path = `../systems/${system}/catalog.ts`
-   const { catalog } = await modules[path]() as { catalog: CatalogService }
+   const { catalog } = await modules[path]() as CatalogModule
+
+   // 3. Sync the catalog.
    await catalog.sync(storeId)
 
-   // 3. Initialize the inventory document from extracted data.
+   // 4. Initialize the inventory document from extracted data.
    const doc = await inventory.initializeDocument(docId)
 
-   // 4. Run the passes.
+   // 5. Run the passes.
    const passes = [
       barcodePass,
       (args: PassArgs) => aiPass({ ...args, passName: 'barcode-collision' }),
