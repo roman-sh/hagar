@@ -9,7 +9,7 @@ import { type H } from '../config/constants'
 export type InventoryItem = {
    [H.ROW_NUMBER]?: string
    [H.SUPPLIER_ITEM_NAME]?: string
-   [H.QUANTITY]?: number
+   [H.QUANTITY]?: string
    [H.UNIT]?: string
    [H.BARCODE]?: string
    [H.INVENTORY_ITEM_ID]?: string // Our internal product ID

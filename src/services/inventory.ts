@@ -17,11 +17,6 @@ const SUPPLIER_HEADERS_TO_FIND = [
   H.BARCODE
 ] as const
 
-// Headers whose values should be treated as numbers when populating an InventoryItem
-const NUMERIC_HEADERS = new Set<string>([
-  H.QUANTITY
-])
-
 // This defines the structure of the object we expect the AI to return.
 // e.g., { "row_number": null, "supplier_item_name": 0, ... }
 type HeaderToIdxMap = {
@@ -84,8 +79,7 @@ export const inventory = {
                if (idx == null) continue
 
                const rawValue = row[idx]
-               ;(item as any)[header] =
-                  NUMERIC_HEADERS.has(header) ? +rawValue : rawValue
+               ;(item as any)[header] = rawValue
             }
 
             return item

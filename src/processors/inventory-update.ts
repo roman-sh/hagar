@@ -51,14 +51,16 @@ export async function inventoryUpdateProcessor(
       await pass({ doc, storeId, docId })
    }
 
+   await job.update(doc)
+
    await database.saveArtefact({
       docId,
       storeId,
       queue: INVENTORY_UPDATE,
-      key: 'resolved_inventory_document',
+      key: 'processed_inventory_document',
       data: doc,
    })
-   log.info({ docId, storeId }, 'Resolved inventory document saved to artefacts')
+   log.info({ docId, storeId }, 'Processed inventory document saved to artefacts')
 
    // The job will hang here until completed by an external trigger.
    return new Promise(() => { })
