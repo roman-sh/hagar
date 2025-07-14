@@ -1,6 +1,6 @@
 import React from 'react'
 import { InventoryDocument, InventoryItem } from '../types/inventory'
-import cssContent from './InventoryConfirmation.css?raw'
+import cssContent from './InventoryConfirmation.css'
 
 // Configuration for layout
 const DENSE_LAYOUT_ITEM_THRESHOLD = 20
@@ -8,7 +8,6 @@ const SUPER_DENSE_LAYOUT_ITEM_THRESHOLD = 40
 
 interface InventoryConfirmationProps {
 	doc: InventoryDocument
-	logoBase64?: string
 }
 
 const getRowStyle = (item: InventoryItem): React.CSSProperties => {
