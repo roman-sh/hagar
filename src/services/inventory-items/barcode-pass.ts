@@ -1,6 +1,7 @@
 import { db } from '../../connections/mongodb'
-import { InventoryDocument, PassArgs } from '../../types/inventory'
+import { PassArgs } from '../../types/inventory'
 import { ProductDocument } from '../../types/documents'
+import { H } from '../../config/constants'
 
 /**
  * Performs a barcode-based matching pass on an inventory document.
@@ -20,9 +21,13 @@ import { ProductDocument } from '../../types/documents'
  * @param {PassArgs} input An object containing the document, storeId, and docId.
  * @returns {Promise<void>} A promise that resolves when the pass is complete.
  */
-export const barcodePass = async ({ doc, storeId, docId }: PassArgs): Promise<void> => {
+export const barcodePass = async (
+   { doc, storeId, docId }: PassArgs
+): Promise<void> => {
+   
    const unresolvedItems = doc.items
-      .filter(item => !item.inventory_item_id && item.barcode)
+      .filter(item => !item[H.INVENTORY_ITEM_ID] && item[H.BARCODE])
+
    if (!unresolvedItems.length) return
 
    log.info(
@@ -53,9 +58,11 @@ export const barcodePass = async ({ doc, storeId, docId }: PassArgs): Promise<vo
       const hits = resultsByBarcode[item.barcode]
 
       if (hits.length === 1) {
-         item.inventory_item_id = hits[0]._id
-         item.inventory_item_name = hits[0].name
-         item.match_type = 'barcode'
+         const hit = hits[0]
+         item[H.INVENTORY_ITEM_ID] = hit._id
+         item[H.INVENTORY_ITEM_NAME] = hit.name
+         item[H.INVENTORY_ITEM_UNIT] = hit.unit
+         item[H.MATCH_TYPE] = 'barcode'
          resolvedCount++
       }
       else if (hits.length > 1) {
@@ -68,14 +75,14 @@ export const barcodePass = async ({ doc, storeId, docId }: PassArgs): Promise<vo
          log.info(
             {
                docId,
-               barcode: item.barcode,
+               barcode: item[H.BARCODE],
                candidatesCount: hits.length
             },
             'barcodePass: Found multiple candidates for barcode.'
          )
       }
       else {
-         unmatchedBarcodes.push(item.barcode)
+         unmatchedBarcodes.push(item[H.BARCODE])
       }
    })
 

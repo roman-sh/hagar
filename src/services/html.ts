@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { InventoryDocument } from '../types/inventory.js'
 import { InventoryConfirmation } from '../components/InventoryConfirmation.js'
 import puppeteer from 'puppeteer'
-import logoBase64 from '../assets/hagar-fluid.png?url'
+
 
 export const html = {
 	/**
@@ -12,7 +12,7 @@ export const html = {
 	 * @returns A Promise that resolves to a Buffer containing the PDF data.
 	 */
 	async generateInventoryConfirmation(doc: InventoryDocument): Promise<Buffer> {
-		const component = React.createElement(InventoryConfirmation, { doc, logoBase64 })
+		const component = React.createElement(InventoryConfirmation, { doc })
 		const staticMarkup = renderToStaticMarkup(component)
 		const htmlWithDoctype = `<!DOCTYPE html>${staticMarkup}`
 

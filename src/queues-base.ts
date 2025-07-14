@@ -3,17 +3,17 @@ import BeeQueue from 'bee-queue'
 import {
    SCAN_VALIDATION,
    OCR_EXTRACTION,
-   DATA_APPROVAL,
+   UPDATE_PREPARATION,
    INVENTORY_UPDATE,
    OUTBOUND_MESSAGES,
 } from './config/constants'
-import { JobData, OutboundMessageJobData } from './types/jobs'
+import { JobDataMap, OutboundMessageJobData } from './types/jobs.js'
 
 // Define separate queue categories
 export type QueueKey =
    | typeof SCAN_VALIDATION
    | typeof OCR_EXTRACTION
-   | typeof DATA_APPROVAL
+   | typeof UPDATE_PREPARATION
    | typeof INVENTORY_UPDATE
 
 
@@ -29,10 +29,10 @@ const queueConfig: QueueOptions = {
 }
 
 // Separate queue maps
-export const queuesMap: Record<QueueKey, Queue<JobData>> = {
+export const queuesMap: { [K in QueueKey]: Queue<JobDataMap[K]> } = {
    [SCAN_VALIDATION]: new Bull(SCAN_VALIDATION, queueConfig),
    [OCR_EXTRACTION]: new Bull(OCR_EXTRACTION, queueConfig),
-   [DATA_APPROVAL]: new Bull(DATA_APPROVAL, queueConfig),
+   [UPDATE_PREPARATION]: new Bull(UPDATE_PREPARATION, queueConfig),
    [INVENTORY_UPDATE]: new Bull(INVENTORY_UPDATE, queueConfig)
 }
 

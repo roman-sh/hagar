@@ -1,5 +1,5 @@
 import { Job } from 'bull'
-import { JobData, BaseJobResult } from '../types/jobs'
+import { OcrExtractionJobData, BaseJobResult } from '../types/jobs.js'
 import { db } from '../connections/mongodb'
 import { JobRecord, MessageDocument, ScanDocument, DocType } from '../types/documents'
 import { ocr, OcrReviewResult } from '../services/ocr'
@@ -8,6 +8,7 @@ import { database } from '../services/db'
 import { gpt } from '../services/gpt'
 import { OptionalId } from 'mongodb'
 import { JOB_STATUS } from '../config/constants'
+import { QueueKey } from '../queues-base.js'
 
 /**
  * Process a job for data extraction from a scanned document
@@ -15,7 +16,7 @@ import { JOB_STATUS } from '../config/constants'
  * @returns The processing result
  */
 export async function ocrExtractionProcessor(
-   job: Job<JobData>
+   job: Job<OcrExtractionJobData>
 ): Promise<BaseJobResult> {
    const docId = job.id as string
 
@@ -29,7 +30,7 @@ export async function ocrExtractionProcessor(
    await database.saveArtefact({
       docId,
       storeId,
-      queue: OCR_EXTRACTION,
+      queue: job.queue.name as QueueKey,
       key: 'extracted-data-from-azure-ocr',
       data: rawData,
    })
@@ -43,7 +44,7 @@ export async function ocrExtractionProcessor(
    await database.saveArtefact({
       docId,
       storeId,
-      queue: OCR_EXTRACTION,
+      queue: job.queue.name as QueueKey,
       key: 'data-after-o3-review',
       data: { data: reviewedData, annotation },
       flatten: true,
@@ -65,14 +66,14 @@ export async function ocrExtractionProcessor(
    await db.collection<OptionalId<MessageDocument>>('messages').insertOne({
       type: DocType.MESSAGE,
       role: 'user',
-      phone: phone,
+      phone,
       name: 'app',
       content: {
          action: 'review_ocr_annotation',
          docId,
          annotation,
       },
-      storeId: storeId,
+      storeId,
       createdAt: new Date(),
    })
 

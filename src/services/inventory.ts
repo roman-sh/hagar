@@ -3,7 +3,7 @@ import { H } from '../config/constants'
 import headerMappingPrompt from '../prompts/header-mapping.md'
 import { AUX_MODEL } from '../config/settings'
 import { type ResponseFormatJSONSchema } from 'openai/resources/shared'
-import { type InventoryItem, type InventoryDocument } from '../types/inventory'
+import { InventoryDocument, InventoryItem, MatchType } from '../types/inventory'
 import { database } from './db'
 
 
@@ -12,8 +12,8 @@ import { database } from './db'
 const SUPPLIER_HEADERS_TO_FIND = [
   H.ROW_NUMBER,
   H.SUPPLIER_ITEM_NAME,
+  H.SUPPLIER_ITEM_UNIT,
   H.QUANTITY,
-  H.UNIT,
   H.BARCODE
 ] as const
 
@@ -23,7 +23,49 @@ type HeaderToIdxMap = {
    [key in (typeof SUPPLIER_HEADERS_TO_FIND)[number]]: number | null
 }
 
+export type InventoryUpdateSummary = {
+   totalItems: number
+   matchedItems: number
+   unmatchedItems: number
+   matchTypes: Record<MatchType, number>
+}
+
+
 export const inventory = {
+   /**
+    * Creates a summary of the inventory document, counting total, matched,
+    * and unmatched items, and breaking down matches by type.
+    * @param doc The inventory document to summarize.
+    * @returns A summary object.
+    */
+   createSummary(doc: InventoryDocument): InventoryUpdateSummary {
+      const summary: InventoryUpdateSummary = {
+         totalItems: doc.items.length,
+         matchedItems: 0,
+         unmatchedItems: 0,
+         matchTypes: {
+            'barcode': 0,
+            'barcode-collision': 0,
+            'vector': 0,
+            'regex': 0,
+         },
+      }
+
+      for (const item of doc.items) {
+         if (item[H.INVENTORY_ITEM_ID]) {
+            summary.matchedItems++
+            const matchType = item[H.MATCH_TYPE]
+            if (matchType) {
+               summary.matchTypes[matchType]++
+            }
+         } else {
+            summary.unmatchedItems++
+         }
+      }
+
+      return summary
+   },
+
    /**
     * Uses an AI to map headers from a supplier's document to our standard headers.
     * @param rawHeaders An array of header strings extracted from the source document.
@@ -85,6 +127,13 @@ export const inventory = {
             return item
          })
 
+         // If the headers map doesn't contain a row number (is nullish), generate it.
+         if (headerToIdxMap[H.ROW_NUMBER] == null) {
+            itemsFromTable.forEach((item, index) => {
+               item[H.ROW_NUMBER] = String(index + 1)
+            })
+         }
+
          allItems.push(...itemsFromTable)
       }
 
@@ -114,7 +163,7 @@ const getHeaderMappingSchema = (): ResponseFormatJSONSchema.JSONSchema => {
    )
 
    return {
-      name: 'header_map',
+      name: 'map_headers',
       strict: true,
       schema: {
          type: 'object',

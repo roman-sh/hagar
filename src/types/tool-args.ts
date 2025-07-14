@@ -9,6 +9,11 @@ export interface SendPdfToUserArgs {
    fileId: string
 }
 
+export interface RequestInventoryConfirmationArgs {
+   docId: string
+   caption: string
+}
+
 export interface finalizeScanValidationArgs extends InvoiceMeta {
    docId: string
    annotation: string

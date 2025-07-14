@@ -39,8 +39,8 @@ export const gpt = {
     * note: we have the incoming message/s in history already
     * @param userData The user data containing phone, name, and storeId
     */
+   // TODO: simplify by passing phone only. Use redis caching to get storeId maybe?
    async process({ phone, storeId }: UserData): Promise<void> {
-      // TODO: simplify by passing phone only. Use redis caching to get storeId maybe?
       log.debug({ phone, storeId }, 'Triggered GPT processing')
 
       // Show typing indicator
@@ -58,12 +58,9 @@ export const gpt = {
       while (!state.done) {
          // 'message' here is a response from the model
          const { message } = (await openai.chat.completions.create({
-            model: 'gpt-4.1-2025-04-14',
-            // model: 'gpt-4.1-mini-2025-04-14',
-            // model: 'o3-mini',
-            // temperature: 0.5,
+            model: 'gpt-4.1',
             messages: [
-               getSystemMessage(storeId, phone),  // inject the system message dynamically to allow history truncation
+               getSystemMessage(),  // inject the system message dynamically to allow history truncation
                ...history,
                ...state.messages
             ],
@@ -129,7 +126,7 @@ function executeTools(toolCalls: ChatCompletionMessageToolCall[]) {
 }
 
 
-function getSystemMessage(storeId: string, phone: string): ChatCompletionMessageParam {
+function getSystemMessage(): ChatCompletionMessageParam {
    return {
       role: 'system' as const,
       content: systemPrompt

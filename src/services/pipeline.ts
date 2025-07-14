@@ -3,7 +3,6 @@ import { INVENTORY_UPDATE, JOB_STATUS } from '../config/constants'
 import { JobRecord } from '../types/documents'
 import { database } from './db'
 import { Job } from 'bull'
-import { JobData } from '../types/jobs'
 
 export const pipeline = {
    /**
@@ -84,7 +83,7 @@ async function enqueueJob(
          ? 'queued to'
          : 'advanced to'
 
-   await queuesMap[queueName].add({} as JobData, { jobId: docId })
+   await queuesMap[queueName].add({}, { jobId: docId })
    log.info(`Document ${docId} ${logPrefix} ${queueName}`)
 }
 
@@ -94,7 +93,7 @@ async function enqueueJob(
  * @param {string} jobId The ID of the job to find.
  * @returns {Promise<{job: Job, queueName: QueueKey}>}
  */
-async function findActiveJob(
+export async function findActiveJob(
    jobId: string
 ): Promise<{ job: Job; queueName: QueueKey }> {
    for (const queueName in queuesMap) {

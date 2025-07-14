@@ -4,7 +4,7 @@ import { InvoiceMeta } from "../types/inventory"
 // Queue names as string constants
 export const SCAN_VALIDATION = 'scan_validation'
 export const OCR_EXTRACTION = 'ocr_extraction'
-export const DATA_APPROVAL = 'data_approval'
+export const UPDATE_PREPARATION = 'update-preparation'
 export const INVENTORY_UPDATE = 'inventory_update'
 export const INBOUND_MESSAGES = 'inbound_messages'
 export const OUTBOUND_MESSAGES = 'outbound_messages'
@@ -33,11 +33,12 @@ export const META_KEYS = [
 export const H = {
    ROW_NUMBER: 'row_number',
    SUPPLIER_ITEM_NAME: 'supplier_item_name',
+   SUPPLIER_ITEM_UNIT: 'supplier_item_unit',
    QUANTITY: 'quantity',
-   UNIT: 'unit',
    BARCODE: 'barcode',
    INVENTORY_ITEM_ID: 'inventory_item_id',
    INVENTORY_ITEM_NAME: 'inventory_item_name',
+   INVENTORY_ITEM_UNIT: 'inventory_item_unit',
    MATCH_TYPE: 'match_type'
 } as const
 

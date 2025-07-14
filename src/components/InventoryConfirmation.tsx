@@ -116,6 +116,7 @@ export const InventoryConfirmation: React.FC<InventoryConfirmationProps> = ({
 								<table className="table table-borderless">
 									<thead>
 										<tr>
+											<th>#</th>
 											<th>פריט ספק</th>
 											<th>פריט במלאי</th>
 											<th>כמות</th>
@@ -124,6 +125,7 @@ export const InventoryConfirmation: React.FC<InventoryConfirmationProps> = ({
 									<tbody>
 										{items.map((item, itemIndex) => (
 											<tr key={itemIndex} style={getRowStyle(item)}>
+												<td>{item.row_number}</td>
 												<td className="truncate-text">
 													{item.supplier_item_name || ''}
 												</td>

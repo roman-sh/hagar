@@ -132,7 +132,8 @@ p {
 /* Column widths */
 .table th:nth-child(1),
 .table td:nth-child(1) {
-	width: 45%;
+	width: 6%;
+	justify-content: center;
 }
 .table th:nth-child(1) {
 	/* Transparent border on first header cell to align with data cells */
@@ -141,10 +142,19 @@ p {
 }
 .table th:nth-child(2),
 .table td:nth-child(2) {
-	width: 45%;
+	width: 42%;
+}
+.table th:nth-child(2) {
+	/* Transparent border on second header cell to align with data cells */
+	border-right: 4px solid transparent;
+	box-sizing: border-box;
 }
 .table th:nth-child(3),
 .table td:nth-child(3) {
+	width: 42%;
+}
+.table th:nth-child(4),
+.table td:nth-child(4) {
 	width: 10%;
 	justify-content: center;
 }

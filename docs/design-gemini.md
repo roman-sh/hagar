@@ -66,7 +66,7 @@ This flow describes how documents from all ingestion channels are processed and 
 
 *   **Mechanism**: After successful storage, a job is added to a Bull queue (e.g., `scan_validation`) for asynchronous processing. Redis serves as the backend for Bull, ensuring job persistence.
 *   **Job Identification**: The MongoDB document `_id` is used as the `jobId` in Bull. This creates a direct, traceable link between the data and its processing job, simplifying lookups and monitoring via the Bull Board dashboard.
-*   **Dynamic Pipeline**: The specific queue a document enters (and subsequent steps) is determined by a `pipeline` array defined in the `stores` collection in MongoDB. This allows for configurable processing workflows per store (e.g., `["scan_validation", "ocr_extraction", "inventory_update"]`). The `q` helper function manages transitions between pipeline stages.
+*   **Dynamic Pipeline**: The specific queue a document enters (and subsequent steps) is determined by a `pipeline` array defined in the `stores` collection in MongoDB. This allows for configurable processing workflows per store (e.g., `["scan_validation", "ocr_extraction", "update-preparation", "inventory_update"]`). The `q` helper function manages transitions between pipeline stages.
 
 ### B. Scan Validation Processor (`app/processors/scan-validation.ts`)
 
@@ -138,7 +138,7 @@ This flow begins after a document has successfully passed the initial `scan_vali
 Based on the content of the `annotation`, the process forks:
 
 *   **Path 1: Fully Automated (No Issues)**
-    *   If the annotation indicates the data is clean or was successfully auto-corrected, the processor calls the `finalizeOcrExtraction` tool directly. The job is marked "completed," and the document proceeds to the `inventory_update` stage without any human involvement.
+    *   If the annotation indicates the data is clean or was successfully auto-corrected, the processor calls the `finalizeOcrExtraction` tool directly. The job is marked "completed," and the document proceeds to the `update-preparation` stage without any human involvement.
 
 *   **Path 2: Human-in-the-Loop (Unresolved Issues)**
     *   If the annotation flags unresolved issues, the processor does not complete the job. Instead, it triggers the main conversational AI by adding a message to the user's conversation with an action to `review_ocr_annotation`.
@@ -151,7 +151,7 @@ Based on the content of the `annotation`, the process forks:
 ### C. Completion and Persistence
 
 *   The `finalizeOcrExtraction` tool marks the Bull job as "completed", passing the final, validated data as the job's return value.
-*   The `ocr_extraction` field in the MongoDB `scans` document is updated with the status "completed" and the structured line-item data. This data is now ready for the final `inventory_update` stage.
+*   The `ocr_extraction` field in the MongoDB `scans` document is updated with the status "completed" and the structured line-item data. This data is now ready for the `update-preparation` stage.
 
 ---
 
@@ -187,7 +187,7 @@ This section details the revised design for the `inventory_update` pipeline stag
 
 ### A. Core Architecture: Pluggable Module System
 
-The `inventory_update` stage is built on a flexible architecture that avoids code duplication and allows for easy integration of new back-office systems.
+The `update-preparation` and `inventory_update` stages are built on a flexible architecture that avoids code duplication and allows for easy integration of new back-office systems.
 
 *   **Single Generic Processor**: All inventory update jobs, regardless of the target system (e.g., Rexail), are handled by a single, generic processor. This eliminates the need for system-specific processor files.
 

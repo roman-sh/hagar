@@ -1,5 +1,5 @@
-import { type ScanValidationJobCompletedPayload } from './jobs'
 import { type H } from '../config/constants'
+import { type QueueKey } from '../queues-base'
 
 
 /**
@@ -10,10 +10,11 @@ export type InventoryItem = {
    [H.ROW_NUMBER]?: string
    [H.SUPPLIER_ITEM_NAME]?: string
    [H.QUANTITY]?: string
-   [H.UNIT]?: string
+   [H.SUPPLIER_ITEM_UNIT]?: string
    [H.BARCODE]?: string
    [H.INVENTORY_ITEM_ID]?: string // Our internal product ID
    [H.INVENTORY_ITEM_NAME]?: string // Our internal product name
+   [H.INVENTORY_ITEM_UNIT]?: string // Our internal product unit
    [H.MATCH_TYPE]?: MatchType
    candidates?: { productId: string; name: string; unit?: string }[] // for non-exact matches
    pageNumber?: number   // metadata per item
@@ -34,11 +35,18 @@ export type InvoiceMeta = {
    pages: number
 }
 
+export type InventorySpreadsheet = {
+   meta: InvoiceMeta
+   header: string[]
+   rows: string[][]
+}
+
 export type PassArgs = {
    doc: InventoryDocument
    storeId: string
-   docId: string
-   passName?: MatchType
+   docId: string,
+   queue: QueueKey,
+   target?: MatchType
 }
 
 export type MatchType = 'barcode' | 'barcode-collision' | 'vector' | 'regex'

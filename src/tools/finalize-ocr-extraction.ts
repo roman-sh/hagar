@@ -24,10 +24,10 @@ export const finalizeOcrExtractionSchema: ChatCompletionTool = {
                   properties: {
                      table: { type: 'number' },
                      page: { type: 'number' },
-                     header: { type: 'array', items: { type: 'string' } },
+                     headers: { type: 'array', items: { type: 'string' } },
                      rows: { type: 'array', items: { type: 'array', items: { type: 'string' } } },
                   },
-                  required: ['table', 'page', 'header', 'rows'],
+                  required: ['table', 'page', 'headers', 'rows'],
                }
             },
          },

@@ -1,74 +1,29 @@
+import { db } from '../connections/mongodb'
 import { Job } from 'bull'
-import { JobData } from '../types/jobs.js'
-import { database } from '../services/db.js'
-import { inventory } from '../services/inventory.js'
-import { barcodePass, vectorPass, aiPass } from '../services/inventory-items/index.js'
-import {
-   InventoryDocument,
-   PassArgs,
-   CatalogModule,
-} from '../types/inventory.js'
-import { INVENTORY_UPDATE } from '../config/constants.js'
+import { InventoryUpdateJobData, BaseJobResult } from '../types/jobs'
 
 /**
- * A generic Bull processor for the 'inventory_update' queue.
- * It dynamically loads system-specific modules to perform tasks
- * like catalog synchronization.
- *
- * @param job The Bull job object, where job.id is the document ID.
- * @returns An unresolved promise to keep the job in an active state.
+ * Process a job for data approval
+ * @param job - The Bull job object
+ * @returns The processing result
  */
 export async function inventoryUpdateProcessor(
-   job: Job<JobData>
-): Promise<void> {
-   const docId = job.id as string
-   log.info({ docId }, 'Starting inventory update process.')
+   job: Job<InventoryUpdateJobData>
+): Promise<BaseJobResult> {
+   log.info(`Processing data approval job: ${job.id}`)
 
-   // 1. Get the store and system details from the database.
-   const { storeId, system } = await database.getStoreByDocId(docId)
+   // Get document ID from job.id
+   const docId = job.id.toString()
 
-   // 2. Dynamically import the catalog service for the specific system (vite specific syntax).
-   const modules = import.meta.glob('../systems/*/catalog.ts')
-   const path = `../systems/${system}/catalog.ts`
-   const { catalog } = await modules[path]() as CatalogModule
+   // TODO: implement
 
-   // 3. Sync the catalog.
-   await catalog.sync(storeId)
+   // Simulate processing delay
+   await new Promise((resolve) => setTimeout(resolve, 1000))
 
-   // 4. Initialize the inventory document from extracted data.
-   const doc = await inventory.initializeDocument(docId)
+   // Mock update to database
 
-   // 5. Run the passes.
-   const passes = [
-      barcodePass,
-      (args: PassArgs) => aiPass({ ...args, passName: 'barcode-collision' }),
-      vectorPass,
-      (args: PassArgs) => aiPass({ ...args, passName: 'vector' }),
-   ]
-
-   for (const pass of passes) {
-      if (inventoryReady(doc)) break
-      await pass({ doc, storeId, docId })
+   return {
+      success: true,
+      message: 'Data updated successfully'
    }
-
-   await job.update(doc)
-
-   await database.saveArtefact({
-      docId,
-      storeId,
-      queue: INVENTORY_UPDATE,
-      key: 'processed_inventory_document',
-      data: doc,
-   })
-   log.info({ docId, storeId }, 'Processed inventory document saved to artefacts')
-
-   // The job will hang here until completed by an external trigger.
-   return new Promise(() => { })
 }
-
-
-// -------- Helper functions --------
-
-function inventoryReady(doc: InventoryDocument) {
-   return doc.items.every(i => i.inventory_item_id)
-} 

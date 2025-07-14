@@ -1,26 +1,35 @@
 import { Job, ProcessCallbackFunction, Queue } from 'bull'
-import { JOB_STATUS, SCAN_VALIDATION, OCR_EXTRACTION, DATA_APPROVAL, INVENTORY_UPDATE } from './config/constants'
-import { JobData } from './types/jobs'
+import {
+   JOB_STATUS,
+   SCAN_VALIDATION,
+   OCR_EXTRACTION,
+   UPDATE_PREPARATION,
+   INVENTORY_UPDATE,
+} from './config/constants'
+import { JobDataMap } from './types/jobs.js'
 import {
    scanValidationProcessor,
    ocrExtractionProcessor,
-   dataApprovalProcessor,
+   updatePreparationProcessor,
    inventoryUpdateProcessor,
 } from './processors'
 import { outboundMessagesProcessor } from './processors/outbound-messages-bee'
 import { database } from './services/db'
 import { queuesMap, outboundMessagesQueue, QueueKey } from './queues-base'
-import { JobRecord } from './types/documents'
+
+
+// We use a very high concurrency to allow jobs
+// to await for user interaction and not to block the pipeline.
+const PIPELINE_QUEUE_CONCURRENCY = 100000
 
 
 // Separate processor maps
-const processorsMap: Record<
-   QueueKey,
-   ProcessCallbackFunction<JobData>
-> = {
+const processorsMap: {
+   [K in QueueKey]: ProcessCallbackFunction<JobDataMap[K]>;
+} = {
    [SCAN_VALIDATION]: scanValidationProcessor,
    [OCR_EXTRACTION]: ocrExtractionProcessor,
-   [DATA_APPROVAL]: dataApprovalProcessor,
+   [UPDATE_PREPARATION]: updatePreparationProcessor,
    [INVENTORY_UPDATE]: inventoryUpdateProcessor,
 }
 
@@ -31,17 +40,21 @@ export function initializeQueues(): void {
    log.info('Initializing queues with processors...')
 
    // Set up pipeline queues with static, unnamed processors
-   for (const queueName of Object.keys(processorsMap) as Array<keyof typeof processorsMap>) {
-      const queue = queuesMap[queueName]
-      const processor = processorsMap[queueName]
-      queue.process(100000, processor)
-      setupQueueEventHandlers(queue, queueName)
+   for (const queueName of Object.keys(processorsMap) as QueueKey[]) {
+      setupQueue(queueName)
    }
 
    // Set up outbound message Bee queue
    outboundMessagesQueue.process(1, outboundMessagesProcessor)
 
    log.info('All queues initialized successfully')
+}
+
+function setupQueue<K extends QueueKey>(queueName: K) {
+   const queue = queuesMap[queueName]
+   const processor = processorsMap[queueName]
+   queue.process(PIPELINE_QUEUE_CONCURRENCY, processor)
+   setupQueueEventHandlers(queue, queueName)
 }
 
 /**
@@ -51,7 +64,7 @@ export function initializeQueues(): void {
  */
 function setupQueueEventHandlers(
    queue: Queue<any>,
-   queueName: string
+   queueName: QueueKey
 ): void {
 
    // Log when jobs become active (start processing)

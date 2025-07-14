@@ -28,7 +28,7 @@ import { database } from '../db'
  * @param docId The master document/job ID for consistent logging.
  */
 export const aiPass = async (
-   { doc, storeId, docId, passName }: PassArgs
+   { doc, storeId, docId, target, queue }: PassArgs
 ): Promise<void> => {
 
    // Filter for items that are unresolved and have multiple candidates.
@@ -51,7 +51,7 @@ export const aiPass = async (
    const itemsForAi = ambiguousItems.map((item, itemIndex) => {
       // Enhance the item name with its unit for better matching context.
       const itemName = item[H.SUPPLIER_ITEM_NAME]
-      const itemUnit = item[H.UNIT]
+      const itemUnit = item[H.SUPPLIER_ITEM_UNIT]
       // Format the unit in parentheses for clear, human-readable display.
       const itemNameForAi = itemUnit ? `${itemName} (${itemUnit})` : itemName
 
@@ -72,14 +72,14 @@ export const aiPass = async (
    await database.saveArtefact({
       docId,
       storeId,
-      queue: INVENTORY_UPDATE,
-      key: `${passName}-ai-pass-input`,
+      queue,
+      key: `${target}-ai-pass-input`,
       data: itemsForAi,
    })
 
    log.info(
       { docId, count: ambiguousItems.length },
-      `${passName} aiPass: Found ambiguous items, preparing for AI resolution.`
+      `${target} aiPass: Found ambiguous items, preparing for AI resolution.`
    )
 
    // Inject the JSON data into the main prompt template.
@@ -122,7 +122,8 @@ export const aiPass = async (
       // Mutate the original document item with the AI's choice.
       itemToUpdate[H.INVENTORY_ITEM_ID] = chosenCandidate.productId
       itemToUpdate[H.INVENTORY_ITEM_NAME] = chosenCandidate.name
-      itemToUpdate[H.MATCH_TYPE] = passName 
+      itemToUpdate[H.INVENTORY_ITEM_UNIT] = chosenCandidate.unit
+      itemToUpdate[H.MATCH_TYPE] = target 
       // Clean up the candidates array
       delete itemToUpdate.candidates
 
@@ -133,7 +134,7 @@ export const aiPass = async (
             supplierName: itemToUpdate[H.SUPPLIER_ITEM_NAME],
             inventoryName: chosenCandidate.name,
          },
-         `${passName} aiPass: Resolved item.`
+         `${target} aiPass: Resolved item.`
       )
 
    }
@@ -144,8 +145,8 @@ export const aiPass = async (
    await database.saveArtefact({
       docId,
       storeId,
-      queue: INVENTORY_UPDATE,
-      key: `${passName}-ai-pass-output`,
+      queue,
+      key: `${target}-ai-pass-output`,
       data: ambiguousItems,
    })
 }

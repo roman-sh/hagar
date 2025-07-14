@@ -1,18 +1,59 @@
 import { Job } from 'bull'
 import { TableData } from '../services/ocr'
-import { InvoiceMeta } from './inventory'
+import { InvoiceMeta, InventoryDocument } from './inventory.js'
+import {
+   SCAN_VALIDATION,
+   OCR_EXTRACTION,
+   UPDATE_PREPARATION,
+   INVENTORY_UPDATE,
+} from '../config/constants.js'
 
 /**
- * Common job data interface used across all queue processors
- *
- * Convention:
- * - Document ID is passed as job.id (via options.jobId when adding a job)
- * - Each job also requires a storeId to identify which store the document belongs to
+ * General Convention for Pipeline Jobs:
+ * The document's `_id` from MongoDB is always passed as the `job.id`
+ * when a job is added to a Bull queue (via the `jobId` option). This creates
+ * a direct, traceable link between the data record and its processing job.
  */
-export interface JobData {
-   storeId: string
-   [key: string]: any // Additional properties specific to certain job types
+
+// --- Specific Job Data Interfaces ---
+
+/**
+ * Job data for the scan validation queue.
+ * This is currently a placeholder and can be expanded later.
+ */
+export interface ScanValidationJobData {}
+
+/**
+ * Job data for the OCR extraction queue.
+ * This is currently a placeholder and can be expanded later.
+ */
+export interface OcrExtractionJobData {}
+
+/**
+ * Job data for the update preparation queue. It holds the processed
+ * inventory document that is being prepared for confirmation.
+ * It is a union of an empty object (initial state) and the full
+ * document (processed state).
+ */
+export type UpdatePreparationJobData = {} | InventoryDocument
+
+/**
+ * Job data for the inventory update queue. 
+ * This is currently a placeholder and can be expanded later.
+ */
+export interface InventoryUpdateJobData {}
+
+/**
+ * A map that associates each queue name with its specific job data type.
+ * This is the key to achieving strong typing for queues and processors.
+ */
+export interface JobDataMap {
+   [SCAN_VALIDATION]: ScanValidationJobData
+   [OCR_EXTRACTION]: OcrExtractionJobData
+   [UPDATE_PREPARATION]: UpdatePreparationJobData
+   [INVENTORY_UPDATE]: InventoryUpdateJobData
 }
+
 
 /**
  * Interface for inbound message job data
