@@ -25,10 +25,22 @@ export const barcodePass = async (
    { doc, storeId, docId }: PassArgs
 ): Promise<void> => {
    
+   const barcodeRegex = /^\d+$/
    const unresolvedItems = doc.items
-      .filter(item => !item[H.INVENTORY_ITEM_ID] && item[H.BARCODE])
+      .filter(item =>
+         !item[H.INVENTORY_ITEM_ID]
+         && item[H.BARCODE]
+         && item[H.BARCODE].length >= 6
+         && barcodeRegex.test(item[H.BARCODE])
+      )
 
-   if (!unresolvedItems.length) return
+   if (!unresolvedItems.length) {
+      log.info(
+         { docId, storeId },
+         'barcodePass: No items with barcodes to process.'
+      )
+      return
+   }
 
    log.info(
       { docId, count: unresolvedItems.length },
@@ -67,7 +79,7 @@ export const barcodePass = async (
       }
       else if (hits.length > 1) {
          item.candidates = hits.map(h => ({
-            productId: h._id,
+            _id: h._id,
             name: h.name,
             unit: h.unit,
          }))

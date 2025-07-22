@@ -1,14 +1,17 @@
 import { Job } from 'bull'
 import { UpdatePreparationJobData } from '../types/jobs'
 import { database } from '../services/db'
-import { inventory } from '../services/inventory'
-import { barcodePass, vectorPass, aiPass } from '../services/inventory-items'
+import * as inventory from '../services/inventory'
+import {
+   barcodePass,
+   vectorPass,
+   aiPass
+} from '../services/inventory-items'
 import {
    InventoryDocument,
    PassArgs,
    CatalogModule,
 } from '../types/inventory'
-import { UPDATE_PREPARATION } from '../config/constants'
 import { db } from '../connections/mongodb'
 import { MessageDocument, DocType } from '../types/documents'
 import { OptionalId } from 'mongodb'
@@ -76,10 +79,7 @@ export async function updatePreparationProcessor(
    // 7. Get user phone number to trigger the confirmation flow.
    const { phone } = await database.getScanAndStoreDetails(docId)
 
-   // 8. Create a summary of the processed document.
-   const summary = inventory.createSummary(doc)
-
-   // 9. Inject a trigger message into the conversation for the agent to pick up.
+   // 8. Inject a trigger message into the conversation for the agent to pick up.
    await db.collection<OptionalId<MessageDocument>>('messages').insertOne({
       type: DocType.MESSAGE,
       role: 'user',
@@ -88,13 +88,12 @@ export async function updatePreparationProcessor(
       content: {
          action: 'request_inventory_confirmation',
          docId,
-         summary,
       },
       storeId,
       createdAt: new Date(),
    })
 
-   // 10. Trigger the GPT agent to process the new message.
+   // 9. Trigger the GPT agent to process the new message.
    gpt.process({ phone, storeId })
 
    // The job will hang here until completed by an external trigger (the confirmation tool).

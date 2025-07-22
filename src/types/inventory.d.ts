@@ -1,5 +1,6 @@
 import { type H } from '../config/constants'
 import { type QueueKey } from '../queues-base'
+import { type ProductDocument } from './documents'
 
 
 /**
@@ -15,9 +16,22 @@ export type InventoryItem = {
    [H.INVENTORY_ITEM_ID]?: string // Our internal product ID
    [H.INVENTORY_ITEM_NAME]?: string // Our internal product name
    [H.INVENTORY_ITEM_UNIT]?: string // Our internal product unit
-   [H.MATCH_TYPE]?: MatchType
-   candidates?: { productId: string; name: string; unit?: string }[] // for non-exact matches
-   pageNumber?: number   // metadata per item
+   [H.MATCH_TYPE]?: MatchType | ''
+   [H.PAGE_NUMBER]?: number   // metadata per item
+   candidates?: ProductCandidate[] // for non-exact matches
+}
+
+/**
+ * A candidate for a product match, typically from a search.
+ * It's derived from the main ProductDocument to ensure consistency,
+ * picking '_id', 'name' and 'unit'.
+ */
+export type ProductCandidate = Pick<ProductDocument,
+   | '_id'
+   | 'name'
+   | 'unit'
+   > & {
+   score?: number
 }
 
 /**
@@ -35,11 +49,16 @@ export type InvoiceMeta = {
    pages: number
 }
 
+/**
+ * Represents the "spreadsheet" JSON format for an inventory document.
+ * This is a token-efficient format for agent interaction.
+ */
 export type InventorySpreadsheet = {
-   meta: InvoiceMeta
-   header: string[]
-   rows: string[][]
+   meta: InventoryDocument['meta']
+   header: (keyof InventoryItem)[]
+   rows: (InventoryItem[keyof InventoryItem])[][]
 }
+
 
 export type PassArgs = {
    doc: InventoryDocument
@@ -49,7 +68,7 @@ export type PassArgs = {
    target?: MatchType
 }
 
-export type MatchType = 'barcode' | 'barcode-collision' | 'vector' | 'regex'
+export type MatchType = 'barcode' | 'barcode-collision' | 'vector' | 'regex' | 'manual'
 
 export interface CatalogService {
    sync(storeId: string, options?: { force?: boolean }): Promise<void>

@@ -1,6 +1,6 @@
 // Document type definitions for MongoDB collections
 import { QueueKey } from '../queues-base'
-import { SCAN_VALIDATION, OCR_EXTRACTION, DATA_APPROVAL, INVENTORY_UPDATE } from '../config/constants'
+import { SCAN_VALIDATION, OCR_EXTRACTION, UPDATE_PREPARATION, INVENTORY_UPDATE } from '../config/constants'
 import { ChatCompletionMessage, ChatCompletionMessageToolCall } from 'openai/resources/chat/completions'
 import { ObjectId } from 'mongodb'
 import {
@@ -68,6 +68,7 @@ export interface ScanDocument extends BaseDocument {
    // Optional queue processing results
    [SCAN_VALIDATION]?: JobRecord
    [OCR_EXTRACTION]?: JobRecord
+   [UPDATE_PREPARATION]?: JobRecord
    [INVENTORY_UPDATE]?: JobRecord
 }
 
@@ -102,6 +103,7 @@ export interface ProductDocument extends BaseDocument {
    storeId: string
    productId: number
    name: string
+   nameLemmas: string[]
    description: string | null
    unit?: string
    barcodes: string[]

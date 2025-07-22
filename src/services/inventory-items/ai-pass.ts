@@ -1,6 +1,6 @@
-import { InventoryDocument, PassArgs } from '../../types/inventory'
+import { PassArgs } from '../../types/inventory'
 import { openai } from '../../connections/openai'
-import { H, INVENTORY_UPDATE } from '../../config/constants'
+import { H } from '../../config/constants'
 import resolveCandidatesPrompt from '../../prompts/resolve-candidates.md'
 import { AUX_MODEL } from '../../config/settings'
 import { database } from '../db'
@@ -97,8 +97,6 @@ export const aiPass = async (
 
    const content = response.choices[0].message.content
 
-   log.info({ docId, rawResponse: content }, 'aiPass: Raw AI response received.')
-
    // Parse the AI's response and apply the resolutions.
    const { result: resolutions } =
       JSON.parse(content) as { result: Record<string, string | null>[] }
@@ -120,23 +118,20 @@ export const aiPass = async (
       const chosenCandidate = itemToUpdate.candidates?.[+candidateIndexStr]
 
       // Mutate the original document item with the AI's choice.
-      itemToUpdate[H.INVENTORY_ITEM_ID] = chosenCandidate.productId
+      itemToUpdate[H.INVENTORY_ITEM_ID] = chosenCandidate._id
       itemToUpdate[H.INVENTORY_ITEM_NAME] = chosenCandidate.name
       itemToUpdate[H.INVENTORY_ITEM_UNIT] = chosenCandidate.unit
-      itemToUpdate[H.MATCH_TYPE] = target 
-      // Clean up the candidates array
-      delete itemToUpdate.candidates
+      itemToUpdate[H.MATCH_TYPE] = target
 
       log.info(
          {
             docId,
-            productId: chosenCandidate.productId,
+            productId: chosenCandidate._id,
             supplierName: itemToUpdate[H.SUPPLIER_ITEM_NAME],
             inventoryName: chosenCandidate.name,
          },
          `${target} aiPass: Resolved item.`
       )
-
    }
 
    // Save the output payload as a job artefact after processing.
@@ -149,4 +144,9 @@ export const aiPass = async (
       key: `${target}-ai-pass-output`,
       data: ambiguousItems,
    })
+
+   // Clean up all ambiguous items after the pass.
+   // For unresolved items we can inspect candidates in ai-pass-output artefact.
+   ambiguousItems.forEach(item => delete item.candidates)
+
 }

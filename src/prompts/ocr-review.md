@@ -38,7 +38,7 @@ Example of a correct multi-page document:
 
 1.  **Review for Suitability and Correctness**:
     -   Examine the table(s) to confirm they are suitable for an inventory update. A suitable table will have a clear header with columns for things like an item description and quantity (`תיאור`, `כמות`, etc.) and rows that contain corresponding data.
-    -   Check for common OCR transcription errors (e.g., "I" instead of "1", "O" instead of "0"). Correct them if you are highly confident.
+    -   Refrain from correcting any text content within the cells. The text from the OCR should be preserved exactly as it is, even if it appears to contain typos or errors.
 
 2.  **Handle Multi-Page Documents**:
     -   Most invoices are single-paged. For the ones that span multiple pages, the main item table will almost always **repeat the same header** on each new page. In rare cases, a continuation page might have an empty `header` array. Both scenarios are valid as long as the row structure is consistent with the first page's table.

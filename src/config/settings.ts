@@ -25,6 +25,11 @@ export const EMBEDDING_MODEL_CONFIG = {
 export const VECTOR_SEARCH_INDEX_NAME = 'name_embedding_index_3072'
 
 /**
+ * The name of the MongoDB Atlas Search index for product name lemmas.
+ */
+export const TEXT_SEARCH_INDEX_NAME = 'name-lemmas'
+
+/**
  * The model identifier for auxiliary, non-conversational AI tasks.
  * This model is used for powerful, one-off operations like data structuring,
  * review, and mapping, where a direct, structured response is required.

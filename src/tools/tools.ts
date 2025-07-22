@@ -6,16 +6,20 @@ import { sendPdfToUser, sendPdfToUserSchema } from './send-pdf-to-user'
 import { finalizeOcrExtraction, finalizeOcrExtractionSchema } from './finalize-ocr-extraction'
 import { getOcrData, getOcrDataSchema } from './get-ocr-data'
 import { requestInventoryConfirmation, requestInventoryConfirmationSchema } from './request-inventory-confirmation'
+import { productSearch, productSearchSchema } from './product-search'
+import { applyRowCorrection, applyRowCorrectionSchema } from './apply-row-correction'
 
 // Tool schemas for GPT
 export const tools: ChatCompletionTool[] = [
    validateDeliveryNoteSchema,
    finalizeScanValidationSchema,
    visualInspectSchema,
-   sendPdfToUserSchema,
+   // sendPdfToUserSchema,
    finalizeOcrExtractionSchema,
    getOcrDataSchema,
    requestInventoryConfirmationSchema,
+   productSearchSchema,
+   applyRowCorrectionSchema,
 ]
 
 // Tool function implementations
@@ -23,8 +27,10 @@ export const functions = {
    validateDeliveryNote,
    finalizeScanValidation,
    visualInspect,
-   sendPdfToUser,
+   // sendPdfToUser,
    finalizeOcrExtraction,
    getOcrData,
    requestInventoryConfirmation,
+   productSearch,
+   applyRowCorrection,
 }

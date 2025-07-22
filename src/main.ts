@@ -14,6 +14,7 @@ import { Message } from "whatsapp-web.js"
 import { messageStore } from './services/message-store.js'
 import { phoneQueueManager } from './services/phone-queues-manager.js'
 
+
 export async function buildApp() {
    log.info('Building application...')
    

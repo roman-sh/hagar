@@ -6,6 +6,8 @@ import { db } from "../../connections/mongodb"
 import { ProductDocument } from "../../types/documents"
 
 
+const CANDIDATE_LIMIT = 3
+
 /**
  * Performs a vector-based matching pass to find potential candidates for unresolved items.
  *
@@ -67,7 +69,7 @@ export const vectorPass = async (
                path: 'embedding',
                queryVector,
                exact: true,
-               limit: 3,
+               limit: CANDIDATE_LIMIT,
             },
          },
          {
@@ -85,9 +87,9 @@ export const vectorPass = async (
 
    // 4. Mutate the document by attaching the candidates to each item.
    itemsToSearch.forEach((item, index) => {
-   const candidates = searchResults[index]
+      const candidates = searchResults[index]
       item.candidates = candidates.map(c => ({
-         productId: c._id,
+         _id: c._id,
          name: c.name,
          unit: c.unit,
       }))

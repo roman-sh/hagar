@@ -1,6 +1,7 @@
 import { ChatCompletionTool } from 'openai/resources'
 import { database } from '../services/db'
 import { html } from '../services/html'
+import * as inventory from '../services/inventory'
 import { client } from '../connections/whatsapp'
 import whatsappWeb from 'whatsapp-web.js'
 import { RequestInventoryConfirmationArgs } from '../types/tool-args'
@@ -14,20 +15,16 @@ export const requestInventoryConfirmationSchema: ChatCompletionTool = {
    type: 'function',
    function: {
       name: 'requestInventoryConfirmation',
-      description: 'Request user confirmation for an inventory update draft.',
+      description: 'Sends the user a PDF draft of the inventory update for confirmation.',
       parameters: {
          type: 'object',
          properties: {
             docId: {
                type: 'string',
                description: "The id of processed document/invoice."
-            },
-            caption: {
-               type: 'string',
-               description: 'The user-facing message to be sent along with the draft file.'
             }
          },
-         required: ['docId', 'caption']
+         required: ['docId']
       }
    }
 }
@@ -38,7 +35,7 @@ export const requestInventoryConfirmationSchema: ChatCompletionTool = {
  * @param args - The arguments for the tool, containing the docId.
  */
 export const requestInventoryConfirmation = async (args: RequestInventoryConfirmationArgs) => {
-   const { docId, caption } = args
+   const { docId } = args
    try {
       // Step 1: Find the active job using its ID.
       const { job } = await findActiveJob(docId)
@@ -46,13 +43,16 @@ export const requestInventoryConfirmation = async (args: RequestInventoryConfirm
       // Step 2: Extract the inventory document from the job's data.
       const doc = job.data as InventoryDocument
 
-      // Step 3: Retrieve the user's phone number.
+      // Step 3: Create a summary of the processed document for the agent to use.
+      const summary = inventory.createSummary(doc)
+
+      // Step 4: Retrieve the user's phone number.
       const { phone } = await database.getScanAndStoreDetails(docId)
 
-      // Step 4: Generate the confirmation PDF on-the-fly from the document data.
+      // Step 5: Generate the confirmation PDF on-the-fly from the document data.
       const pdfBuffer = await html.generateInventoryConfirmation(doc)
 
-      // Step 5: Create a WhatsApp-compatible media object from the PDF buffer.
+      // Step 6: Create a WhatsApp-compatible media object from the PDF buffer.
       // TODO: we may want to save this to S3 for audit/debugging purposes.
       const media = new whatsappWeb.MessageMedia(
          'application/pdf',
@@ -60,14 +60,16 @@ export const requestInventoryConfirmation = async (args: RequestInventoryConfirm
          'inventory_update_draft.pdf'
       )
 
-      // Step 6: Send the PDF as a document with the provided caption to the user.
+      // Step 7: Send the PDF as a document to the user.
       const chatId = `${phone}@c.us`
-      await client.sendMessage(chatId, media, { caption })
+      await client.sendMessage(chatId, media)
 
       // Return a success message for the tool execution log.
       return {
+         docId,
          success: true,
-         message: `Inventory confirmation request sent to ${phone}.`
+         message: `Inventory confirmation request sent to ${phone}.`,
+         summary,
       }
 
    } catch (error) {

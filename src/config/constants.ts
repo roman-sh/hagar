@@ -31,6 +31,7 @@ export const META_KEYS = [
 
 // Inventory update headers
 export const H = {
+   PAGE_NUMBER: 'pageNumber',
    ROW_NUMBER: 'row_number',
    SUPPLIER_ITEM_NAME: 'supplier_item_name',
    SUPPLIER_ITEM_UNIT: 'supplier_item_unit',
@@ -44,5 +45,13 @@ export const H = {
 
 
 export const INVENTORY_UPDATE_HEADERS = Object.values(H)
+
+export const DISPLAY_HEADERS = {
+   [H.ROW_NUMBER]: '#',
+   [H.SUPPLIER_ITEM_NAME]: 'פריט ספק',
+   [H.INVENTORY_ITEM_NAME]: 'פריט מלאי',
+   [H.QUANTITY]: 'כמות',
+   [H.MATCH_TYPE]: 'אופן התאמה'
+}
 
 

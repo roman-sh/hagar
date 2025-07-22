@@ -33,3 +33,6 @@ nodemon.json
 
 # redis backup
 dump.rdb
+
+# python venv
+/venv/

@@ -9,6 +9,7 @@ import {
    DEFAULT_SYNC_COOLDOWN_MINUTES,
    EMBEDDING_MODEL_CONFIG,
 } from '../../config/settings'
+import { lemmatizer } from '../../services/lemmatizer'
 
 /**
  * Service object for interacting with the Rexail catalog.
@@ -89,18 +90,25 @@ export const catalog: CatalogService = {
 
          log.debug({ storeId, add: toAdd.length, update: toUpdate.length, remove: toDeleteIds.length }, 'Catalog changes identified.')
 
-         // 5. Process embeddings for new and updated products
-         const productsToEmbed = [...toAdd, ...toUpdate]
+         // 5. Process embeddings and lemmas for new and updated products
+         const productsToProcess = [...toAdd, ...toUpdate]
          let embeddingsMap = new Map<number, number[]>()
+         let lemmasMap = new Map<number, string[]>()
 
-         if (productsToEmbed.length > 0) {
-            log.info({ storeId, count: productsToEmbed.length }, 'Generating embeddings for new/updated products...')
-            const embedStart = Date.now()
-            const textsToEmbed = productsToEmbed.map(p => p.fullName)
-            const embeddings = await createEmbedding(textsToEmbed)
-            log.info({ storeId, durationMs: Date.now() - embedStart }, 'Finished generating embeddings.')
-            
-            embeddingsMap = new Map(productsToEmbed.map((p: RexailProduct, i) => [p.nonObfuscatedId, embeddings[i]]))
+         if (productsToProcess.length > 0) {
+            log.info({ storeId, count: productsToProcess.length }, 'Generating embeddings and lemmas for new/updated products...')
+            const textsToProcess = productsToProcess.map(p => p.fullName)
+
+            const embeddingsStart = Date.now()
+            const embeddings = await createEmbedding(textsToProcess)
+            log.info({ storeId, durationMs: Date.now() - embeddingsStart }, 'Finished generating embeddings.')
+
+            const lemmasStart = Date.now()
+            const lemmas = await lemmatizer.batchLemmatize(textsToProcess)
+            log.info({ storeId, durationMs: Date.now() - lemmasStart }, 'Finished generating lemmas.')
+
+            embeddingsMap = new Map(productsToProcess.map((p: RexailProduct, i) => [p.nonObfuscatedId, embeddings[i]]))
+            lemmasMap = new Map(productsToProcess.map((p: RexailProduct, i) => [p.nonObfuscatedId, lemmas[i]]))
          }
 
          // 6. Execute database operations
@@ -108,14 +116,28 @@ export const catalog: CatalogService = {
 
          // Add new products
          if (toAdd.length > 0) {
-            const newDocs = toAdd.map(p => transformProduct(p, storeId, embeddingsMap.get(p.nonObfuscatedId)!))
+            const newDocs = toAdd.map(p =>
+               transformProduct(
+                  p,
+                  storeId,
+                  embeddingsMap.get(p.nonObfuscatedId),
+                  lemmasMap.get(p.nonObfuscatedId)
+               )
+            )
             promises.push(database.insertProducts(newDocs))
             log.debug({ storeId, count: newDocs.length }, 'Adding new products.')
          }
 
          // Update existing products
          if (toUpdate.length > 0) {
-            const updatedDocs = toUpdate.map(p => transformProduct(p, storeId, embeddingsMap.get(p.nonObfuscatedId)!))
+            const updatedDocs = toUpdate.map(p =>
+               transformProduct(
+                  p,
+                  storeId,
+                  embeddingsMap.get(p.nonObfuscatedId),
+                  lemmasMap.get(p.nonObfuscatedId)
+               )
+            )
             promises.push(database.updateProducts(updatedDocs))
             log.debug({ storeId, count: updatedDocs.length }, 'Updating existing products.')
          }
@@ -126,7 +148,12 @@ export const catalog: CatalogService = {
             log.debug({ storeId, count: toDeleteIds.length }, 'Deleting stale products.')
          }
 
+         const dbUpdateStart = Date.now()
          await Promise.all(promises)
+         const durationMs = Date.now() - dbUpdateStart
+
+         const opCount = toAdd.length + toUpdate.length + toDeleteIds.length
+         log.info({ storeId, durationMs, count: opCount }, 'Finished updating products in DB.')
 
          // 7. Update the store's last sync timestamp
          await database.updateStore(storeId, {
@@ -222,12 +249,14 @@ const transformProduct = (
    product: RexailProduct,
    storeId: string,
    embedding: number[],
+   nameLemmas: string[]
 ): ProductDocument => ({
    _id: `${DocType.PRODUCT}:${storeId}:${product.nonObfuscatedId}`,
    type: DocType.PRODUCT,
    storeId,
    productId: product.nonObfuscatedId,
    name: product.fullName,
+   nameLemmas,
    description: product.productExtraDetails,
    unit: product.productSellingUnits?.[0]?.sellingUnit?.name,
    barcodes: extractBarcodes(product),

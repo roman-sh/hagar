@@ -1,8 +1,9 @@
 import { queuesMap, QueueKey } from '../queues-base'
-import { INVENTORY_UPDATE, JOB_STATUS } from '../config/constants'
+import { JOB_STATUS } from '../config/constants'
 import { JobRecord } from '../types/documents'
 import { database } from './db'
 import { Job } from 'bull'
+
 
 export const pipeline = {
    /**

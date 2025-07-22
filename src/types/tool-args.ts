@@ -11,7 +11,10 @@ export interface SendPdfToUserArgs {
 
 export interface RequestInventoryConfirmationArgs {
    docId: string
-   caption: string
+}
+
+export interface GetInventoryMarkdownArgs {
+   docId: string
 }
 
 export interface finalizeScanValidationArgs extends InvoiceMeta {
@@ -32,4 +35,9 @@ export interface VisualInspectArgs {
 export interface FinalizeOcrExtractionArgs {
    docId: string
    data?: any[]
+}
+
+export interface ApplyManualCorrectionsArgs {
+   docId: string
+   corrections: Record<string, string>
 }

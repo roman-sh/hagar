@@ -1,5 +1,6 @@
 import React from 'react'
 import { InventoryDocument, InventoryItem } from '../types/inventory'
+import { DISPLAY_HEADERS, H } from '../config/constants'
 import cssContent from './InventoryConfirmation.css'
 
 // Configuration for layout
@@ -33,7 +34,7 @@ const getRowStyle = (item: InventoryItem): React.CSSProperties => {
 const groupByPage = (items: InventoryItem[]): Record<string, InventoryItem[]> => {
 	return items.reduce(
 		(acc, item) => {
-			const page = item.pageNumber || 1
+			const page = item[H.PAGE_NUMBER]
 			if (!acc[page]) {
 				acc[page] = []
 			}
@@ -116,23 +117,23 @@ export const InventoryConfirmation: React.FC<InventoryConfirmationProps> = ({
 								<table className="table table-borderless">
 									<thead>
 										<tr>
-											<th>#</th>
-											<th>פריט ספק</th>
-											<th>פריט במלאי</th>
-											<th>כמות</th>
+											<th>{DISPLAY_HEADERS[H.ROW_NUMBER]}</th>
+											<th>{DISPLAY_HEADERS[H.SUPPLIER_ITEM_NAME]}</th>
+											<th>{DISPLAY_HEADERS[H.INVENTORY_ITEM_NAME]}</th>
+											<th>{DISPLAY_HEADERS[H.QUANTITY]}</th>
 										</tr>
 									</thead>
 									<tbody>
 										{items.map((item, itemIndex) => (
 											<tr key={itemIndex} style={getRowStyle(item)}>
-												<td>{item.row_number}</td>
+												<td>{item[H.ROW_NUMBER]}</td>
 												<td className="truncate-text">
-													{item.supplier_item_name || ''}
+													{item[H.SUPPLIER_ITEM_NAME] || ''}
 												</td>
 												<td className="truncate-text">
-													{item.inventory_item_name || ''}
+													{item[H.INVENTORY_ITEM_NAME] || ''}
 												</td>
-												<td>{item.quantity}</td>
+												<td>{item[H.QUANTITY]}</td>
 											</tr>
 										))}
 									</tbody>
