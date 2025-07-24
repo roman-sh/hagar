@@ -10,8 +10,9 @@ import {
    ScanValidationJobCompletedPayload,
    OcrExtractionJobCompletedPayload,
 } from '../types/jobs'
-import { InvoiceMeta } from '../types/inventory'
+import { InvoiceMeta, ProductCandidate } from '../types/inventory'
 import { QueueKey } from '../queues-base'
+import { TEXT_SEARCH_INDEX_NAME, LEMMA_SEARCH_CANDIDATE_LIMIT } from '../config/settings'
 
 
 /**
@@ -37,7 +38,6 @@ type RecordJobProgressArgs = RecordJobProgressArgsBase & (
 
 interface SaveArtefactArgs {
    docId: string
-   storeId: string
    queue: QueueKey
    key: string
    data: any
@@ -58,10 +58,19 @@ export const database = {
     * @param {SaveArtefactArgs} args - The arguments for saving the artefact.
     */
    saveArtefact: async (
-      { docId, storeId, queue, key, data, flatten = false }: SaveArtefactArgs
+      { docId, queue, key, data, flatten = false }: SaveArtefactArgs
    ): Promise<void> => {
       const collection = db.collection<JobArtefactDocument>('job_artefacts')
       key = key.replace(/-/g, '_')
+      
+      const scanDoc = await db.collection<ScanDocument>('scans').findOne(
+         { _id: docId },
+         { projection: { storeId: 1 } }
+      )
+      if (!scanDoc || !scanDoc.storeId) {
+         throw new Error(`Could not find storeId for docId: ${docId}`)
+      }
+      const { storeId } = scanDoc
 
       const payload = flatten
          ? { timestamp: new Date(), ...data }
@@ -357,5 +366,49 @@ export const database = {
          // Preserve the original error as the cause (Node 16+ supports the 'cause' option).
          throw new Error(errorMessage, { cause: error })
       }
+   },
+
+   /**
+    * Performs an efficient Atlas Search for products using a lemmatized query string,
+    * pre-filtering by storeId for performance.
+    * @param {string[]} lemmas - The lemmatized search terms.
+    * @param {string} storeId - The store to search within.
+    * @returns {Promise<ProductCandidate[]>} A promise that resolves to an array of product candidates.
+    */
+   searchProductsByLemmas: async (lemmas: string[], storeId: string): Promise<ProductCandidate[]> => {
+      const pipeline = [
+         {
+            $search: {
+               index: TEXT_SEARCH_INDEX_NAME,
+               compound: {
+                  filter: [{
+                     equals: {
+                        value: storeId,
+                        path: 'storeId'
+                     }
+                  }],
+                  must: [{
+                     text: {
+                        query: lemmas,
+                        path: 'nameLemmas'
+                     }
+                  }]
+               }
+            }
+         },
+         { $limit: LEMMA_SEARCH_CANDIDATE_LIMIT },
+         {
+            $project: {
+               _id: 1,
+               name: 1,
+               unit: 1,
+               score: { $meta: 'searchScore' },
+            },
+         },
+      ]
+
+      return db.collection<ProductDocument>('products')
+         .aggregate<ProductCandidate>(pipeline)
+         .toArray()
    }
 }

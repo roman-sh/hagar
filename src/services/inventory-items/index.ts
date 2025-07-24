@@ -1,3 +1,4 @@
 export * from './barcode-pass'
 export * from './vector-pass'
+export * from './lemmas-pass'
 export * from './ai-pass'

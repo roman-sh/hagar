@@ -92,8 +92,8 @@ function setupQueueEventHandlers(
          parsedResult = result
       }
       log.info(
-         { jobId, queueName, result: parsedResult },
-         'Job completed successfully'
+         { jobId },
+         `${queueName.toUpperCase()}: Job completed successfully`
       )
    })
 

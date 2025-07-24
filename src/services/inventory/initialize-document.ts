@@ -74,7 +74,7 @@ export async function initializeDocument(
       const headerToIdxMap = await mapHeaders(table.header, table.rows)
 
       const itemsFromTable = table.rows.map(row => {
-         const item: InventoryItem = { [H.PAGE_NUMBER]: table.page }
+         const item: InventoryItem = { [H.PAGE_NUMBER]: String(table.page) }
 
          // Populate the item by iterating over our canonical headers
          for (const header of SUPPLIER_HEADERS_TO_FIND) {

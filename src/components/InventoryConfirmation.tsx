@@ -1,7 +1,7 @@
 import React from 'react'
 import { InventoryDocument, InventoryItem } from '../types/inventory'
 import { DISPLAY_HEADERS, H } from '../config/constants'
-import cssContent from './InventoryConfirmation.css'
+import cssContent from './InventoryConfirmation.css?raw'
 
 // Configuration for layout
 const DENSE_LAYOUT_ITEM_THRESHOLD = 20
@@ -15,12 +15,14 @@ const getRowStyle = (item: InventoryItem): React.CSSProperties => {
 	let borderColor = ''
 	switch (item.match_type) {
 		case 'barcode':
+		case 'manual':
 			borderColor = '#198754' // Success
 			break
-		case 'vector':
-		case 'barcode-collision':
-		case 'regex':
+		case 'name':
 			borderColor = '#ffc107' // Warning
+			break
+		case 'skip':
+			borderColor = 'transparent'
 			break
 		default:
 			borderColor = '#dc3545' // Danger

@@ -13,7 +13,7 @@ export interface RequestInventoryConfirmationArgs {
    docId: string
 }
 
-export interface GetInventoryMarkdownArgs {
+export interface GetInventorySpreadsheetArgs {
    docId: string
 }
 
@@ -35,6 +35,11 @@ export interface VisualInspectArgs {
 export interface FinalizeOcrExtractionArgs {
    docId: string
    data?: any[]
+}
+
+export interface ApplyInventoryCorrectionsArgs {
+   docId: string
+   spreadsheet: any // Using 'any' as the detailed type is complex for the agent
 }
 
 export interface ApplyManualCorrectionsArgs {

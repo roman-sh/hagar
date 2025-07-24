@@ -30,6 +30,11 @@ export const VECTOR_SEARCH_INDEX_NAME = 'name_embedding_index_3072'
 export const TEXT_SEARCH_INDEX_NAME = 'name-lemmas'
 
 /**
+ * The maximum number of candidates to return from a lemma-based product search.
+ */
+export const LEMMA_SEARCH_CANDIDATE_LIMIT = 3
+
+/**
  * The model identifier for auxiliary, non-conversational AI tasks.
  * This model is used for powerful, one-off operations like data structuring,
  * review, and mapping, where a direct, structured response is required.

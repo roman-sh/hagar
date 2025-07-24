@@ -21,21 +21,31 @@ export function createSummary(doc: InventoryDocument): InventoryUpdateSummary {
       unmatchedItems: 0,
       matchTypes: {
          'barcode': 0,
-         'barcode-collision': 0,
-         'vector': 0,
-         'regex': 0,
+         'name': 0,
+         'manual': 0,
+         'skip': 0,
       },
    }
 
    for (const item of doc.items) {
-      if (item[H.INVENTORY_ITEM_ID]) {
-         summary.matchedItems++
-         const matchType = item[H.MATCH_TYPE]
-         if (matchType) {
-            summary.matchTypes[matchType]++
-         }
-      } else {
-         summary.unmatchedItems++
+      const matchType = item[H.MATCH_TYPE];
+
+      switch (matchType) {
+         case 'barcode':
+         case 'name':
+         case 'manual':
+            summary.matchedItems++;
+            summary.matchTypes[matchType]++;
+            break;
+
+         case 'skip':
+            summary.matchTypes.skip++;
+            break;
+
+         default:
+            // This covers items with no match_type or an empty string
+            summary.unmatchedItems++;
+            break;
       }
    }
 

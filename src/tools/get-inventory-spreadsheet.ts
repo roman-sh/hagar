@@ -2,15 +2,15 @@ import { ChatCompletionTool } from 'openai/resources'
 import { findActiveJob } from '../services/pipeline'
 import { InventoryDocument } from '../types/inventory'
 import * as inventory from '../services/inventory'
-import { GetInventoryMarkdownArgs } from '../types/tool-args'
+import { GetInventorySpreadsheetArgs } from '../types/tool-args'
 import { InventoryDraftNotFoundError } from '../errors/application-errors'
 
 
-export const getInventoryMarkdownSchema: ChatCompletionTool = {
+export const getInventorySpreadsheetSchema: ChatCompletionTool = {
    type: 'function',
    function: {
-      name: 'getInventoryMarkdown',
-      description: 'Retrieves the Markdown representation of an inventory draft pdf, used for providing context to the agent during a correction flow.',
+      name: 'getInventorySpreadsheet',
+      description: 'Retrieves the JSON spreadsheet representation of an inventory draft, used for providing context to the agent during a correction flow.',
       parameters: {
          type: 'object',
          properties: {
@@ -25,12 +25,12 @@ export const getInventoryMarkdownSchema: ChatCompletionTool = {
 }
 
 /**
- * Retrieves the inventory document as a Markdown string.
- * @param {GetInventoryMarkdownArgs} args - The arguments for the function.
+ * Retrieves the inventory document as a spreadsheet object.
+ * @param {GetInventorySpreadsheetArgs} args - The arguments for the function.
  * @param {string} args.docId - The ID of the document being processed.
- * @returns {Promise<object>} An object containing the Markdown string.
+ * @returns {Promise<object>} An object containing the spreadsheet.
  */
-export async function getInventoryMarkdown({ docId }: GetInventoryMarkdownArgs) {
+export async function getInventorySpreadsheet({ docId }: GetInventorySpreadsheetArgs) {
    try {
       const { job } = await findActiveJob(docId)
       const doc = job.data as InventoryDocument
@@ -39,27 +39,23 @@ export async function getInventoryMarkdown({ docId }: GetInventoryMarkdownArgs) 
          `Could not find an inventory draft in job's data for docId ${docId}.`
       )}
 
-      const markdown = inventory.toMarkdown(doc, docId)
+      const spreadsheet = inventory.toSpreadsheet(doc)
 
-      log.info({ docId }, 'Retrieved inventory draft as Markdown.')
+      log.info({ docId }, 'Retrieved inventory draft as spreadsheet.')
 
       return {
          success: true,
-         markdown,
+         spreadsheet,
       }
    } catch (error) {
-      let errorMessage: string
-
-      if (error instanceof InventoryDraftNotFoundError) {
-         errorMessage = (error as Error).message
-      } else {
-         errorMessage = `Failed to get inventory draft as Markdown for docId ${docId}.`
-      }
+      const errorMessage = error instanceof InventoryDraftNotFoundError
+         ? (error as Error).message
+         : `Failed to get inventory draft as spreadsheet for docId ${docId}.`
 
       log.error(error, errorMessage)
       return {
          success: false,
-         message: `${errorMessage}\nError: ${(error as Error).message}`,
+         message: errorMessage
       }
    }
 } 

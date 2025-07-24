@@ -5,7 +5,8 @@ import * as inventory from '../services/inventory'
 import {
    barcodePass,
    vectorPass,
-   aiPass
+   aiPass,
+   lemmasPass
 } from '../services/inventory-items'
 import {
    InventoryDocument,
@@ -46,15 +47,17 @@ export async function updatePreparationProcessor(
    // 4. Initialize the inventory document from extracted data.
    const doc = await inventory.initializeDocument(docId)
 
-   // 5. Run the matching passes.
+   // 5. Run the matching passes in a structured pipeline.
    const passes = [
-      barcodePass,
-      (args: PassArgs) => aiPass({ ...args, target: 'barcode-collision' }),
-      vectorPass,
-      (args: PassArgs) => aiPass({ ...args, target: 'vector' }),
+      barcodePass,  // High-confidence direct matches first.
+      vectorPass,   // Gather candidates from vector search.
+      lemmasPass,   // Gather additional candidates from text search.
+      aiPass        // Consolidated AI review of all candidates.
    ]
 
    for (const pass of passes) {
+      // The inventoryReady check is now more of a safeguard, as the pipeline
+      // is designed to run all passes to gather a comprehensive candidate list.
       if (inventoryReady(doc)) break
       await pass({
          doc,
@@ -67,14 +70,15 @@ export async function updatePreparationProcessor(
    // 6. Save the processed document to the job data to retrieve it later from a tool.
    await job.update(doc)
 
-   // Also save to artefacts for debugging.
+   // --- Save artefact: initial document ---
+   log.info({ docId }, '[Update Preparation] Saving initial document to artefacts.')
    await database.saveArtefact({
       docId,
-      storeId,
       queue: job.queue.name as QueueKey,
-      key: 'processed_inventory_document',
+      key: 'initial_document',
       data: doc,
    })
+   // ---
 
    // 7. Get user phone number to trigger the confirmation flow.
    const { phone } = await database.getScanAndStoreDetails(docId)

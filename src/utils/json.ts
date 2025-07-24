@@ -7,4 +7,4 @@ export const json = {
       try { return JSON.parse(content) }
       catch (e) { return content }
    }
-}
+} 

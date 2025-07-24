@@ -29,7 +29,6 @@ export async function ocrExtractionProcessor(
    // Save extracted raw data as a job artefact
    await database.saveArtefact({
       docId,
-      storeId,
       queue: job.queue.name as QueueKey,
       key: 'extracted-data-from-azure-ocr',
       data: rawData,
@@ -43,7 +42,6 @@ export async function ocrExtractionProcessor(
    // Save data after o3 review / modification as a job artefact
    await database.saveArtefact({
       docId,
-      storeId,
       queue: job.queue.name as QueueKey,
       key: 'data-after-o3-review',
       data: { data: reviewedData, annotation },

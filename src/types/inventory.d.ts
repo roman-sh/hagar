@@ -17,7 +17,7 @@ export type InventoryItem = {
    [H.INVENTORY_ITEM_NAME]?: string // Our internal product name
    [H.INVENTORY_ITEM_UNIT]?: string // Our internal product unit
    [H.MATCH_TYPE]?: MatchType | ''
-   [H.PAGE_NUMBER]?: number   // metadata per item
+   [H.PAGE_NUMBER]?: string   // metadata per item
    candidates?: ProductCandidate[] // for non-exact matches
 }
 
@@ -68,7 +68,7 @@ export type PassArgs = {
    target?: MatchType
 }
 
-export type MatchType = 'barcode' | 'barcode-collision' | 'vector' | 'regex' | 'manual'
+export type MatchType = 'barcode' | 'name' | 'manual' | 'skip'
 
 export interface CatalogService {
    sync(storeId: string, options?: { force?: boolean }): Promise<void>

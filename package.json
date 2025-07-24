@@ -8,7 +8,7 @@
     "start": "node --env-file=.env dist/main.js",
     "dev": "tsx watch --env-file=.env src/main.ts",
     "test": "vitest",
-    "build": "vite build",
+    "build": "npm run typecheck && vite build",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [],
@@ -20,12 +20,15 @@
     "@bull-board/hono": "^6.7.10",
     "@elastic/elasticsearch": "~8.18.2",
     "@hono/node-server": "^1.14.3",
+    "@types/diff": "^7.0.2",
     "@types/qrcode-terminal": "^0.12.2",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "axios": "^1.10.0",
     "bee-queue": "^1.7.1",
     "bull": "^4.16.5",
+    "console-table-printer": "^2.14.6",
+    "deep-diff": "^1.0.2",
     "hono": "^4.7.5",
     "ioredis": "^5.6.0",
     "mongodb": "^6.15.0",
@@ -44,6 +47,7 @@
     "whatsapp-web.js": "^1.27.0"
   },
   "devDependencies": {
+    "@types/deep-diff": "^1.0.5",
     "@types/lodash": "^4.17.20",
     "@types/node": "^22.13.14",
     "dotenv": "^17.2.0",

@@ -8,6 +8,7 @@ import {
    JobWaitingPayloads,
    JobCompletedPayloads,
 } from './jobs'
+import { InventoryDocument } from './inventory'
 
 /**
  * Enum for document types, to be used in discriminator key
@@ -19,6 +20,7 @@ export enum DocType {
    MESSAGE = 'message',
    PRODUCT = 'product',
    JOB_ARTEFACT = 'job_artefact',
+   UPDATE = 'update',
 }
 
 /**
@@ -70,6 +72,15 @@ export interface ScanDocument extends BaseDocument {
    [OCR_EXTRACTION]?: JobRecord
    [UPDATE_PREPARATION]?: JobRecord
    [INVENTORY_UPDATE]?: JobRecord
+}
+
+/**
+ * Document for storing an approved inventory update, for learning purposes.
+ * The _id of this document is the same as the originating ScanDocument _id.
+ */
+export interface UpdateDocument extends BaseDocument, InventoryDocument {
+   _id: string
+   type: DocType.UPDATE
 }
 
 /**
@@ -155,4 +166,10 @@ export type JobArtefactDocument = {
    [K in QueueKey]?: Record<string, any>
 }
 
-export type AnyDocument = StoreDocument | ScanDocument | ProductDocument | MessageDocument | JobArtefactDocument
+export type AnyDocument = 
+   | StoreDocument
+   | ScanDocument
+   | ProductDocument
+   | MessageDocument
+   | JobArtefactDocument
+   | UpdateDocument
