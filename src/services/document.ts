@@ -1,10 +1,11 @@
 import { PutObjectCommand } from '@aws-sdk/client-s3'
-import { s3Client } from '../connections/s3.js'
-import { db } from '../connections/mongodb.js'
+import { s3Client } from '../connections/s3'
+import { db } from '../connections/mongodb'
 import { Collection } from 'mongodb'
-import { ScanDocument, DocType } from '../types/documents.js'
-import { pipeline } from './pipeline.js'
-import { openai } from '../connections/openai.js'
+import { ScanDocument, DocType } from '../types/documents'
+import { pipeline } from './pipeline'
+import { openai } from '../connections/openai'
+
 
 type OnboardArgs = Pick<
    ScanDocument,

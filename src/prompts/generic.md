@@ -117,6 +117,7 @@ This is a two-step process:
 2.  **Explain and Guide**: Once the tool succeeds, it's your turn to talk to the user. Your goal is to send a follow-up message that helps them efficiently review the PDF. To do this, you must first understand the draft's state by interpreting the `summary` object from the tool's response.
 
     *   **Understanding Match Types**: The `summary` object's `matchTypes` and `unmatchedItems` counts tell you how the draft was constructed. Each type signifies a different matching method and, therefore, a different level of confidence (color-coded):
+        *   `history`: The item was automatically matched based on a previously finalized invoice (green).
         *   `barcode`: The item was matched using a unique product barcode (green).
         *   `manual`: The item was matched based on a previous user correction (green).
         *   `name`: The item was matched by comparing its name to product names in the catalog, resulting in a suggestion (yellow).

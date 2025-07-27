@@ -14,6 +14,7 @@ Hagar™ is an AI-powered inventory management system that transforms physical d
 4.  **Human-in-the-Loop**: AI automates where possible, but human oversight via WhatsApp ensures accuracy and handles exceptions.
 5.  **Cost Efficiency**: Multi-model AI architecture and message batching optimize for token usage and API call costs.
 6.  **Scalability & Reliability**: Queue-based architecture, persistent storage, and robust error handling ensure the system can grow and recover gracefully.
+7.  **Self-Improving System**: The system learns from user actions. Manual corrections and decisions on one invoice are stored and used to automate the processing of future, similar invoices.
 
 ---
 
@@ -181,40 +182,60 @@ This flow details how Hagar connects to a back-office system (using Rexail as an
 
 ---
 
-## Flow 8: Inventory Update & Matching Workflow
+## Flow 8: Product Matching & Draft Preparation
 
-This section details the revised design for the `inventory_update` pipeline stage. It uses a robust, pluggable architecture where each supported back-office inventory system is a self-contained module.
+This flow details the `update-preparation` pipeline stage, responsible for transforming a validated list of OCR'd line items into a fully resolved inventory draft. It is built on a robust, pluggable architecture where business logic is separated into distinct, configurable phases.
 
-### A. Core Architecture: Pluggable Module System
+### A. Core Architecture: Pluggable Modules & Generic Processors
 
-The `update-preparation` and `inventory_update` stages are built on a flexible architecture that avoids code duplication and allows for easy integration of new back-office systems.
+The system is designed for extensibility without requiring changes to the core processing logic.
 
-*   **Single Generic Processor**: All inventory update jobs, regardless of the target system (e.g., Rexail), are handled by a single, generic processor. This eliminates the need for system-specific processor files.
+*   **Generic Processor**: A single, generic `update-preparation` processor handles all jobs for this stage, regardless of the store's back-office system (e.g., Rexail, Odoo).
+*   **Dynamic Module Loading**: The processor identifies the store's `backoffice.type` from its configuration and dynamically loads the corresponding module (e.g., from `src/systems/rexail/`). This module provides the system-specific implementations, primarily for catalog synchronization.
+*   **System-Agnostic Matching Engine**: The core product matching logic is implemented as a series of system-agnostic "passes" (e.g., `historyPass`, `barcodePass`) that are reused across all systems.
 
-*   **Dynamic Module Loading**: The processor achieves its flexibility using dynamic imports. At runtime, it identifies the store's back-office system and loads the corresponding module. This approach relies on a simple file-based convention, making the system truly pluggable.
+This architecture ensures that adding support for a new inventory system is as simple as creating a new module directory with the required `catalog.ts` implementation. The generic processor and matching passes handle the rest automatically.
 
-*   **Decoupled Matching Logic**: The core product matching logic is implemented as a series of system-agnostic "passes" (e.g., `barcodePass`, `vectorPass`). This powerful matching engine is reused by the processor for every job after the system-specific catalog has been synced.
+### B. The Preparation Pipeline: Abstract Phases
 
-### B. Processor Workflow Example: The Journey of the Cheese Invoice
+The processor executes a series of abstract phases to transform the raw data into a finalized draft.
 
-To illustrate the architecture in action, let's follow a real invoice (`cheese.pdf`) with 8 line items as it moves through the `rexail` processor.
+1.  **Phase 1: Pre-processing & Catalog Sync**
+    *   **Objective**: To prepare the environment by ensuring all necessary data is available and up-to-date.
+    *   **Key Action**: The processor invokes the system-specific `catalog.sync` service from the dynamically loaded module.
+    *   **Rationale**: This step guarantees that the matching engine is operating against a fresh, local copy of the store's product catalog, which is essential for accuracy.
 
-1.  **Phase 1: On-Demand Catalog Sync**
-    *   **Action**: The processor's first job is to ensure the local product catalog is up-to-date by calling the `catalog.sync` service.
-    *   **Rationale**: The accuracy of all subsequent matching depends on a fresh and complete catalog. The sync is throttled to avoid unnecessary API calls, but for this example, it proceeds, ensuring the local MongoDB `products` collection is a mirror of the Rexail back-office, complete with vector embeddings for all items.
+2.  **Phase 2: Automated Matching Cascade**
+    *   **Objective**: To automatically resolve as many line items as possible using a sequence of matching strategies, ordered from most to least certain.
+    *   **Key Actions**: The processor iterates through a configurable array of matching "passes". An item resolved by one pass is excluded from subsequent ones.
+        *   **`historyPass`**: Leverages previously approved manual matches and skips from past invoices to resolve items automatically. This allows the system to learn from the user's past decisions.
+        *   **`barcodePass`**: Performs an exact match using the item's barcode against the local catalog. This is the most reliable method for unique identification.
+        *   **`vectorPass`**: For items without exact matches, this pass generates a vector embedding of the item's name and finds semantically similar products in the catalog. It adds its findings to a list of potential candidates for the item.
+        *   **`lemmasPass`**: Supplements the vector search by using lemmatization to find products with the same linguistic root (e.g., matching the Hebrew construct-state "גבינת" to its root "גבינה"). Its findings are also added to the item's candidate list.
+        *   **`aiPass`**: As a final step, this pass uses an AI model to review the original item name against the consolidated list of candidates generated by the `vectorPass` and `lemmasPass` to select the most likely match.
 
-2.  **Phase 2: The Multi-Pass Matching Cascade**
-    *   **Rationale**: The system uses a cascading series of "passes," moving from the most certain matching method to the most sophisticated. This is efficient and maximizes accuracy. An item resolved in an early pass is removed from consideration in later passes.
-    *   **Action (`barcodePass`)**: The processor first sends all 8 items to the `barcodePass`. 7 of the items have barcodes that match a single, unique product in the catalog. They are immediately resolved. One item, "קפרינו רומנו - מנות", has a barcode that is not found in the catalog, so it remains unresolved. If a partial barcode (often the last 7 digits of a full barcode, used for brevity on invoices) were to match multiple products, those products would be added as candidates for the first `aiPass` to resolve.
-    *   **Action (`vectorPass`)**: The single unresolved item is passed to the `vectorPass`. It generates a vector embedding for the name and finds the top 3-5 most semantically similar products, attaching them to the item as a `candidates` array. The purpose of this pass is to efficiently generate a small, relevant set of potential matches for the subsequent AI-driven resolution step.
-    *   **Action (`aiPass`)**: The item, now enriched with its candidate list, proceeds to the `aiPass`. Here, a prompt is constructed showing the AI the original name and its candidates. To provide richer context and help differentiate between items sold by weight versus by unit, both the original item name and the candidate names are enhanced with their unit of measurement where available. The AI is prompted to return its selection in a structured, machine-readable format. It correctly identifies the best match and returns its selection. If the AI determines that no candidate is a suitable match, it is instructed to indicate this, leaving the item unresolved for a subsequent processing step.
-    *   **(Future Enhancement) Regex Fallback**: The design allows for a future enhancement where, if the AI determines all vector candidates are unsuitable, it could be trained to call a `runRegexSearch` tool to perform a keyword-based search as a final attempt before giving up.
+3.  **Phase 3: User Review and Correction**
+    *   **Objective**: To present the auto-generated draft for user review and facilitate corrections through a conversational interface.
+    *   **Key Actions**:
+        *   The conversational AI presents the initial draft to the user, typically as a formatted document.
+        *   If the user requests changes, a conversational correction cycle begins. The AI leverages its search capabilities, which are powered by lemmatization, to find product alternatives based on user feedback.
+        *   After each correction is confirmed, an updated version of the draft is generated and presented back to the user. This cycle repeats until all items are correct.
+        *   All user-driven changes are marked with a `manual` match type for traceability.
+        *   Once the user gives their final approval, the job is marked as complete, and the final, user-verified document is persisted.
 
-3.  **Phase 3: Finalization**
-    *   **Action**: With all 8 items now resolved (7 by barcode, 1 by the vector/AI flow), the processor can proceed to the finalization stage.
-    *   **Rationale**: The fully resolved data is now ready to be presented to the user for final confirmation, after which it will be sent to the Rexail back-office system to update the official inventory.
+---
 
-This architecture ensures that adding support for a new inventory system (e.g., "Odoo") is as simple as creating a new module directory (e.g., `src/systems/odoo/`) with the required `catalog.ts` implementation. The generic processor and matching passes handle the rest automatically.
+## Flow 9: Back-Office System Integration
+
+This represents the final stage of the pipeline, where the verified document from the preparation stage is used to update the store's official back-office system.
+
+*   **Objective**: To apply the finalized data to the target inventory management system, completing the end-to-end workflow.
+*   **Mechanism**: This stage is triggered after the `Product Matching & Draft Preparation` flow is successfully completed. It uses the same dynamic module system to load the appropriate integration logic for the specific store's back-office software.
+*   **System-Specific Actions**: The loaded module contains the necessary code to communicate with the external system's API. This could involve a variety of actions, such as:
+    *   Updating stock counts for received items.
+    *   Adding new products to the catalog.
+    *   Marking existing products as "active" or "visible" in an online store, effectively using recent invoices to curate the active catalog.
+*   **Completion**: Once the back-office system confirms the update was successful, the processing journey for the document is complete.
 
 ---
 

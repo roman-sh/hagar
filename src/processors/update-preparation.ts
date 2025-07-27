@@ -3,6 +3,7 @@ import { UpdatePreparationJobData } from '../types/jobs'
 import { database } from '../services/db'
 import * as inventory from '../services/inventory'
 import {
+   historyPass,
    barcodePass,
    vectorPass,
    aiPass,
@@ -49,6 +50,7 @@ export async function updatePreparationProcessor(
 
    // 5. Run the matching passes in a structured pipeline.
    const passes = [
+      historyPass,  // Apply historical matching decisions to unresolved items.
       barcodePass,  // High-confidence direct matches first.
       vectorPass,   // Gather candidates from vector search.
       lemmasPass,   // Gather additional candidates from text search.

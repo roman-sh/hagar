@@ -1,5 +1,13 @@
 import { db } from '../connections/mongodb'
-import { StoreDocument, MessageDocument, ScanDocument, JobRecord, ProductDocument, JobArtefactDocument } from '../types/documents'
+import {
+   StoreDocument,
+   MessageDocument,
+   ScanDocument,
+   JobRecord,
+   ProductDocument,
+   JobArtefactDocument,
+   UpdateDocument,
+} from '../types/documents'
 import { OCR_EXTRACTION, SCAN_VALIDATION, META_KEYS } from '../config/constants'
 import { redisClient } from '../connections/redis'
 import { FindOptions } from 'mongodb'
@@ -10,7 +18,7 @@ import {
    ScanValidationJobCompletedPayload,
    OcrExtractionJobCompletedPayload,
 } from '../types/jobs'
-import { InvoiceMeta, ProductCandidate } from '../types/inventory'
+import { InvoiceMeta, ProductCandidate, InventoryItem } from '../types/inventory'
 import { QueueKey } from '../queues-base'
 import { TEXT_SEARCH_INDEX_NAME, LEMMA_SEARCH_CANDIDATE_LIMIT } from '../config/settings'
 
@@ -410,5 +418,76 @@ export const database = {
       return db.collection<ProductDocument>('products')
          .aggregate<ProductCandidate>(pipeline)
          .toArray()
-   }
+   },
+
+   /**
+    * For a given list of supplier item names, finds the most recent historical
+    * resolution (i.e., the inventory_item_id and name) from past finalized invoices.
+    * This is used by the history-pass to apply previous matching decisions automatically.
+    * It uses a single, efficient aggregation query to perform a bulk lookup.
+    *
+    * @param {string} storeId - The ID of the store to search within.
+    * @param {string[]} supplierItemNames - An array of item names from the current invoice.
+    * @returns {Promise<{ [key: string]: Partial<InventoryItem> }>} A promise that resolves to a
+    *          map where keys are the supplier item names and values are the partial
+    *          InventoryItem objects containing the historical resolution.
+    */
+   async resolveHistoryItems(
+      storeId: string, supplierItemNames: string[]
+   ): Promise<{ [key: string]: Partial<InventoryItem> }> {
+      const pipeline = [
+         // Step 1: Find all documents that might contain the items we need, using an index on storeId.
+         {
+            $match: {
+               storeId: storeId,
+               'items.supplier_item_name': { $in: supplierItemNames },
+            },
+         },
+         // Step 2: Sort the parent documents by creation date, newest first.
+         // This is crucial for the $group stage to pick the latest item correctly.
+         { $sort: { createdAt: -1 } },
+         
+         // Step 3: Deconstruct the items array from each document into a stream of items.
+         { $unwind: '$items' },
+         
+         // Step 4: Filter the stream of items to only include the ones we are looking for
+         // and that have a resolution type, making them a valid historical decision.
+         {
+            $match: {
+               'items.supplier_item_name': { $in: supplierItemNames },
+               'items.match_type': { $exists: true, $ne: '' },
+            },
+         },
+
+         // Step 5: Group by the supplier item name. For each group, take the *first*
+         // item encountered. Because of the preceding $sort, this is guaranteed
+         // to be the most recent one. We only capture the specific fields needed for resolution.
+         {
+            $group: {
+               _id: '$items.supplier_item_name',
+               inventory_item_id: { $first: '$items.inventory_item_id' },
+               inventory_item_name: { $first: '$items.inventory_item_name' },
+               inventory_item_unit: { $first: '$items.inventory_item_unit' },
+               match_type: { $first: '$items.match_type' },
+            },
+         },
+      ]
+
+      const aggregationResult = await db.collection<UpdateDocument>('updates').aggregate(pipeline).toArray()
+
+      // The result is an array like: [{ _id: 'Milk', inventory_item_id: 'P-123', ... }, ... ]
+      // We'll transform it into the desired map structure { 'Milk': { inventory_item_id: 'P-123', ... } }
+      const results: { [key: string]: Partial<InventoryItem> } = {}
+      
+      for (const doc of aggregationResult) {
+         results[doc._id] = {
+            inventory_item_id: doc.inventory_item_id,
+            inventory_item_name: doc.inventory_item_name,
+            inventory_item_unit: doc.inventory_item_unit,
+            match_type: doc.match_type,
+         }
+      }
+
+      return results
+   },
 }

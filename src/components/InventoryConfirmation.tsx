@@ -14,6 +14,7 @@ interface InventoryConfirmationProps {
 const getRowStyle = (item: InventoryItem): React.CSSProperties => {
 	let borderColor = ''
 	switch (item.match_type) {
+		case 'history':
 		case 'barcode':
 		case 'manual':
 			borderColor = '#198754' // Success

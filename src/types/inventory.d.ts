@@ -68,7 +68,7 @@ export type PassArgs = {
    target?: MatchType
 }
 
-export type MatchType = 'barcode' | 'name' | 'manual' | 'skip'
+export type MatchType = 'barcode' | 'name' | 'manual' | 'skip' | 'history'
 
 export interface CatalogService {
    sync(storeId: string, options?: { force?: boolean }): Promise<void>

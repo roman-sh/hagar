@@ -20,6 +20,7 @@ export function createSummary(doc: InventoryDocument): InventoryUpdateSummary {
       matchedItems: 0,
       unmatchedItems: 0,
       matchTypes: {
+         'history': 0,
          'barcode': 0,
          'name': 0,
          'manual': 0,
@@ -31,6 +32,7 @@ export function createSummary(doc: InventoryDocument): InventoryUpdateSummary {
       const matchType = item[H.MATCH_TYPE];
 
       switch (matchType) {
+         case 'history':
          case 'barcode':
          case 'name':
          case 'manual':
