@@ -5,6 +5,7 @@ import { Collection } from 'mongodb'
 import { ScanDocument, DocType } from '../types/documents'
 import { pipeline } from './pipeline'
 import { openai } from '../connections/openai'
+import { database } from './db'
 
 
 type OnboardArgs = Pick<
@@ -17,6 +18,9 @@ type OnboardArgs = Pick<
 export const document = {
    onboard: async (args: OnboardArgs) => {
       const { fileBuffer, filename, contentType, storeId, channel, author } = args
+
+      // Clean the context for the new session
+      await database.cleanContext(storeId)
 
       // Sanitize filename and create S3 key
       const sanitizedFilename = filename.replace(/\s+/g, '_')

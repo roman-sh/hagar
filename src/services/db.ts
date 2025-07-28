@@ -10,7 +10,7 @@ import {
 } from '../types/documents'
 import { OCR_EXTRACTION, SCAN_VALIDATION, META_KEYS } from '../config/constants'
 import { redisClient } from '../connections/redis'
-import { FindOptions } from 'mongodb'
+import { FindOptions, ObjectId } from 'mongodb'
 import {
    JobFailedPayload,
    JobWaitingPayloads,
@@ -21,6 +21,7 @@ import {
 import { InvoiceMeta, ProductCandidate, InventoryItem } from '../types/inventory'
 import { QueueKey } from '../queues-base'
 import { TEXT_SEARCH_INDEX_NAME, LEMMA_SEARCH_CANDIDATE_LIMIT } from '../config/settings'
+import { DocType } from '../types/documents'
 
 
 /**
@@ -201,6 +202,63 @@ export const database = {
       })
          .sort({ createdAt: 1 }) // Sort chronologically (oldest first)
          .toArray()
+   },
+
+   /**
+    * Cleans the conversational context for a new session. It moves all previous messages
+    * for a store to an archive collection, then creates a single summary message from the
+    * user's prior inputs to preserve context in a token-efficient manner.
+    *
+    * @param {string} storeId - The ID of the store for which to clean the context.
+    * @returns {Promise<void>}
+    */
+   cleanContext: async (storeId: string): Promise<void> => {
+      const messagesCollection = db.collection<MessageDocument>('messages')
+      const archiveCollection = db.collection<MessageDocument>('messages_archive')
+
+      // 1. Find all messages for the store.
+      const allMessages = await messagesCollection.find({ storeId }).toArray()
+      
+      if (!allMessages.length) {
+         log.info({ storeId }, 'No previous messages found. Context is already clean.')
+         return
+      }
+
+      // 2. Archive all messages.
+      await archiveCollection.insertMany(allMessages)
+
+      // 3. Find the filename and docId from the last 'scanner' message for context.
+      const lastScanMessage = [...allMessages].reverse().find(m => m.name === 'scanner')
+      const filename = lastScanMessage?.content?.filename
+      const docId = lastScanMessage?.content?.docId
+
+      // 4. Filter for actual human messages (role='user' and content is a string).
+      const userMessages = allMessages.filter(m => m.role === 'user' && typeof m.content === 'string')
+      
+      // 5. Delete all original messages from the primary collection.
+      await messagesCollection.deleteMany({ storeId })
+
+      // 6. If there were user messages, create and insert the new summary message.
+      if (userMessages.length) {
+         const summaryHeader = `Context from previous invoice:\nfilename: ${filename}\ndocId: ${docId}\n`
+         const messageContent = userMessages.map(m => `- ${m.content}`).join('\n')
+         const summaryContent = summaryHeader + messageContent
+
+         await messagesCollection.insertOne({
+            _id: new ObjectId(),
+            type: DocType.MESSAGE,
+            storeId,
+            phone: userMessages[userMessages.length - 1].phone, // Use phone from the last message
+            role: 'assistant',
+            content: summaryContent,
+            createdAt: new Date(),
+         })
+      }
+      log.info(
+         { storeId },
+         `Context cleaned.\n${allMessages.length} messages archived.\n${userMessages.length} user messages summarized.`
+      )
+
    },
 
 
