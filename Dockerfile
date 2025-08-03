@@ -14,5 +14,5 @@ COPY package.json package-lock.json ./
 RUN npm ci --only=production
 COPY --from=builder /app/dist ./dist
 EXPOSE 3000
-# The CMD now uses a runtime environment variable, with a sensible default.
-CMD [ "node", "--env-file=${ENV_FILE_PATH}", "dist/main.js" ] 
+# Use the "shell" form of CMD to ensure the environment variable is substituted.
+CMD node --env-file=${ENV_FILE_PATH} dist/main.js 
