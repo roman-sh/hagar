@@ -104,13 +104,13 @@ function executeTools(toolCalls: ChatCompletionMessageToolCall[]) {
          
          log.info({
             tool: call.function.name,
-            response: result,
+            response: json.parse(result),
             callId: call.id
          }, 'TOOL RESPONSE')
          
          return {
             role: 'tool' as const,
-            content: JSON.stringify(result),
+            content: json.stringify(result),
             tool_call_id: call.id
          }
       }

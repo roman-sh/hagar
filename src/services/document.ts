@@ -6,6 +6,7 @@ import { ScanDocument, DocType } from '../types/documents'
 import { pipeline } from './pipeline'
 import { openai } from '../connections/openai'
 import { database } from './db'
+import { createHmac } from 'crypto'
 
 
 type OnboardArgs = Pick<
@@ -19,19 +20,32 @@ export const document = {
    onboard: async (args: OnboardArgs) => {
       const { fileBuffer, filename, contentType, storeId, channel, author } = args
 
+      if (!process.env.ENCRYPTION_KEY) throw new Error(
+         'ENCRYPTION_KEY must be set in environment variables for secure filename generation.'
+      )
+
       // Clean the context for the new session
       await database.cleanContext(storeId)
 
-      // Sanitize filename and create S3 key
+      // Sanitize filename
       const sanitizedFilename = filename.replace(/\s+/g, '_')
-      const s3Key = `tmp/${channel}/${sanitizedFilename}`
+
+      // Create a consistent, secure prefix
+      const prefix = createHmac('sha256', process.env.ENCRYPTION_KEY)
+         .update(sanitizedFilename)
+         .digest('base64url')
+         .substring(0, 6)
+
+      // Create the S3 key with the prefix
+      const s3Key = `${storeId}/${prefix}-${sanitizedFilename}`
 
       // Upload to S3
       const uploadCommand = new PutObjectCommand({
          Bucket: process.env.AWS_BUCKET_NAME,
          Key: s3Key,
          Body: fileBuffer,
-         ContentType: contentType
+         ContentType: contentType,
+         IfNoneMatch: '*'  // will throw an error if the file already exists
       })
 
       await s3Client.send(uploadCommand)
