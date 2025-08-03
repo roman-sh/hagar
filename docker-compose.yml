@@ -1,11 +1,10 @@
 services:
   hagar:
-    build:
-      context: .
-      args:
-        - ENV_FILE=.env.production
+    image: ghcr.io/roman-sh/hagar:YOUR_COMMIT_HASH_HERE
     container_name: hagar
     restart: unless-stopped
+    environment:
+      - ENV_FILE_PATH=.env.production
     stdin_open: true
     tty: true
     volumes:
