@@ -5,10 +5,23 @@ import Redis from 'ioredis'
 export let redisClient: Redis
 export let redisSubscriber: Redis
 
+if (!process.env.REDIS_HOST) throw new Error(
+   'REDIS_HOST must be set in environment variables'
+)
+
+if (!process.env.REDIS_PORT) throw new Error(
+   'REDIS_PORT must be set in environment variables'
+)
+
 export async function initializeRedis(): Promise<Redis> {
+   const redisOptions = {
+      host: process.env.REDIS_HOST,
+      port: Number(process.env.REDIS_PORT),
+   };
+
    // ioredis defaults to localhost:6379
-   redisClient = new Redis()
-   redisSubscriber = new Redis()
+   redisClient = new Redis(redisOptions)
+   redisSubscriber = new Redis(redisOptions)
 
    // Error handling
    redisClient.on('error', (error) => {

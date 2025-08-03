@@ -1,0 +1,51 @@
+services:
+  hagar:
+    build:
+      context: .
+      args:
+        - ENV_FILE=.env.production
+    container_name: hagar
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    volumes:
+      # Mount the production env file (read-only)
+      - ./.env.production:/app/.env.production:ro
+      # Map the named volume 'whatsapp_data' to the '/app/.whatsapp' directory inside the container
+      - whatsapp_data:/app/.whatsapp
+    ports:
+      - "3000:3000"
+    networks:
+      - hagar-net
+    depends_on:
+      - redis
+      - hebmorph-service
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - hagar-net
+
+  hebmorph-service:
+    image: shmigi/hebmorph-service:latest
+    container_name: hebmorph-service
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    networks:
+      - hagar-net
+
+networks:
+  hagar-net:
+    driver: bridge
+
+volumes:
+  redis_data:
+    driver: local
+  whatsapp_data:
+    driver: local 

@@ -8,7 +8,7 @@ import path from 'path'
 const { Client, LocalAuth } = whatsappWeb
 
 export const client = new Client({
-   authStrategy: new LocalAuth(),
+   authStrategy: new LocalAuth({ dataPath: '.whatsapp' }),
    puppeteer: {
       headless: true,
       args: [

@@ -1,0 +1,39 @@
+# Git-related files
+.git
+.gitignore
+
+# Node.js dependencies (installed within the container)
+node_modules
+
+# Build output directory
+dist
+
+# WhatsApp Web JS session/cache data
+.wwebjs_auth
+.wwebjs_cache
+
+# Local Environment variables and secrets
+.env
+.env.*
+!/.env.example
+!/.env.production.example
+
+# Local Redis data files that might appear in root
+dump.rdb
+appendonly.aof
+
+# Python dependency file for scripts
+requirements.txt
+
+# OS-specific and editor-specific files
+.DS_Store
+.cursor
+.local.config
+
+# Project folders not required for the final application image
+data
+docs
+hebmorph-service
+pi-scripts
+scripts
+test 
