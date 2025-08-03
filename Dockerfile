@@ -53,5 +53,6 @@ COPY package.json package-lock.json ./
 RUN npm ci --only=production
 COPY --from=builder /app/dist ./dist
 EXPOSE 3000
-# Use the "shell" form of CMD to ensure the environment variable is substituted.
-CMD node --env-file=${ENV_FILE_PATH} dist/main.js 
+# The CMD now simply runs the application.
+# The environment variables will be injected directly by Docker Compose.
+CMD [ "node", "dist/main.js" ] 

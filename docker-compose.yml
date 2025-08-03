@@ -3,13 +3,11 @@ services:
     image: ghcr.io/roman-sh/hagar:YOUR_COMMIT_HASH_HERE
     container_name: hagar
     restart: unless-stopped
-    environment:
-      - ENV_FILE_PATH=.env.production
+    env_file:
+      - .env.production
     stdin_open: true
     tty: true
     volumes:
-      # Mount the production env file (read-only)
-      - ./.env.production:/app/.env.production:ro
       # Map the named volume 'whatsapp_data' to the '/app/.whatsapp' directory inside the container
       - whatsapp_data:/app/.whatsapp
     ports:
