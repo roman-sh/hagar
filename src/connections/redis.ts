@@ -19,6 +19,8 @@ export async function initializeRedis(): Promise<Redis> {
       port: Number(process.env.REDIS_PORT),
    };
 
+   log.info({ redisOptions }, 'Connecting to Redis with options:')
+
    // ioredis defaults to localhost:6379
    redisClient = new Redis(redisOptions)
    redisSubscriber = new Redis(redisOptions)
