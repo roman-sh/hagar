@@ -1,39 +1,51 @@
 services:
+  # Main application container
   hagar:
+    # Pulls a specific image built by the GitHub Actions CI/CD pipeline.
+    # IMPORTANT: Manually replace 'YOUR_COMMIT_HASH_HERE' with the short Git
+    # commit hash of the version you want to deploy. This ensures that
+    # deployments are deterministic and easily rollback-able.
     image: ghcr.io/roman-sh/hagar:YOUR_COMMIT_HASH_HERE
     container_name: hagar
     restart: unless-stopped
+
+    # Load environment variables from the .env.production file located on the host.
     env_file:
       - .env.production
-    environment:
-      REDIS_HOST: host.docker.internal
-      REDIS_PORT: 6379
+
+    # Use the host's network directly. This is the simplest way to allow
+    # the container to connect to services running on the droplet's localhost,
+    # such as the native Redis server and the forwarded port for hebmorph-service.
+    network_mode: "host"
+
+    # Keep stdin open and allocate a pseudo-TTY. Useful for some interactive
+    # debugging scenarios, though not critical for normal operation.
     stdin_open: true
     tty: true
+
+    # Persist the WhatsApp session data on the host machine. This prevents
+    # needing to scan a QR code every time the container restarts. It maps the
+    # host's './.wwebjs_auth' directory to '/app/.wwebjs_auth' inside the container.
     volumes:
-      # Map the named volume 'whatsapp_data' to the '/app/.whatsapp' directory inside the container
       - ./.wwebjs_auth:/app/.wwebjs_auth
-    ports:
-      - "3000:3000"
-    networks:
-      - hagar-net
+
+    # This service depends on the hebmorph-service. Docker Compose will ensure
+    # hebmorph-service is started before hagar is started.
     depends_on:
       - hebmorph-service
 
-
+  # Hebrew lemmatization service container
   hebmorph-service:
     image: shmigi/hebmorph-service:latest
     container_name: hebmorph-service
     restart: unless-stopped
+
+    # This service does NOT use host networking. It runs on Docker's default
+    # bridge network. The 'ports' mapping makes it accessible from the host.
+    # The hagar container (which IS on the host network) can reach it at localhost:5001.
     ports:
       - "5001:5001"
-    networks:
-      - hagar-net
 
-networks:
-  hagar-net:
-    driver: bridge
-
-volumes:
-  whatsapp_data:
-    driver: local 
+# We no longer define custom networks (like 'hagar-net') because the combination
+# of host networking for 'hagar' and port mapping for 'hebmorph-service'
+# provides all the connectivity needed for this setup.
