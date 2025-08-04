@@ -5,28 +5,21 @@ services:
     restart: unless-stopped
     env_file:
       - .env.production
+    environment:
+      REDIS_HOST: host.docker.internal
+      REDIS_PORT: 6379
     stdin_open: true
     tty: true
     volumes:
       # Map the named volume 'whatsapp_data' to the '/app/.whatsapp' directory inside the container
-      - whatsapp_data:/app/.whatsapp
+      - ./.wwebjs_auth:/app/.wwebjs_auth
     ports:
       - "3000:3000"
     networks:
       - hagar-net
     depends_on:
-      - redis
       - hebmorph-service
 
-  redis:
-    image: redis:latest
-    container_name: redis
-    restart: unless-stopped
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-    networks:
-      - hagar-net
 
   hebmorph-service:
     image: shmigi/hebmorph-service:latest
@@ -42,7 +35,5 @@ networks:
     driver: bridge
 
 volumes:
-  redis_data:
-    driver: local
   whatsapp_data:
     driver: local 
