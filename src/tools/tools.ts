@@ -9,6 +9,8 @@ import { requestInventoryConfirmation, requestInventoryConfirmationSchema } from
 import { productSearch, productSearchSchema } from './product-search'
 import { applyInventoryCorrections, applyInventoryCorrectionsSchema } from './apply-inventory-corrections'
 import { finalizeUpdatePreparation, finalizeUpdatePreparationSchema } from './finalize-update-preparation'
+import { QueueKey } from '../queues-base'
+
 
 // Tool schemas for GPT
 export const tools: ChatCompletionTool[] = [
@@ -37,3 +39,23 @@ export const functions = {
    applyInventoryCorrections,
    finalizeUpdatePreparation,
 }
+
+export const toolsByQueue: Record<QueueKey, ChatCompletionTool[]> = {
+   scan_validation: [
+     validateDeliveryNoteSchema,
+     finalizeScanValidationSchema,
+     visualInspectSchema,
+   ],
+   ocr_extraction: [
+     finalizeOcrExtractionSchema,
+     getOcrDataSchema,
+   ],
+   update_preparation: [
+     getInventorySpreadsheetSchema,
+     requestInventoryConfirmationSchema,
+     productSearchSchema,
+     applyInventoryCorrectionsSchema,
+     finalizeUpdatePreparationSchema,
+   ],
+   inventory_update: [] as ChatCompletionTool[],
+ } satisfies Record<string, ChatCompletionTool[]>

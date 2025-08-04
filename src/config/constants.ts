@@ -4,7 +4,7 @@ import { InvoiceMeta } from "../types/inventory"
 // Queue names as string constants
 export const SCAN_VALIDATION = 'scan_validation'
 export const OCR_EXTRACTION = 'ocr_extraction'
-export const UPDATE_PREPARATION = 'update-preparation'
+export const UPDATE_PREPARATION = 'update_preparation'
 export const INVENTORY_UPDATE = 'inventory_update'
 export const INBOUND_MESSAGES = 'inbound_messages'
 export const OUTBOUND_MESSAGES = 'outbound_messages'

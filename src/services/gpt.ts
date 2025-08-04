@@ -9,13 +9,15 @@ import {
    type ChatCompletionMessageToolCall,
    type ChatCompletionToolMessageParam
 } from "openai/resources/chat/completions"
-import { functions, tools } from "../tools/tools"
+import { functions, toolsByQueue } from "../tools/tools"
 import { db } from "../connections/mongodb"
 import { outboundMessagesQueue } from "../queues-base"
 import { json } from "../utils/json"
 import systemPrompt from '../prompts/generic.md'
 import { UserData } from "../types/shared"
 import { messageStore } from "./message-store"
+import { findActiveJob } from "./pipeline"
+import { QueueKey } from "../queues-base"
 
 
 const UTILITY_FIELDS = ['_id', 'type', 'storeId', 'createdAt', 'phone']
@@ -55,6 +57,8 @@ export const gpt = {
          messages: []
       }
 
+      const currentTools = toolsByQueue[await getCurrentQueue(phone)] ?? []
+
       while (!state.done) {
          // 'message' here is a response from the model
          const { message } = (await openai.chat.completions.create({
@@ -64,7 +68,7 @@ export const gpt = {
                ...history,
                ...state.messages
             ],
-            tools: tools
+            ...(currentTools.length && { tools: currentTools }),
          })).choices[0]
 
          state.messages.push(message)
@@ -199,6 +203,26 @@ async function saveMessages(
 
       await collection.insertOne(messageDoc)
       await new Promise(resolve => setTimeout(resolve, 1))
+   }
+}
+
+
+async function getCurrentQueue(phone: string): Promise<QueueKey | undefined> {
+   const storeId = await database.getStoreIdByPhone(phone)
+   // Find the docId from the last 'scanner' message.
+   const lastScanMessage = await db.collection('messages').findOne(
+      { storeId, name: 'scanner' },
+      { sort: { createdAt: -1 } }    // newest first
+    )
+   const docId = lastScanMessage?.content?.docId
+   if (!docId) return
+   // Find the queue name from the docId.
+   try {
+      const { queueName } = await findActiveJob(docId)
+      return queueName
+   }
+   catch (e) {
+      return   // User has no active job, return undefined
    }
 }
 

@@ -232,33 +232,39 @@ export const database = {
       const filename = lastScanMessage?.content?.filename
       const docId = lastScanMessage?.content?.docId
 
-      // 4. Filter for actual human messages (role='user' and content is a string).
-      const userMessages = allMessages.filter(m => m.role === 'user' && typeof m.content === 'string')
+      // 4. Keep only conversational messages (assistant or user) that have plain-string content.
+      const convoMessages = allMessages.filter(
+         (m) =>
+            (m.role === 'user' || m.role === 'assistant')
+            && typeof m.content === 'string'
+      )
       
       // 5. Delete all original messages from the primary collection.
       await messagesCollection.deleteMany({ storeId })
 
-      // 6. If there were user messages, create and insert the new summary message.
-      if (userMessages.length) {
+      // 6. If there were conversational messages, create and insert the new summary message.
+      if (convoMessages.length) {
          const summaryHeader = `Context from previous invoice:\nfilename: ${filename}\ndocId: ${docId}\n`
-         const messageContent = userMessages.map(m => `- ${m.content}`).join('\n')
+         const messageContent = convoMessages
+            .map((m) => `- [${m.role}] ${m.content}`)
+            .join('\n')
          const summaryContent = summaryHeader + messageContent
 
          await messagesCollection.insertOne({
             _id: new ObjectId(),
             type: DocType.MESSAGE,
             storeId,
-            phone: userMessages[userMessages.length - 1].phone, // Use phone from the last message
+            phone: convoMessages[convoMessages.length - 1].phone, // Use phone from the last message
             role: 'assistant',
             content: summaryContent,
             createdAt: new Date(),
          })
       }
+
       log.info(
          { storeId },
-         `Context cleaned.\n${allMessages.length} messages archived.\n${userMessages.length} user messages summarized.`
+         `Context cleaned.\n${allMessages.length} messages archived.\n${convoMessages.length} messages summarized.`
       )
-
    },
 
 
