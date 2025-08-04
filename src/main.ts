@@ -118,17 +118,5 @@ async function shutdown(signal: string) {
    }
 }
 
-// --- Conditional Server Start ---
-// The following block allows this file to have a dual personality.
-//
-// 1. If the file is executed directly (e.g., `node dist/bundle.js` or `tsx app/main.ts`),
-//    the `if` condition will be true, and the `startServer()` function will be called,
-//    launching the application server as normal. This is the behavior for `npm start` and `npm run dev`.
-//
-// 2. If the file is imported by another module (e.g., a test file like `test/rexail-api.test.ts`),
-//    the `if` condition will be false. This allows us to import `buildApp` to create an
-//    in-memory instance of the application for testing without actually starting a live server.
-if (import.meta.url.startsWith('file://') && process.argv[1] === new URL(import.meta.url).pathname) {
-   startServer()
-}
 
+startServer()
