@@ -16,6 +16,17 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4
 
+      # New Step: Cache NPM dependencies
+      # This step stores the downloaded node modules in a cache. On subsequent
+      # runs, it restores this cache, making the 'npm ci' step much faster.
+      - name: Cache Node.js modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
@@ -30,6 +41,12 @@ jobs:
           images: ghcr.io/${{ github.repository }}
           tags: |
             type=sha,prefix=
+            latest
+
+      # New Step: Set up Docker Buildx
+      # This is a prerequisite for enabling the Docker build cache.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -37,4 +54,9 @@ jobs:
           context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }} 
+          labels: ${{ steps.meta.outputs.labels }}
+          # New Option: Enable Docker build cache
+          # This tells the build action to use a cache for Docker layers.
+          # It stores the cache on the GitHub Actions registry.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
