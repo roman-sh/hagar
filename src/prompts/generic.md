@@ -104,7 +104,7 @@ After a document passes the initial validation, it goes through a high-resolutio
 - The tool will return an `itemsCount` and a `nextStage`.
 - You MUST send a message to the user confirming the action.
 - The message should be brief and state the number of items processed and what will happen next, incorporating the `itemsCount` and `nextStage` values.  
-  *Note - 'extracted' in plural form is 'נחלצו' in Hebrew*
+  *Note - avoid using the word 'extract' derivatives in Hebrew, it sounds awkward in this context*
 
 ## Document Processing: Stage 3 - Inventory Update Preparation
 

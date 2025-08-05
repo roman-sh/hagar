@@ -242,21 +242,23 @@ export const database = {
       // 5. Delete all original messages from the primary collection.
       await messagesCollection.deleteMany({ storeId })
 
-      // 6. If there were conversational messages, create and insert the new summary message.
+      // 6. If there were conversational messages, insert a structured summary message.
       if (convoMessages.length) {
-         const summaryHeader = `Context from previous invoice:\nfilename: ${filename}\ndocId: ${docId}\n`
-         const messageContent = convoMessages
-            .map((m) => `- [${m.role}] ${m.content}`)
-            .join('\n')
-         const summaryContent = summaryHeader + messageContent
-
          await messagesCollection.insertOne({
             _id: new ObjectId(),
             type: DocType.MESSAGE,
             storeId,
-            phone: convoMessages[convoMessages.length - 1].phone, // Use phone from the last message
+            phone: convoMessages[convoMessages.length - 1].phone, // phone of last message
             role: 'assistant',
-            content: summaryContent,
+            content: {
+               note: 'Summary of previous session for context',
+               meta: {
+                  filename,
+                  docId,
+                  archivedCount: allMessages.length,
+               },
+               transcript: convoMessages.map(m => ({ role: m.role, text: m.content as string }))
+            },
             createdAt: new Date(),
          })
       }
