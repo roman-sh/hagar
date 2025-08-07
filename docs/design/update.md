@@ -139,8 +139,34 @@ Example of key fields in the update payload:
 }
 ```
 
+## Controlling Online Visibility
+
+To show or hide a product in the online store, you must `POST` the **complete product object** to the `create-or-update` endpoint with specific boolean flags set. The server has two primary states:
+
+1.  **To Make a Product VISIBLE:**
+    The payload must contain these exact values:
+    -   `"active": true`
+    -   `"activeForOnline": true`
+    -   `"excludedFromOnlineCatalog": false`
+    -   `"hidden": false`
+
+2.  **To HIDE a Product:**
+    A product can be hidden from the online store by setting any of the following flags.
+    -   **Method 1:** Set the master override.
+        -   `"excludedFromOnlineCatalog": true`
+    -   **Method 2:** Set the hidden flag.
+        -   `"hidden": true`
+    -   **Method 3:** Deactivate the product. **Both `active` and `activeForOnline` must be set to `false` together**, as the API requires them to be synchronized.
+        -   `"active": false`
+        -   `"activeForOnline": false`
+
+**Key API Rules:**
+-   The API requires the `active` and `activeForOnline` flags to always be identical. It will reject payloads where they differ.
+-   The `hidden` flag also affects visibility but is less commonly used. For simplicity, it's best to rely on the three flags above.
+-   **Do not** include the `edited` or `newQuantityInStock` fields when only changing visibility, as these are for stock updates.
+
 ## Notes
 
 1. Always include the complete product object in the update; the API expects the full representation and will replace the entire product record
 2. Be careful with price and stock changes as they will immediately affect the online store
-3. Consider backing up the original product data before making significant changes 
+3. Consider backing up the original product data before making significant changes

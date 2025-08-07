@@ -1,7 +1,12 @@
 import { ChatCompletionTool } from 'openai/resources'
-import { finalizeScanValidationArgs } from '../types/tool-args'
+import { InvoiceMeta } from '../types/inventory'
 import { pipeline } from '../services/pipeline'
 
+
+interface finalizeScanValidationArgs extends InvoiceMeta {
+  docId: string
+  annotation: string
+}
 
 export const finalizeScanValidationSchema: ChatCompletionTool = {
    type: 'function',

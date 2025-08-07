@@ -4,9 +4,13 @@ import { html } from '../services/html'
 import * as inventory from '../services/inventory'
 import { client } from '../connections/whatsapp'
 import whatsappWeb from 'whatsapp-web.js'
-import { RequestInventoryConfirmationArgs } from '../types/tool-args'
 import { findActiveJob } from '../services/pipeline'
 import { InventoryDocument } from '../types/inventory'
+
+
+interface RequestInventoryConfirmationArgs {
+  docId: string
+}
 
 /**
  * The schema for the requestInventoryConfirmation tool, provided to the AI.

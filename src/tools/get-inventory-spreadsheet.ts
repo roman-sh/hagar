@@ -2,9 +2,12 @@ import { ChatCompletionTool } from 'openai/resources'
 import { findActiveJob } from '../services/pipeline'
 import { InventoryDocument } from '../types/inventory'
 import * as inventory from '../services/inventory'
-import { GetInventorySpreadsheetArgs } from '../types/tool-args'
 import { InventoryDraftNotFoundError } from '../errors/application-errors'
 
+
+interface GetInventorySpreadsheetArgs {
+  docId: string
+}
 
 export const getInventorySpreadsheetSchema: ChatCompletionTool = {
    type: 'function',

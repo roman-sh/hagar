@@ -1,8 +1,12 @@
 import { ChatCompletionTool } from 'openai/resources'
 import { pipeline } from '../services/pipeline'
-import { FinalizeOcrExtractionArgs } from '../types/tool-args'
 import { database } from '../services/db'
 
+
+interface FinalizeOcrExtractionArgs {
+  docId: string
+  data?: any[]
+}
 
 export const finalizeOcrExtractionSchema: ChatCompletionTool = {
    type: 'function',

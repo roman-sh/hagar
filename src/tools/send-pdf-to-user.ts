@@ -2,8 +2,13 @@ import { db } from '../connections/mongodb'
 import { client } from '../connections/whatsapp'
 import WAWebJS from 'whatsapp-web.js'
 import { ScanDocument } from '../types/documents'
-import { SendPdfToUserArgs } from '../types/tool-args'
 import { ChatCompletionTool } from 'openai/resources'
+
+
+interface SendPdfToUserArgs {
+  phone: string
+  fileId: string
+}
 
 /**
  * Send a PDF document to a user via WhatsApp

@@ -240,6 +240,11 @@ This represents the final stage of the pipeline, where the verified document fro
 
 ---
 
+## Production Deployment & CI/CD  
+To keep operational overhead low we deploy everything onto a single DigitalOcean droplet. Docker Compose groups the Node.js application, the Hebrew-lemmatizer side-service and the host’s native Redis into one self-contained stack. GitHub Actions builds and publishes each image to GHCR on every push to `main`, giving us reproducible, one-command upgrades (`docker compose pull && up -d`) while layer caching in the registry keeps both the build and pull steps quick.
+
+---
+
 ## Summary of Design Achievements
 
 This flow-based architecture achieves:
@@ -248,4 +253,4 @@ This flow-based architecture achieves:
 *   **Cost Efficiency**: Primarily through the multi-model AI strategy that minimizes token usage for expensive media processing.
 *   **User Experience**: Leverages the ubiquity of WhatsApp for a zero-training interface, with real-time feedback and conversational error resolution.
 *   **Scalability**: Asynchronous queue-based processing, stateless components, and a database designed for growth allow the system to handle increasing load.
-*   **Maintainability**: Clear separation of concerns between hardware interaction (Python on Pi), backend logic (Node.js), AI services, and data storage makes the system easier to develop, test, and debug. TypeScript enhances code quality and maintainability on the backend. 
+*   **Maintainability**: Clear separation of concerns between hardware interaction (Python on Pi), backend logic (Node.js), AI services, and data storage makes the system easier to develop, test, and debug. TypeScript enhances code quality and maintainability on the backend.

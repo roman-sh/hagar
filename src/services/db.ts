@@ -98,6 +98,7 @@ export const database = {
       await collection.updateOne(filter, update, { upsert: true })
    },
 
+
    /**
     * Map a deviceId to a storeId
     * @param deviceId - The deviceId to map
@@ -136,17 +137,20 @@ export const database = {
       return storeId
    },
 
+
    getStore: async (storeId: string): Promise<StoreDocument> => {
       const store = await db.collection<StoreDocument>('stores').findOne({ storeId })
       if (!store) throw new Error(`Store not found for storeId: ${storeId}`)
       return store
    },
 
+   
    // only update fields we send as data, like this:
    // updateStore(storeId, { catalog: { hash: newHash } })
    updateStore: async (storeId: string, data: Partial<StoreDocument>): Promise<void> => {
       await db.collection('stores').updateOne({ storeId }, { $set: data })
    },
+
 
    /**
     * Retrieves all product documents for a specific store.
@@ -157,6 +161,24 @@ export const database = {
    getProductsByStoreId: async (storeId: string, options: FindOptions<ProductDocument> = {}): Promise<ProductDocument[]> => {
       return db.collection<ProductDocument>('products').find({ storeId }, options).toArray()
    },
+
+
+   /**
+    * Retrieves the essential details for multiple products using a single, efficient query.
+    * @param {string[]} productIds - An array of product _ids to fetch.
+    * @returns {Promise<Pick<ProductDocument, '_id' | 'name' | 'unit'>[]>} A promise that resolves to an array of product details.
+    */
+   async getInventoryProductDetails(
+      productIds: string[]
+   ): Promise<Pick<ProductDocument, '_id' | 'name' | 'unit'>[]> {
+      const products = await db.collection<ProductDocument>('products').find(
+         { _id: { $in: productIds } },
+         { projection: { _id: 1, name: 1, unit: 1 } }
+      ).toArray()
+      
+      return products as Pick<ProductDocument, '_id' | 'name' | 'unit'>[]
+   },
+
 
    /**
     * Performs a batch update to overwrite existing products with new data.
@@ -176,6 +198,7 @@ export const database = {
       await db.collection<ProductDocument>('products').bulkWrite(operations)
    },
 
+
    /**
     * Deletes multiple products for a specific store based on their product IDs.
     * @param {string} storeId - The ID of the store from which to delete products.
@@ -189,9 +212,11 @@ export const database = {
       })
    },
 
+
    insertProducts: async (products: ProductDocument[]): Promise<void> => {
       await db.collection<ProductDocument>('products').insertMany(products)
    },
+
 
    getMessages: async (phone: string, storeId: string): Promise<MessageDocument[]> => {
       // TODO: Add a limit by message count or from_date or maybe do summorization
@@ -203,6 +228,7 @@ export const database = {
          .sort({ createdAt: 1 }) // Sort chronologically (oldest first)
          .toArray()
    },
+
 
    /**
     * Cleans the conversational context for a new session. It moves all previous messages
@@ -301,6 +327,7 @@ export const database = {
          { $set: { [queueName]: mergedRecord } }
       )
    },
+
 
    /**
     * Retrieves a store document by looking up a document ID in the scans collection.
@@ -442,6 +469,7 @@ export const database = {
       }
    },
 
+
    /**
     * Performs an efficient Atlas Search for products using a lemmatized query string,
     * pre-filtering by storeId for performance.
@@ -486,6 +514,7 @@ export const database = {
          .toArray()
    },
 
+   
    /**
     * For a given list of supplier item names, finds the most recent historical
     * resolution (i.e., the inventory_item_id and name) from past finalized invoices.

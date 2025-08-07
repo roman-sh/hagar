@@ -54,6 +54,10 @@ export async function finalizeUpdatePreparation({ docId }: FinalizeUpdatePrepara
       await db.collection<UpdateDocument>('updates').insertOne(updateDoc)
       log.info({ docId }, 'Saved final inventory document to updates collection.')
 
+      // Clear the job's data before advancing to avoid duplication.
+      // Bull will add job result (inventory document) automatically
+      await job.update({})
+
       // Advance the job to the next stage, passing the finalized document
       // for auditing and to be used by the next processor.
       const nextStage = await pipeline.advance(docId, { data: doc })

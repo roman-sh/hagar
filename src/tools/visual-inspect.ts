@@ -1,6 +1,11 @@
 import { ChatCompletionTool } from 'openai/resources'
 import { openai } from '../connections/openai'
-import { VisualInspectArgs } from '../types/tool-args'
+
+
+interface VisualInspectArgs {
+  file_id: string
+  prompt: string
+}
 
 export const visualInspectSchema: ChatCompletionTool = {
    type: 'function',

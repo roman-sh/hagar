@@ -131,10 +131,12 @@ export const InventoryConfirmation: React.FC<InventoryConfirmationProps> = ({
 											<tr key={itemIndex} style={getRowStyle(item)}>
 												<td>{item[H.ROW_NUMBER]}</td>
 												<td className="truncate-text">
-													{item[H.SUPPLIER_ITEM_NAME] || ''}
+													{item[H.SUPPLIER_ITEM_NAME]}
 												</td>
 												<td className="truncate-text">
-													{item[H.INVENTORY_ITEM_NAME] || ''}
+													{item[H.INVENTORY_ITEM_UNIT]
+														? `${item[H.INVENTORY_ITEM_NAME]} (${item[H.INVENTORY_ITEM_UNIT]})`
+														: item[H.INVENTORY_ITEM_NAME]}
 												</td>
 												<td>{item[H.QUANTITY]}</td>
 											</tr>
