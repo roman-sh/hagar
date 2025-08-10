@@ -18,6 +18,7 @@ import { UserData } from "../types/shared"
 import { messageStore } from "./message-store"
 import { findActiveJob } from "./pipeline"
 import { QueueKey } from "../queues-base"
+import { MAIN_MODEL } from "../config/settings"
 
 
 const UTILITY_FIELDS = ['_id', 'type', 'storeId', 'createdAt', 'phone']
@@ -62,7 +63,7 @@ export const gpt = {
       while (!state.done) {
          // 'message' here is a response from the model
          const { message } = (await openai.chat.completions.create({
-            model: 'gpt-4.1',
+            model: MAIN_MODEL,
             messages: [
                getSystemMessage(),  // inject the system message dynamically to allow history truncation
                ...history,

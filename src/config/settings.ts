@@ -41,3 +41,8 @@ export const LEMMA_SEARCH_CANDIDATE_LIMIT = 3
  * We use 'o3' for these tasks, as it is cost-effective and powerful.
  */
 export const AUX_MODEL = 'o3' // do not change this
+
+/**
+ * The model identifier for the main conversational AI model.
+ */
+export const MAIN_MODEL = 'gpt-5'
