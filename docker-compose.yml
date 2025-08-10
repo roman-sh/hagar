@@ -12,6 +12,10 @@ services:
     # Load environment variables from the .env.production file located on the host.
     env_file:
       - .env.production
+      
+    # Set the timezone to Asia/Jerusalem.
+    environment:
+      - TZ=Asia/Jerusalem
 
     # Use the host's network directly. This is the simplest way to allow
     # the container to connect to services running on the droplet's localhost,
@@ -39,6 +43,8 @@ services:
     image: shmigi/hebmorph-service:latest
     container_name: hebmorph-service
     restart: unless-stopped
+    environment:
+      - TZ=Asia/Jerusalem
 
     # This service does NOT use host networking. It runs on Docker's default
     # bridge network. The 'ports' mapping makes it accessible from the host.
