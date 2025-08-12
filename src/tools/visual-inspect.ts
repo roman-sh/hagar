@@ -1,5 +1,6 @@
 import { ChatCompletionTool } from 'openai/resources'
 import { openai } from '../connections/openai'
+import { AUX_MODEL } from '../config/settings'
 
 
 interface VisualInspectArgs {
@@ -31,7 +32,7 @@ export const visualInspectSchema: ChatCompletionTool = {
 
 export const visualInspect = async (args: VisualInspectArgs) => {
    const response = await openai.chat.completions.create({
-      model: 'o3',
+      model: AUX_MODEL,
       messages: [
          {
             role: 'user',

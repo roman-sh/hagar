@@ -45,4 +45,4 @@ export const AUX_MODEL = 'o3' // do not change this
 /**
  * The model identifier for the main conversational AI model.
  */
-export const MAIN_MODEL = 'gpt-5'
+export const MAIN_MODEL = 'gpt-4.1'

@@ -1,5 +1,7 @@
 import { openai } from '../connections/openai'
 import { ChatCompletionTool } from 'openai/resources'
+import { AUX_MODEL } from '../config/settings'
+
 
 export const validateDeliveryNoteSchema: ChatCompletionTool = {
    type: 'function',
@@ -22,7 +24,7 @@ export const validateDeliveryNoteSchema: ChatCompletionTool = {
 
 export const validateDeliveryNote = async (args: { file_id: string }) => {
    const response = await openai.chat.completions.create({
-      model: 'o3',
+      model: AUX_MODEL,
       messages: [
          {
             role: 'user',

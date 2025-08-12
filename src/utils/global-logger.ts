@@ -21,7 +21,7 @@ streams.push({
    level: (process.env.CONSOLE_LOG_LEVEL as Level) || 'info',
    stream: pretty({
       colorize: true,
-      translateTime: 'SYS:HH:MM:ss.l',
+      translateTime: 'SYS:d mmm HH:MM:ss.l',
       ignore: 'pid,hostname',
    }),
 })
