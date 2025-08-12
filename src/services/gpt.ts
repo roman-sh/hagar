@@ -9,7 +9,7 @@ import {
    type ChatCompletionMessageToolCall,
    type ChatCompletionToolMessageParam
 } from "openai/resources/chat/completions"
-import { functions, toolsByQueue } from "../tools/tools"
+import { functions, toolsByQueue, defaultTools } from "../tools/tools"
 import { db } from "../connections/mongodb"
 import { outboundMessagesQueue } from "../queues-base"
 import { json } from "../utils/json"
@@ -49,17 +49,30 @@ export const gpt = {
       // Show typing indicator
       ;(await messageStore.getChat(phone))?.sendStateTyping()
 
+      /**
+       * We allow only one document to be processed at a time. To enforce it, we introduce a 'context guard' concept.
+       * While messages history is cleared on new scan upload, stale trigger messages and tool calls/responses
+       * from the ongoing scan processing can still pollute the history afterwards.
+       */
+      const activeDocId = await getCurrentContext(phone)
+      const currentTools = [
+         ...defaultTools,
+         ...(toolsByQueue[await getCurrentQueue(activeDocId)] ?? [])
+      ]
+
       // Get message documents from the database
       const messageDocs = await database.getMessages(phone, storeId)
-      const history = composeHistory(messageDocs)
+      
+      const history = composeHistory(
+         // Filter out stale messages before composing the history
+         guardContext(messageDocs, activeDocId)
+      )
 
       const state: GptState = {
          done: false,
          messages: []
       }
-
-      const currentTools = toolsByQueue[await getCurrentQueue(phone)] ?? []
-
+     
       while (!state.done) {
          // 'message' here is a response from the model
          const { message } = (await openai.chat.completions.create({
@@ -76,6 +89,18 @@ export const gpt = {
 
          if (message.tool_calls) {
             const toolResults = await executeTools(message.tool_calls)
+
+            // In-flight context check: Abort if context has changed during tool execution.
+            // This is a part of the context guard mechanism (see above).
+            const currentActiveDocId = await getCurrentContext(phone)
+            if (currentActiveDocId !== activeDocId) {
+               log.warn({
+                  originalDocId: activeDocId,
+                  currentDocId: currentActiveDocId
+               }, 'Context changed during tool execution. Aborting GPT process.')
+               return   // Abort this entire process
+            }
+
             state.messages.push(...toolResults)
          }
          else {
@@ -90,6 +115,32 @@ export const gpt = {
       // Save new messages to DB
       await saveMessages(state.messages, phone, storeId)
    }
+}
+
+
+/**
+ * Filters out stale trigger messages and orphan tool responses from the message history.
+ * @param messages The array of message documents.
+ * @param activeDocId The single, authoritative docId for the current context.
+ * @returns A new array of message documents with stale messages removed.
+ */
+function guardContext(messages: MessageDocument[], activeDocId: string): MessageDocument[] {
+   if (!activeDocId) return messages
+   
+   // Filter the messages based on the context rules.
+   return messages.filter(message => {
+      // Rule for stale triggers: discard if the docId doesn't match the active context.
+      if (message.name === 'app') {
+         const triggerDocId = message.content?.docId
+         if (triggerDocId && triggerDocId !== activeDocId) {
+            log.warn({ activeDocId, triggerDocId }, 'Discarding stale trigger message.')
+            return false
+         }
+      }
+
+      // Otherwise, keep the message.
+      return true
+   })
 }
 
 
@@ -208,15 +259,7 @@ async function saveMessages(
 }
 
 
-async function getCurrentQueue(phone: string): Promise<QueueKey | undefined> {
-   const storeId = await database.getStoreIdByPhone(phone)
-   // Find the docId from the last 'scanner' message.
-   const lastScanMessage = await db.collection('messages').findOne(
-      { storeId, name: 'scanner' },
-      { sort: { createdAt: -1 } }    // newest first
-    )
-   const docId = lastScanMessage?.content?.docId
-   if (!docId) return
+async function getCurrentQueue(docId: string): Promise<QueueKey | undefined> {
    // Find the queue name from the docId.
    try {
       const { queueName } = await findActiveJob(docId)
@@ -228,3 +271,10 @@ async function getCurrentQueue(phone: string): Promise<QueueKey | undefined> {
 }
 
 
+async function getCurrentContext(phone: string): Promise<string | undefined> {
+   const lastScanMessage = await db.collection('messages').findOne(
+      { phone, name: 'scanner' },
+      { sort: { createdAt: -1 } }    // newest first
+   )
+   return lastScanMessage?.content?.docId
+}

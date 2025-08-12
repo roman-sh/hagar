@@ -14,48 +14,53 @@ import { QueueKey } from '../queues-base'
 
 // Tool schemas for GPT
 export const tools: ChatCompletionTool[] = [
-   validateDeliveryNoteSchema,
-   finalizeScanValidationSchema,
-   visualInspectSchema,
-   finalizeOcrExtractionSchema,
-   getOcrDataSchema,
-   getInventorySpreadsheetSchema,
-   requestInventoryConfirmationSchema,
-   productSearchSchema,
-   applyInventoryCorrectionsSchema,
-   finalizeUpdatePreparationSchema,
+  validateDeliveryNoteSchema,
+  finalizeScanValidationSchema,
+  visualInspectSchema,
+  finalizeOcrExtractionSchema,
+  getOcrDataSchema,
+  getInventorySpreadsheetSchema,
+  requestInventoryConfirmationSchema,
+  productSearchSchema,
+  applyInventoryCorrectionsSchema,
+  finalizeUpdatePreparationSchema,
 ]
 
 // Tool function implementations
 export const functions = {
-   validateDeliveryNote,
-   finalizeScanValidation,
-   visualInspect,
-   finalizeOcrExtraction,
-   getOcrData,
-   getInventorySpreadsheet,
-   requestInventoryConfirmation,
-   productSearch,
-   applyInventoryCorrections,
-   finalizeUpdatePreparation,
+  validateDeliveryNote,
+  finalizeScanValidation,
+  visualInspect,
+  finalizeOcrExtraction,
+  getOcrData,
+  getInventorySpreadsheet,
+  requestInventoryConfirmation,
+  productSearch,
+  applyInventoryCorrections,
+  finalizeUpdatePreparation,
 }
 
 export const toolsByQueue: Record<QueueKey, ChatCompletionTool[]> = {
-   scan_validation: [
-     validateDeliveryNoteSchema,
-     finalizeScanValidationSchema,
-     visualInspectSchema,
-   ],
-   ocr_extraction: [
-     finalizeOcrExtractionSchema,
-     getOcrDataSchema,
-   ],
-   update_preparation: [
-     getInventorySpreadsheetSchema,
-     requestInventoryConfirmationSchema,
-     productSearchSchema,
-     applyInventoryCorrectionsSchema,
-     finalizeUpdatePreparationSchema,
-   ],
-   inventory_update: [] as ChatCompletionTool[],
- } satisfies Record<string, ChatCompletionTool[]>
+  scan_validation: [
+    validateDeliveryNoteSchema,
+    finalizeScanValidationSchema,
+    visualInspectSchema,
+  ],
+  ocr_extraction: [
+    finalizeOcrExtractionSchema,
+    getOcrDataSchema,
+  ],
+  update_preparation: [
+    getInventorySpreadsheetSchema,
+    requestInventoryConfirmationSchema,
+    productSearchSchema,
+    applyInventoryCorrectionsSchema,
+    finalizeUpdatePreparationSchema,
+  ],
+  inventory_update: [] as ChatCompletionTool[],
+} satisfies Record<string, ChatCompletionTool[]>
+
+
+export const defaultTools: ChatCompletionTool[] = [
+  // TODO: add default tools here
+]
