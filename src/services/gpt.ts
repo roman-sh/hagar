@@ -260,14 +260,13 @@ async function saveMessages(
 
 
 async function getCurrentQueue(docId: string): Promise<QueueKey | undefined> {
+   if (!docId) return
    // Find the queue name from the docId.
    try {
       const { queueName } = await findActiveJob(docId)
       return queueName
    }
-   catch (e) {
-      return   // User has no active job, return undefined
-   }
+   catch (e) { }  // User has no active job, return undefined
 }
 
 
