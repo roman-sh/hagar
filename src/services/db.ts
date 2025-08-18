@@ -516,73 +516,74 @@ export const database = {
 
    
    /**
-    * For a given list of supplier item names, finds the most recent historical
-    * resolution (i.e., the inventory_item_id and name) from past finalized invoices.
-    * This is used by the history-pass to apply previous matching decisions automatically.
-    * It uses a single, efficient aggregation query to perform a bulk lookup.
+    * For a given supplier item name, finds the single most recent historical
+    * resolution (i.e., a full InventoryItem) from the denormalized 'history' collection.
+    * This uses an Atlas Search index for efficient, fuzzy matching.
     *
     * @param {string} storeId - The ID of the store to search within.
-    * @param {string[]} supplierItemNames - An array of item names from the current invoice.
-    * @returns {Promise<{ [key: string]: Partial<InventoryItem> }>} A promise that resolves to a
-    *          map where keys are the supplier item names and values are the partial
-    *          InventoryItem objects containing the historical resolution.
+    * @param {string} supplierItemName - The item name from the current invoice.
+    * @param {number} maxEdits - The maximum fuzzy edit distance to allow.
+    * @returns {Promise<Partial<InventoryItem> | null>} A promise that resolves to the single
+    *          best historical match, or null if no match is found.
     */
    async resolveHistoryItems(
-      storeId: string, supplierItemNames: string[]
-   ): Promise<{ [key: string]: Partial<InventoryItem> }> {
-      const pipeline = [
-         // Step 1: Find all documents that might contain the items we need, using an index on storeId.
-         {
-            $match: {
-               storeId: storeId,
-               'items.supplier_item_name': { $in: supplierItemNames },
-            },
-         },
-         // Step 2: Sort the parent documents by creation date, newest first.
-         // This is crucial for the $group stage to pick the latest item correctly.
-         { $sort: { createdAt: -1 } },
-         
-         // Step 3: Deconstruct the items array from each document into a stream of items.
-         { $unwind: '$items' },
-         
-         // Step 4: Filter the stream of items to only include the ones we are looking for
-         // and that have a resolution type, making them a valid historical decision.
-         {
-            $match: {
-               'items.supplier_item_name': { $in: supplierItemNames },
-               'items.match_type': { $exists: true, $ne: '' },
-            },
-         },
+      storeId: string,
+      supplierItemName: string,
+      maxEdits: number
+   ): Promise<Partial<InventoryItem> | null> {
 
-         // Step 5: Group by the supplier item name. For each group, take the *first*
-         // item encountered. Because of the preceding $sort, this is guaranteed
-         // to be the most recent one. We only capture the specific fields needed for resolution.
+      const pipeline = [
          {
-            $group: {
-               _id: '$items.supplier_item_name',
-               inventory_item_id: { $first: '$items.inventory_item_id' },
-               inventory_item_name: { $first: '$items.inventory_item_name' },
-               inventory_item_unit: { $first: '$items.inventory_item_unit' },
-               match_type: { $first: '$items.match_type' },
-            },
+            '$search': {
+               'index': 'search_history_supplier_name',
+               'compound': {
+                  'filter': [
+                     {
+                        'equals': {
+                           'value': storeId,
+                           'path': 'storeId'
+                        }
+                     }
+                  ],
+                  'must': [
+                     {
+                        'text': {
+                           'query': supplierItemName,
+                           'path': 'supplier_item_name',
+                           'fuzzy': {
+                              'maxEdits': maxEdits
+                           }
+                        }
+                     }
+                  ]
+               }
+            }
          },
+         {
+            '$sort': {
+               'createdAt': -1
+            }
+         },
+         {
+            '$limit': 1
+         },
+         {
+            '$project': {
+               // Exclude fields we don't need to apply, keeping the payload lean.
+               '_id': 0,
+               'storeId': 0,
+               'parentDocId': 0,
+               'createdAt': 0,
+               'score': { '$meta': 'searchScore' } // Include score for potential future use/logging
+            }
+         }
       ]
 
-      const aggregationResult = await db.collection<UpdateDocument>('updates').aggregate(pipeline).toArray()
+      const results = await db.collection('history').aggregate(pipeline).toArray()
 
-      // The result is an array like: [{ _id: 'Milk', inventory_item_id: 'P-123', ... }, ... ]
-      // We'll transform it into the desired map structure { 'Milk': { inventory_item_id: 'P-123', ... } }
-      const results: { [key: string]: Partial<InventoryItem> } = {}
-      
-      for (const doc of aggregationResult) {
-         results[doc._id] = {
-            inventory_item_id: doc.inventory_item_id,
-            inventory_item_name: doc.inventory_item_name,
-            inventory_item_unit: doc.inventory_item_unit,
-            match_type: doc.match_type,
-         }
-      }
+      if (!results.length) return null
 
-      return results
+      // The result from the aggregation is the full history item, which is a Partial<InventoryItem>
+      return results[0] as Partial<InventoryItem>
    },
 }

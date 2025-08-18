@@ -122,11 +122,25 @@ async function applyAiResolutions({ resolutions, itemsToProcess, docId, queue }:
       // e.g., { "0": "product:organi_ein_karem:12345" }
       // This line efficiently unpacks that object into its key and value.
       const [itemIndexStr, chosenId] = Object.entries(resolution)[0]
+      const itemToUpdate = itemsToProcess[+itemIndexStr]
+
+      // This is a safeguard against an out-of-bounds index from the AI.
+      if (!itemToUpdate) {
+         log.error({ docId, itemIndexStr, resolution }, 'AI returned an index that is out of bounds.')
+         continue
+      }
       
       // If the AI returns null, it means it was not confident in any match.
-      if (!chosenId) continue
+      if (!chosenId) {
+         const candidateNames = itemToUpdate.candidates?.map(c => c.name).join(' | ') || 'No candidates'
+         log.info({
+            docId,
+            supplierName: itemToUpdate[H.SUPPLIER_ITEM_NAME],
+            candidates: candidateNames,
+         }, 'aiPass: AI could not resolve a confident match for this item.')
+         continue
+      }
 
-      const itemToUpdate = itemsToProcess[+itemIndexStr]
       // Find the chosen candidate object from the original list using the _id returned by the AI.
       const chosenCandidate = itemToUpdate.candidates!.find(c => c._id === chosenId)
 
@@ -142,13 +156,6 @@ async function applyAiResolutions({ resolutions, itemsToProcess, docId, queue }:
       itemToUpdate[H.INVENTORY_ITEM_NAME] = chosenCandidate.name
       itemToUpdate[H.INVENTORY_ITEM_UNIT] = chosenCandidate.unit
       itemToUpdate[H.MATCH_TYPE] = 'name'
-
-      log.info({
-         docId,
-         productId: chosenCandidate._id,
-         supplierName: itemToUpdate[H.SUPPLIER_ITEM_NAME],
-         inventoryName: chosenCandidate.name,
-      }, `aiPass: Resolved item.`)
    }
 
    await database.saveArtefact({

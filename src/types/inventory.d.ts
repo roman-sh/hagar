@@ -37,9 +37,16 @@ export type ProductCandidate = Pick<ProductDocument,
 /**
  * Represents an entire inventory document, including metadata and a list of structured items.
  */
-export type InventoryDocument = {
-   meta: InvoiceMeta
+export interface InventoryDocument {
    items: InventoryItem[]
+   meta?: InvoiceMeta
+}
+
+export interface HistoryItem extends InventoryItem {
+   _id: string
+   storeId: string
+   createdAt: Date
+   parentDocId: string
 }
 
 export type InvoiceMeta = {
