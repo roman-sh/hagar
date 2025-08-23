@@ -45,10 +45,7 @@ export const gpt = {
    // TODO: simplify by passing phone only. Use redis caching to get storeId maybe?
    async process({ phone, storeId }: UserData): Promise<void> {
       log.debug({ phone, storeId }, 'Triggered GPT processing')
-
-      // Show typing indicator
-      ;(await messageStore.getChat(phone))?.sendStateTyping()
-
+ 
       /**
        * We allow only one document to be processed at a time. To enforce it, we introduce a 'context guard' concept.
        * While messages history is cleared on new scan upload, stale trigger messages and tool calls/responses
@@ -74,6 +71,9 @@ export const gpt = {
       }
      
       while (!state.done) {
+         // Show typing indicator
+         ;(await messageStore.getChat(phone))?.sendStateTyping()
+
          // 'message' here is a response from the model
          const { message } = (await openai.chat.completions.create({
             model: MAIN_MODEL,
@@ -102,6 +102,18 @@ export const gpt = {
             }
 
             state.messages.push(...toolResults)
+
+            // The turn should only end if ALL tool calls returned a isSilent flag.
+            // If there's a mix of silent and non-silent tools, the AI needs to continue.
+            const isSilent = toolResults.every(result => {
+               const content = JSON.parse(result.content)
+               return content.isSilent
+            })
+
+            if (isSilent) {
+               log.info('Tool(s) requested silent finalization. Ending GPT turn.')
+               state.done = true
+            }
          }
          else {
             state.done = true

@@ -218,7 +218,7 @@ The processor executes a series of abstract phases to transform the raw data int
 3.  **Phase 3: User Review and Correction**
     *   **Objective**: To present the auto-generated draft, manage user corrections conversationally, and finalize the document for the next stage.
     *   **Flow**:
-        1.  The AI first sends the user a draft document (as a PDF) for review and waits for feedback.
+        1.  The AI first sends the user a draft document (as a PDF) for review and waits for feedback. The system generates this PDF dynamically using React for Server-Side Rendering (SSR) to create an HTML representation of the inventory draft from a component (`InventoryConfirmation.tsx`), which is then converted to a PDF via a headless browser (Puppeteer).
         2.  When the user replies with changes, the system employs a **delta-based correction model** for efficiency. The AI gathers all requested fixes—such as re-matching a product, updating a quantity, or fixing the invoice date—and applies them as a minimal changeset rather than resubmitting the entire document. This is orchestrated through tools that allow the AI to first fetch the draft's context and then apply only the specific corrections.
         3.  For significant changes, a revised draft is sent back to the user for a final check. This iterative loop continues until the user confirms the draft is accurate.
         4.  Once approved, the AI finalizes the stage, persisting the corrected inventory document and advancing it in the pipeline.

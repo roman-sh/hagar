@@ -53,6 +53,7 @@ export const finalizeScanValidation = async (args: finalizeScanValidationArgs) =
 
       return {
          success: true,
+         isSilent: true,
          nextStage,
       }
    } catch (error) {

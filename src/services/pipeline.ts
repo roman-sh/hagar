@@ -58,10 +58,9 @@ export const pipeline = {
          await enqueueJob(docId, nextQueue, 'advanced')
          return nextQueue
       } else {
-         log.info(
-            `Document ${docId} has completed the final stage of its pipeline.`
-         )
-         return null
+         const message = `Document ${docId} has completed the final stage of its pipeline.`
+         log.info(message)
+         return message
       }
    },
 }

@@ -64,7 +64,12 @@ export async function finalizeOcrExtraction(args: FinalizeOcrExtractionArgs) {
 
       log.info({ docId, nextStage, itemsCount }, `OCR extraction finalized.`)
 
-      return { success: true, nextStage, itemsCount }
+      return {
+         success: true,
+         isSilent: true,
+         nextStage,
+         itemsCount,
+      }
    } catch (error) {
       const errorMessage = `Failed to finalize OCR extraction for document ${docId}.`
       log.error(error, errorMessage)
