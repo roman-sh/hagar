@@ -76,10 +76,7 @@ export async function ocrExtractionProcessor(
    })
 
    // 6. Trigger GPT processing
-   gpt.process({
-      phone: phone,
-      storeId: storeId,
-   })
+   gpt.process({ phone })
 
    // 7. Set progress to 2/3 to indicate readiness for AI validation
    await job.progress(66)

@@ -14,7 +14,7 @@ import { db } from "../connections/mongodb"
 import { outboundMessagesQueue } from "../queues-base"
 import { json } from "../utils/json"
 import systemPrompt from '../prompts/generic.md'
-import { UserData } from "../types/shared"
+import { ProcessArgs } from "../types/shared"
 import { messageStore } from "./message-store"
 import { findActiveJob } from "./pipeline"
 import { QueueKey } from "../queues-base"
@@ -38,13 +38,12 @@ interface GptState {
 
 export const gpt = {
    /**
-    * Process messages for a phone/store with GPT
+    * Process messages for a phone with GPT
     * note: we have the incoming message/s in history already
-    * @param userData The user data containing phone, name, and storeId
+    * @param processArgs The user's phone and optional model to use
     */
-   // TODO: simplify by passing phone only. Use redis caching to get storeId maybe?
-   async process({ phone, storeId }: UserData): Promise<void> {
-      log.debug({ phone, storeId }, 'Triggered GPT processing')
+   async process({ phone, model = MAIN_MODEL }: ProcessArgs): Promise<void> {
+      log.debug({ phone, model }, 'Triggered GPT processing')
  
       /**
        * We allow only one document to be processed at a time. To enforce it, we introduce a 'context guard' concept.
@@ -58,7 +57,7 @@ export const gpt = {
       ]
 
       // Get message documents from the database
-      const messageDocs = await database.getMessages(phone, storeId)
+      const messageDocs = await database.getMessages(phone)
       
       const history = composeHistory(
          // Filter out stale messages before composing the history
@@ -76,7 +75,7 @@ export const gpt = {
 
          // 'message' here is a response from the model
          const { message } = (await openai.chat.completions.create({
-            model: MAIN_MODEL,
+            model,
             messages: [
                getSystemMessage(),  // inject the system message dynamically to allow history truncation
                ...history,
@@ -125,7 +124,7 @@ export const gpt = {
          }
       }
       // Save new messages to DB
-      await saveMessages(state.messages, phone, storeId)
+      await saveMessages(state.messages, phone)
    }
 }
 
@@ -242,10 +241,10 @@ function composeHistory(messageDocs: MessageDocument[]) {
 
 async function saveMessages(
    messages: ChatCompletionMessageParam[],
-   phone: string,
-   storeId: string
+   phone: string
 ): Promise<void> {
    const collection = db.collection('messages')
+   const storeId = await database.getStoreIdByPhone(phone)
 
    for (const message of messages) {
       const messageDoc = {

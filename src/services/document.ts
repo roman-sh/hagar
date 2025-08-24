@@ -11,14 +11,14 @@ import { createHmac } from 'crypto'
 
 type OnboardArgs = Pick<
    ScanDocument,
-   'filename' | 'contentType' | 'storeId' | 'channel' | 'author'
+   'filename' | 'contentType' | 'storeId' | 'userName' | 'phone'
 > & {
    fileBuffer: Buffer
 }
 
 export const document = {
    onboard: async (args: OnboardArgs) => {
-      const { fileBuffer, filename, contentType, storeId, channel, author } = args
+      const { fileBuffer, filename, contentType, storeId, userName, phone } = args
 
       if (!process.env.ENCRYPTION_KEY) throw new Error(
          'ENCRYPTION_KEY must be set in environment variables for secure filename generation.'
@@ -71,8 +71,8 @@ export const document = {
          filename: sanitizedFilename,
          contentType: contentType,
          url: `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`,
-         author,
-         channel,
+         userName,
+         phone,
          createdAt: new Date()
       }
 

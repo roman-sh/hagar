@@ -218,12 +218,9 @@ export const database = {
    },
 
 
-   getMessages: async (phone: string, storeId: string): Promise<MessageDocument[]> => {
-      // TODO: Add a limit by message count or from_date or maybe do summorization
-      // TODO: We may want to create an index to speed up the query
+   getMessages: async (phone: string): Promise<MessageDocument[]> => {
       return await db.collection<MessageDocument>('messages').find({
-         'storeId': storeId,
-         'phone': phone // Here we can decide if we want only messages from this specific phone, or all messages for store
+         'phone': phone
       })
          .sort({ createdAt: 1 }) // Sort chronologically (oldest first)
          .toArray()

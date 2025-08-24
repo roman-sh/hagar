@@ -1,18 +1,18 @@
-import './utils/suppress-warnings.js'
-import './utils/global-logger.js'
+import './utils/suppress-warnings'
+import './utils/global-logger'
 import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
-import { initializeQueues } from './queues-init.js'
-import { initializeDatabase } from './connections/mongodb.js'
-import { initializeRedis } from './connections/redis.js'
-import { initializeS3 } from './connections/s3.js'
-import { client } from "./connections/whatsapp.js"
-import { pdfUploadHandler } from './api/pdf-upload.js'
-import { configureBullBoard, type BullBoardConfig } from './config/bull-board.js'
-import { initializeDebouncer } from './services/message-debouncer.js'
+import { initializeQueues } from './queues-init'
+import { initializeDatabase } from './connections/mongodb'
+import { initializeRedis } from './connections/redis'
+import { initializeS3 } from './connections/s3'
+import { client } from "./connections/whatsapp"
+// import { pdfUploadHandler } from './api/pdf-upload'
+import { configureBullBoard, type BullBoardConfig } from './config/bull-board'
+import { initializeDebouncer } from './services/message-debouncer'
 import { Message } from "whatsapp-web.js"
-import { messageStore } from './services/message-store.js'
-import { phoneQueueManager } from './services/phone-queues-manager.js'
+import { messageStore } from './services/message-store'
+import { phoneQueueManager } from './services/phone-queues-manager'
 
 
 export async function buildApp() {
@@ -53,7 +53,10 @@ export async function buildApp() {
    bullBoardConfig.setupRedirect(app)
 
    // API routes
-   app.post('/api/pdf-upload', pdfUploadHandler) // app's entry point
+
+   // We use scan apps to upload PDFs directly to Hagar's whatsapp.
+   // Uncomment this if physical scanner + RPi becomes relevant again.
+   // app.post('/api/pdf-upload', pdfUploadHandler)
 
    // Define a health check endpoint
    app.get('/health', (c) => c.json({ status: 'ok' }))
@@ -66,6 +69,7 @@ export async function buildApp() {
 
    return { app, bullBoardConfig }
 }
+
 
 async function startServer() {
    process.on('SIGINT', shutdown)
@@ -94,6 +98,7 @@ async function startServer() {
 
    log.info('Application ready - WhatsApp client is stable on Node.js!')
 }
+
 
 // --- Final Graceful Shutdown Handler ---
 async function shutdown(signal: string) {

@@ -1,4 +1,4 @@
-export interface UserData {
+export interface ProcessArgs {
    phone: string
-   storeId: string
+   model?: string
 }

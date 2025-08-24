@@ -100,7 +100,7 @@ export async function updatePreparationProcessor(
    })
 
    // 9. Trigger the GPT agent to process the new message.
-   gpt.process({ phone, storeId })
+   gpt.process({ phone })
 
    // The job will hang here until completed by an external trigger (the confirmation tool).
    return new Promise(() => { })

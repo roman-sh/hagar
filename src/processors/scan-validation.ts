@@ -36,10 +36,7 @@ export async function scanValidationProcessor(
    })
 
    // Trigger GPT processing directly
-   gpt.process({ 
-      phone, 
-      storeId 
-   })
+   gpt.process({ phone })
 
    log.info({ docId, storeId, filename }, 'Document sent to GPT for validation')
 

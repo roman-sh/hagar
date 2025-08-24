@@ -19,7 +19,6 @@
 
 import { redisClient, redisSubscriber } from '../connections/redis'
 import { gpt } from './gpt'
-import { UserData } from '../types/shared'
 
 
 /**
@@ -31,10 +30,8 @@ export function initializeDebouncer() {
    // Listen for Redis key expirations
    redisSubscriber.on('message', (channel, key) => {   // 'message' here is the event name
       if (key.startsWith('gpt_trigger:')) {
-         const encodedData = key.replace(/^gpt_trigger:/, '')
-         const jsonData = decodeURIComponent(encodedData)
-         const userData = JSON.parse(jsonData)         
-         gpt.process(userData)
+         const phone = key.replace(/^gpt_trigger:/, '')
+         gpt.process({ phone })
       }
    })
 
@@ -46,11 +43,10 @@ export function initializeDebouncer() {
  * This creates or resets an expiring key in Redis which will trigger
  * GPT processing after the specified delay if no new messages arrive
  * 
- * @param userData The user data containing phone, name, and storeId
- * @param delaySeconds How long to wait for more messages (default: 1 second)
+ * @param phone The user's phone number
+ * @param delayMilliseconds How long to wait for more messages (default: 500 milliseconds)
  */
-export function setGptTrigger(userData: UserData, delaySeconds = 1) {
-   const data = encodeURIComponent(JSON.stringify(userData))
-   const key = `gpt_trigger:${data}`
-   redisClient.set(key, '1', 'EX', delaySeconds)
+export function setGptTrigger(phone: string, delayMilliseconds = 500) {
+   const key = `gpt_trigger:${phone}`
+   redisClient.set(key, '1', 'PX', delayMilliseconds)
 }

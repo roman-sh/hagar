@@ -8,6 +8,7 @@ import BeeQueue from 'bee-queue'
 import { document } from '../services/document'
 import { Message } from 'whatsapp-web.js'
 
+
 /**
  * Process an inbound message job using Bee queues
  * @param job - The Bee job object containing message ID
@@ -22,15 +23,15 @@ export async function inboundMessagesBeeProcessor(
    
    log.debug({ jobId, messageId }, 'Starting inbound message processing')
    
+   // Retrieve the original message object from the store
+   const message = messageStore.get(messageId)
+   const phone = message.from.split('@')[0] // Extract phone number from WhatsApp ID
+   const contact = await message.getContact()
+   const userName = (contact.name || contact.pushname || phone).replace(/[\s<|\\/>]/g, '_')
+   const storeId = await database.getStoreIdByPhone(phone)
+   let content: Message['body'] | undefined
+   
    try {
-      // Retrieve the original message object from the store
-      const message = messageStore.get(messageId)
-      const phone = message.from.split('@')[0] // Extract phone number from WhatsApp ID
-      const contact = await message.getContact()
-      const author = (contact.name || contact.pushname || phone).replace(/[\s<|\\/>]/g, '_')
-      const storeId = await database.getStoreIdByPhone(phone)
-      let content: Message['body'] | undefined
-
       switch (message.type) {
          case 'document': {
             const media = await message.downloadMedia()
@@ -40,10 +41,10 @@ export async function inboundMessagesBeeProcessor(
                   filename: media.filename,
                   contentType: media.mimetype,
                   storeId,
-                  channel: 'whatsapp',
-                  author
+                  userName,
+                  phone
                })
-               log.info({ phone, author, file: media.filename }, 'PDF from WhatsApp onboarded')
+               log.info({ phone, userName, file: media.filename }, 'PDF from WhatsApp onboarded')
                return { success: true, message: 'Document onboarded successfully.' }
             } else {
                throw new Error('Unsupported file type. Please send a PDF document.')
@@ -71,27 +72,27 @@ export async function inboundMessagesBeeProcessor(
          }
       }
 
-      log.info({ name: author, content }, 'INCOMING MESSAGE')
+      log.info({ name: userName, content }, 'INCOMING MESSAGE')
 
       await db.collection('messages').insertOne({
          type: 'message',
          role: 'user',
          phone,
-         name: author,
+         name: userName,
          content,
          storeId,
          createdAt: new Date()
       })
 
-      setGptTrigger({ phone, storeId })
+      setGptTrigger(phone)
 
       return {
          success: true,
          message: 'Message processed'
       }
    }
-   catch (error) {
-      log.error(error, `Failed to process inbound message`, { jobId, messageId })
+   catch (error: any) {
+      log.error({ err: error, notifyPhone: phone, storeId }, `Failed to process inbound message`)
       throw error // Re-throw to fail the job in the queue
    }
    finally {
