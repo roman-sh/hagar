@@ -91,7 +91,7 @@ export interface StoreDocument extends BaseDocument {
    type: DocType.STORE
    system: string
    deviceId: string
-   phone: string
+   phones: string[]
    pipeline: QueueKey[] // Array of queue steps from QueueKey type
    backoffice: {
       url: string

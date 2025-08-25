@@ -29,9 +29,7 @@ import { DocType } from '../types/documents'
  * Derived from the base document types for better maintainability.
  */
 type ScanAndStoreDetails
-   = Pick<ScanDocument, 'storeId' | 'fileId' | 'filename' | 'url'>
-   & Pick<StoreDocument, 'phone'>
-
+   = Pick<ScanDocument, 'storeId' | 'fileId' | 'filename' | 'url' | 'phone'>
 
 interface RecordJobProgressArgsBase {
    jobId: string
@@ -113,6 +111,18 @@ export const database = {
    },
 
 
+   /**
+    * Retrieves the storeId associated with a given phone number.
+    * It first checks a Redis cache for the mapping. If not found, it queries
+    * the MongoDB `stores` collection, searching for a match in the `phones` array.
+    * The result is then cached in Redis for 24 hours.
+    * It includes error handling to notify via AI and throw if no store or multiple stores are found.
+    *
+    * @param {string} phone - The phone number to look up.
+    * @returns {Promise<string>} A promise that resolves to the storeId.
+    * @throws {Error} Throws an error if no store is found for the phone number.
+    * @throws {Error} Throws an error if multiple stores are found for the same phone number.
+    */
    getStoreIdByPhone: async (phone: string): Promise<StoreDocument['storeId']> => {
       const cacheKey = `storeId:phone:${phone}`
       const cachedStoreId = await redisClient.get(cacheKey)
@@ -122,13 +132,23 @@ export const database = {
          return cachedStoreId
       }
 
-      const { storeId } = await db.collection<StoreDocument>('stores')
-         .findOne({ phone }, { projection: { storeId: 1 } })
+      const matchingStores = await db.collection<StoreDocument>('stores')
+         .find({ phones: phone }, { projection: { storeId: 1 } }).toArray()
 
-      if (!storeId) {
+      if (!matchingStores.length) {
+         const message = `StoreId not found for phone: ${phone}`
+         log.error({ notifyPhone: phone }, message)
          // TODO: Set up a demo store for unregistered phones
-         throw new Error(`StoreId not found for phone: ${phone}`)
+         throw new Error(message)
       }
+
+      if (matchingStores.length > 1) {
+         const message = `Multiple stores found for phone: ${phone}.`
+         log.error({ notifyPhone: phone, storesFound: matchingStores }, message)
+         throw new Error(message)
+      }
+
+      const { storeId } = matchingStores[0]
 
       // Cache the store ID for 24 hours
       await redisClient.set(cacheKey, storeId, 'EX', 60 * 60 * 24)
@@ -381,7 +401,7 @@ export const database = {
                fileId: '$fileId',
                filename: '$filename',
                url: '$url',
-               phone: '$store.phone',
+               phone: '$phone',
             },
          },
       ]
