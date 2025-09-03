@@ -24,11 +24,12 @@ export async function scanValidationProcessor(
       type: DocType.MESSAGE,
       role: 'user',
       phone,
+      contextId: docId,
       name: 'scanner',
       content: {
+         action: 'validate_delivery_note',
          file_id: fileId, // OpenAI file_id from the document
          docId,
-         phone,   // TODO: redundant? We can get it from getScanAndStoreDetails
          filename
       },
       storeId,
@@ -36,9 +37,12 @@ export async function scanValidationProcessor(
    })
 
    // Trigger GPT processing directly
-   gpt.process({ phone })
+   gpt.process({ phone, contextId: docId })
 
-   log.info({ docId, storeId, filename }, 'Document sent to GPT for validation')
+   const logMessage = `Agent triggered with action: validate_delivery_note`
+   job.log(logMessage)
+
+   log.info({ docId, storeId, filename }, logMessage)
 
    job.progress(50)
 

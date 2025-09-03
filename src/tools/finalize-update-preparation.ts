@@ -13,13 +13,8 @@ export const finalizeUpdatePreparationSchema: ChatCompletionTool = {
       description: 'Finalizes the inventory update preparation stage after all corrections have been applied and confirmed.',
       parameters: {
          type: 'object',
-         properties: {
-            docId: {
-               type: 'string',
-               description: 'The database ID of the document being finalized.',
-            },
-         },
-         required: ['docId'],
+         properties: {},
+         required: [],
       },
    },
 }
@@ -67,6 +62,7 @@ export async function finalizeUpdatePreparation({ docId }: FinalizeUpdatePrepara
 
       return {
          success: true,
+         isSilent: !!nextStage,
          message: `Inventory update preparation for document ${docId} has been finalized.`,
          nextStage,
       }

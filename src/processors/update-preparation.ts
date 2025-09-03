@@ -44,9 +44,11 @@ export async function updatePreparationProcessor(
 
    // 3. Sync the catalog.
    await catalog.sync(storeId)
+   job.log('Catalog sync complete.')
 
    // 4. Initialize the inventory document from extracted data.
    const doc = await inventory.initializeDocument(docId)
+   job.log('Initialized inventory document.')
 
    // 5. Run the matching passes in a structured pipeline.
    const passes = [
@@ -58,9 +60,11 @@ export async function updatePreparationProcessor(
    ]
 
    for (const pass of passes) {
-      // The inventoryReady check is now more of a safeguard, as the pipeline
-      // is designed to run all passes to gather a comprehensive candidate list.
-      if (inventoryReady(doc)) break
+      if (inventoryReady(doc)) {
+         job.log('Inventory is ready, skipping remaining passes.')
+         break
+      }
+      job.log(`Running matching pass: ${pass.name}...`)
       await pass({
          doc,
          storeId,
@@ -68,6 +72,7 @@ export async function updatePreparationProcessor(
          queue: job.queue.name as QueueKey,
       })
    }
+   job.log('All matching passes are complete.')
 
    // 6. Save the processed document to the job data to retrieve it later from a tool.
    await job.update(doc)
@@ -83,13 +88,14 @@ export async function updatePreparationProcessor(
    // ---
 
    // 7. Get user phone number to trigger the confirmation flow.
-   const { phone } = await database.getScanAndStoreDetails(docId)
+   const phone = await database.getScanOwnerPhone(docId)
 
    // 8. Inject a trigger message into the conversation for the agent to pick up.
    await db.collection<OptionalId<MessageDocument>>('messages').insertOne({
       type: DocType.MESSAGE,
       role: 'user',
       phone,
+      contextId: docId,
       name: 'app',
       content: {
          action: 'request_inventory_confirmation',
@@ -100,7 +106,11 @@ export async function updatePreparationProcessor(
    })
 
    // 9. Trigger the GPT agent to process the new message.
-   gpt.process({ phone })
+   gpt.process({ phone, contextId: docId })
+
+   const logMessage = `Agent triggered with action: request_inventory_confirmation`
+   job.log(logMessage)
+   log.info({ docId, storeId, phone }, logMessage)
 
    // The job will hang here until completed by an external trigger (the confirmation tool).
    return new Promise(() => { })
@@ -110,5 +120,7 @@ export async function updatePreparationProcessor(
 // -------- Helper functions --------
 
 function inventoryReady(doc: InventoryDocument) {
-   return doc.items.every(i => i.inventory_item_id)
-} 
+   return doc.items.every(i =>
+      i.inventory_item_id || i.match_type === 'skip'
+   )
+}

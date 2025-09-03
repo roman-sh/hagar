@@ -2,10 +2,9 @@ import { ChatCompletionTool } from 'openai/resources'
 import { database } from '../services/db'
 import { html } from '../services/html'
 import * as inventory from '../services/inventory'
-import { client } from '../connections/whatsapp'
-import whatsappWeb from 'whatsapp-web.js'
 import { findActiveJob } from '../services/pipeline'
 import { InventoryDocument } from '../types/inventory'
+import { conversationManager } from '../services/conversation-manager'
 
 
 interface RequestInventoryConfirmationArgs {
@@ -22,13 +21,8 @@ export const requestInventoryConfirmationSchema: ChatCompletionTool = {
       description: 'Sends the user a PDF draft of the inventory update for confirmation.',
       parameters: {
          type: 'object',
-         properties: {
-            docId: {
-               type: 'string',
-               description: "The id of processed document/invoice."
-            }
-         },
-         required: ['docId']
+         properties: {},
+         required: []
       }
    }
 }
@@ -50,23 +44,31 @@ export const requestInventoryConfirmation = async (args: RequestInventoryConfirm
       // Step 3: Create a summary of the processed document for the agent to use.
       const summary = inventory.createSummary(doc)
 
-      // Step 4: Retrieve the user's phone number.
-      const { phone } = await database.getScanAndStoreDetails(docId)
+      // Step 4: Retrieve the user's phone number and original filename.
+      const { phone, filename: originalFilename } = await database.getScanDetails(docId)
 
       // Step 5: Generate the confirmation PDF on-the-fly from the document data.
       const pdfBuffer = await html.generateInventoryConfirmation(doc)
 
-      // Step 6: Create a WhatsApp-compatible media object from the PDF buffer.
-      // TODO: we may want to save this to S3 for audit/debugging purposes.
-      const media = new whatsappWeb.MessageMedia(
-         'application/pdf',
-         pdfBuffer.toString('base64'),
-         'inventory_update_draft.pdf'
-      )
+      // Step 6: Construct a meaningful filename, preferring supplier/invoice ID but falling back to the original.
+      let pdfFilename = originalFilename
+      const { supplier, invoiceId } = doc.meta || {}
+      if (supplier && invoiceId) {
+         // Combine supplier and invoice ID, then sanitize the entire string.
+         const rawFilename = `${supplier}_${invoiceId}.pdf`
+         pdfFilename = rawFilename.replace(/[\s/\\?%*:|"<>]/g, '_')
+      }
 
-      // Step 7: Send the PDF as a document to the user.
-      const chatId = `${phone}@c.us`
-      await client.sendMessage(chatId, media)
+      // Step 7: Send the PDF through the queueing system to respect conversation context.
+      await conversationManager.send({
+         phone,
+         contextId: docId,
+         media: {
+            mimetype: 'application/pdf',
+            data: pdfBuffer.toString('base64'),
+         },
+         filename: pdfFilename
+      })
 
       // Return a success message for the tool execution log.
       return {

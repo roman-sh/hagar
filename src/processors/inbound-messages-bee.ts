@@ -1,12 +1,16 @@
 import { db } from '../connections/mongodb'
 import { BaseJobResult, MessageRef } from '../types/jobs'
-import { setGptTrigger } from '../services/message-debouncer'
 import { audio } from '../services/audio'
 import { database } from '../services/db'
 import { messageStore } from '../services/message-store'
 import BeeQueue from 'bee-queue'
 import { document } from '../services/document'
 import { Message } from 'whatsapp-web.js'
+import { conversationManager } from '../services/conversation-manager'
+import { pipeline } from '../services/pipeline'
+import { MessageDocument, DocType } from '../types/documents'
+import { OptionalId } from 'mongodb'
+import { setGptTrigger } from '../services/message-debouncer'
 
 
 /**
@@ -23,39 +27,52 @@ export async function inboundMessagesBeeProcessor(
    
    log.debug({ jobId, messageId }, 'Starting inbound message processing')
    
-   // Retrieve the original message object from the store
-   const message = messageStore.get(messageId)
-   const phone = message.from.split('@')[0] // Extract phone number from WhatsApp ID
-   const contact = await message.getContact()
-   const userName = (contact.name || contact.pushname || phone).replace(/[\s<|\\/>]/g, '_')
-   const storeId = await database.getStoreIdByPhone(phone)
+   const
+      // Retrieve the original message object from the store
+      message = messageStore.get(messageId),
+      phone = message.from.split('@')[0], // Extract phone number from WhatsApp ID
+      contact = await message.getContact(),
+      userName = (contact.name || contact.pushname || phone).replace(/[\s<|\\/>]/g, '_'),
+      storeId = await database.getStoreIdByPhone(message.from.split('@')[0])
+
    let content: Message['body'] | undefined
    
    try {
       switch (message.type) {
          case 'document': {
             const media = await message.downloadMedia()
-            if (media.mimetype === 'application/pdf') {
-               await document.onboard({
-                  fileBuffer: Buffer.from(media.data, 'base64'),
-                  filename: media.filename,
-                  contentType: media.mimetype,
-                  storeId,
-                  userName,
-                  phone
-               })
-               log.info({ phone, userName, file: media.filename }, 'PDF from WhatsApp onboarded')
-               return { success: true, message: 'Document onboarded successfully.' }
-            } else {
+            if (media.mimetype !== 'application/pdf') {
                throw new Error('Unsupported file type. Please send a PDF document.')
             }
+
+            // 1. Onboard document (uploads, creates DB record)
+            const { docId } = await document.onboard({
+               fileBuffer: Buffer.from(media.data, 'base64'),
+               filename: media.filename,
+               contentType: media.mimetype,
+               storeId,
+               userName,
+               phone
+            })
+            log.info({ phone, userName, docId }, 'PDF from WhatsApp onboarded')
+
+            // 2. Initialize the new document context. The manager will handle
+            // creating the queue and activating it if it's the user's first document.
+            await conversationManager.initializeContext(phone, docId)
+
+            // 3. Start the processing pipeline
+            await pipeline.start(docId)
+            
+            return { success: true, message: 'Document onboarded successfully.' }
          }
 
+         
          case 'chat': {
             content = message.body
             break
          }
 
+         
          case 'audio':
          case 'ptt': {
             const media = await message.downloadMedia()
@@ -63,10 +80,12 @@ export async function inboundMessagesBeeProcessor(
             break
          }
 
+         
          case 'image': {
             // break
          }
 
+         
          default: {
             throw new Error(`Unsupported message type: ${message.type}`)
          }
@@ -74,17 +93,21 @@ export async function inboundMessagesBeeProcessor(
 
       log.info({ name: userName, content }, 'INCOMING MESSAGE')
 
-      await db.collection('messages').insertOne({
-         type: 'message',
+      const contextId = await conversationManager.getCurrentContext(phone)
+
+      await db.collection<OptionalId<MessageDocument>>('messages').insertOne({
+         type: DocType.MESSAGE,
          role: 'user',
          phone,
          name: userName,
          content,
          storeId,
+         contextId,  // We assign incoming message to current conversation context.
          createdAt: new Date()
       })
 
-      setGptTrigger(phone)
+      // Trigger GPT with debouncing, passing the determined context.
+      setGptTrigger({ phone, contextId })
 
       return {
          success: true,

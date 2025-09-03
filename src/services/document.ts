@@ -23,10 +23,7 @@ export const document = {
       if (!process.env.ENCRYPTION_KEY) throw new Error(
          'ENCRYPTION_KEY must be set in environment variables for secure filename generation.'
       )
-
-      // Clean the context for the new session
-      await database.cleanContext(storeId)
-
+      
       // Sanitize filename
       const sanitizedFilename = filename.replace(/\s+/g, '_')
 
@@ -80,9 +77,6 @@ export const document = {
       const collection: Collection<ScanDocument> = db.collection('scans')
       const { insertedId } = await collection.insertOne(doc)
       log.info({ docId: insertedId }, 'Document inserted into MongoDB')
-
-      // Start the processing pipeline
-      pipeline.start(insertedId)
 
       return {
          docId: doc._id,

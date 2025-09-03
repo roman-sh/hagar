@@ -10,6 +10,7 @@ import { productSearch, productSearchSchema } from './product-search'
 import { applyInventoryCorrections, applyInventoryCorrectionsSchema } from './apply-inventory-corrections'
 import { finalizeUpdatePreparation, finalizeUpdatePreparationSchema } from './finalize-update-preparation'
 import { QueueKey } from '../queues-base'
+import { shiftConversationContext, shiftConversationContextSchema } from './shift-conversation-context'
 
 
 // Tool schemas for GPT
@@ -24,6 +25,7 @@ export const tools: ChatCompletionTool[] = [
   productSearchSchema,
   applyInventoryCorrectionsSchema,
   finalizeUpdatePreparationSchema,
+  shiftConversationContextSchema,
 ]
 
 // Tool function implementations
@@ -38,6 +40,7 @@ export const functions = {
   productSearch,
   applyInventoryCorrections,
   finalizeUpdatePreparation,
+  shiftConversationContext,
 }
 
 export const toolsByQueue: Record<QueueKey, ChatCompletionTool[]> = {
@@ -62,5 +65,5 @@ export const toolsByQueue: Record<QueueKey, ChatCompletionTool[]> = {
 
 
 export const defaultTools: ChatCompletionTool[] = [
-  // TODO: add default tools here
+  shiftConversationContextSchema,
 ]

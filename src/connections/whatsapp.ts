@@ -1,9 +1,5 @@
-// @ts-nocheck
-
 import whatsappWeb from 'whatsapp-web.js'
 import qrcode from 'qrcode-terminal'
-import pino from 'pino'
-import path from 'path'
 
 const { Client, LocalAuth } = whatsappWeb
 
@@ -51,24 +47,3 @@ client.on('qr', (qr) => {
    log.info('QR code received - scan with your phone')
    qrcode.generate(qr, { small: true })
 })
-
-
-// // Create a dedicated file transport for WhatsApp message analysis
-// const messageAnalysisLogger = pino({
-//    transport: {
-//       target: 'pino/file',
-//       options: {
-//          destination: 'whatsapp-message-analysis.json',
-//          mkdir: true,
-//          sync: true
-//       }
-//    }
-// })
-
-// client.on('message', async (message) => {
-//    // Log message for analysis
-//    messageAnalysisLogger.info({ message }, 'WhatsApp message structure analysis');
-
-//    // Send a simple text response
-//    await client.sendMessage(message.from, 'Кто там?')
-// })

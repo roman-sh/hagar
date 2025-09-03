@@ -5,7 +5,7 @@ import { database } from '../services/db'
 
 interface FinalizeOcrExtractionArgs {
   docId: string
-  data?: any[]
+  data: any[]
 }
 
 export const finalizeOcrExtractionSchema: ChatCompletionTool = {
@@ -16,13 +16,9 @@ export const finalizeOcrExtractionSchema: ChatCompletionTool = {
       parameters: {
          type: 'object',
          properties: {
-            docId: {
-               type: 'string',
-               description: 'The database ID of the document being processed.',
-            },
             data: {
                type: 'array',
-               description: 'The final, validated, and potentially corrected structured data. Provide this field ONLY if you have made corrections to the data that was initially provided to you.',
+               description: 'The final, validated structured data. If corrections were made, provide the full corrected array. If no corrections were needed, provide an empty array `[]`.',
                items: {
                   type: 'object',
                   properties: {
@@ -35,7 +31,7 @@ export const finalizeOcrExtractionSchema: ChatCompletionTool = {
                }
             },
          },
-         required: ['docId'],
+         required: ['data'],
       },
    }
 }
@@ -44,19 +40,24 @@ export const finalizeOcrExtractionSchema: ChatCompletionTool = {
  * Finalizes the OCR extraction step and advances the document to the next stage in the pipeline.
  *
  * This function is called by the AI agent to finalize the OCR step. There are two main scenarios:
- * 1. Automated Path: If the initial AI review was successful and corrected all issues, the agent calls this tool immediately without the 'data' parameter.
- * 2. Interactive Path: If the initial review found issues it could not correct, the agent consults the user. Once the user provides corrections, the agent calls this tool WITH the full, corrected 'data'.
+ * 1. No Corrections Needed (Category 1/2): The automated review was successful. The agent calls this tool with an empty array `[]` for the `data` parameter to approve the existing data in the database.
+ * 2. Corrections Were Made (Category 3): After an interactive session with the user, the agent calls this tool with the full, corrected `data` array.
  *
- * The logic below handles both cases by using the provided data if it exists, or falling back to the data already in the database.
+ * The logic below handles both cases by checking if the provided `data` array is empty.
  * @param docId The ID of the document to finalize.
- * @param data Optional. The corrected data provided by the AI after user interaction. If omitted, the data from the initial automated review is used.
+ * @param data The corrected data from the AI. If empty (`[]`), the data from the initial automated review is used.
  * @returns A confirmation message indicating the result of the operation.
  */
+// TODO: refactor to pass only the corrected rows, not the entire table object
 export async function finalizeOcrExtraction(args: FinalizeOcrExtractionArgs) {
-   const { docId } = args
+   const docId = args.docId
    try {
-      // Use the provided data, or fall back to fetching it from the database.
-      const data = args.data ?? (await database.getOcrDataFromScan(docId))
+      // If the AI provides a non-empty array, use it. Otherwise, fall back to the DB.
+      const useProvidedData = Array.isArray(args.data) && args.data.length
+      const data = useProvidedData
+         ? args.data
+         : await database.getOcrDataFromScan(docId)
+      
       // Count items by summing the number of rows in each table object
       const itemsCount = data.reduce((acc: number, table: { rows: any[] }) => acc + table.rows.length, 0)
 
@@ -66,7 +67,7 @@ export async function finalizeOcrExtraction(args: FinalizeOcrExtractionArgs) {
 
       return {
          success: true,
-         isSilent: true,
+         isSilent: !!nextStage,
          nextStage,
          itemsCount,
       }

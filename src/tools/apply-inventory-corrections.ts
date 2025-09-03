@@ -34,10 +34,6 @@ export const applyInventoryCorrectionsSchema: ChatCompletionTool = {
       parameters: {
          type: 'object',
          properties: {
-            docId: {
-               type: 'string',
-               description: 'The database ID of the document being processed.',
-            },
             metaCorrection: {
                type: 'object',
                description: 'An object containing any metadata fields (e.g., date, supplier) that need to be changed.',
@@ -57,7 +53,7 @@ export const applyInventoryCorrectionsSchema: ChatCompletionTool = {
                }
             }
          },
-         required: ['docId'],
+         required: [],
       },
    },
 }
@@ -78,6 +74,7 @@ export async function applyInventoryCorrections(args: unknown) {
    }
 
    const { docId, metaCorrection, rowCorrections } = validatedArgs
+   
    try {
       // 2. Proceed with the main logic
       const { job, queueName } = await findActiveJob(docId)

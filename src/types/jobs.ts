@@ -63,13 +63,43 @@ export interface MessageRef {
    messageId: string
 }
 
-export type OutboundMessageJobData = {
+// A text message can be general or contextual
+export interface TextOutboundJobData {
+   type: 'text'
    phone: string
-   content: string | null
+   content: string
+   contextId?: string // contextId is OPTIONAL here
 }
+
+// A media message MUST be contextual
+export interface MediaUrlOutboundJobData {
+   type: 'media_url'
+   phone: string
+   contextId: string // contextId is REQUIRED here
+   fileUrl: string
+   filename?: string
+}
+
+// A media message MUST be contextual
+export interface MediaBase64OutboundJobData {
+   type: 'media_base64'
+   phone: string
+   contextId: string // contextId is REQUIRED here
+   mimetype: string
+   data: string // base64 encoded
+   filename: string
+}
+
+// The final job data is one of these three types
+export type OutboundMessageJobData =
+   | TextOutboundJobData
+   | MediaUrlOutboundJobData
+   | MediaBase64OutboundJobData
+
 
 /**
  * Base result interface for job processors
+ * @deprecated This is no longer needed for outbound jobs.
  */
 export interface BaseJobResult {
    success: boolean

@@ -143,6 +143,7 @@ export interface ProductDocument extends BaseDocument {
 export interface MessageDocument extends BaseDocument {
    _id: ObjectId
    phone: string
+   contextId?: string
    role: 'system' | 'user' | 'assistant' | 'tool'
    content: any
    tool_calls?: ChatCompletionMessageToolCall[]

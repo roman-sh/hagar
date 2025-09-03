@@ -3,6 +3,7 @@ import { JOB_STATUS } from '../config/constants'
 import { JobRecord } from '../types/documents'
 import { database } from './db'
 import { Job } from 'bull'
+import { conversationManager } from './conversation-manager'
 
 
 export const pipeline = {
@@ -58,9 +59,10 @@ export const pipeline = {
          await enqueueJob(docId, nextQueue, 'advanced')
          return nextQueue
       } else {
-         const message = `Document ${docId} has completed the final stage of its pipeline.`
-         log.info(message)
-         return message
+         log.info(`Document ${docId} has completed the final stage of its pipeline. Scheduling context shift.`)
+         const phone = await database.getScanOwnerPhone(docId)
+         conversationManager.scheduleContextShift(phone, docId)
+         return null
       }
    },
 }

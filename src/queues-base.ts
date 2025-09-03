@@ -36,5 +36,6 @@ export const queuesMap: { [K in QueueKey]: Queue<JobDataMap[K]> } = {
    [INVENTORY_UPDATE]: new Bull(INVENTORY_UPDATE, queueConfig)
 }
 
-// Outbound messages Bee queue (single queue with concurrency 1 for rate limiting)
-export const outboundMessagesQueue = new BeeQueue<OutboundMessageJobData>(OUTBOUND_MESSAGES) 
+// Outbound messages queue, now using Bull for its event model.
+// Kept separate from the pipeline queues. Concurrency is set in the processor.
+export const outboundMessagesQueue = new Bull<OutboundMessageJobData>(OUTBOUND_MESSAGES) 

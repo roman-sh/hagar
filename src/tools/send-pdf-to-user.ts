@@ -1,12 +1,12 @@
 import { db } from '../connections/mongodb'
-import { client } from '../connections/whatsapp'
-import WAWebJS from 'whatsapp-web.js'
 import { ScanDocument } from '../types/documents'
 import { ChatCompletionTool } from 'openai/resources'
+import { conversationManager } from '../services/conversation-manager'
 
 
 interface SendPdfToUserArgs {
   phone: string
+  docId: string
   fileId: string
 }
 
@@ -22,14 +22,13 @@ export async function sendPdfToUser(args: SendPdfToUserArgs) {
          fileId: args.fileId
       })
 
-      // Create WhatsApp media from URL
-      const media = await WAWebJS.MessageMedia.fromUrl(doc.url, {
+      // Send the PDF through the queueing system
+      await conversationManager.send({
+         phone: args.phone,
+         contextId: args.docId,
+         fileUrl: doc.url,
          filename: doc.filename
       })
-
-      // Send to WhatsApp
-      const chatId = `${args.phone}@c.us`
-      await client.sendMessage(chatId, media)
 
       return {
          success: true,
@@ -53,16 +52,12 @@ export const sendPdfToUserSchema: ChatCompletionTool = {
       parameters: {
          type: 'object',
          properties: {
-            phone: {
-               type: 'string',
-               description: 'The phone number to send the PDF to (available in system message context)'
-            },
             fileId: {
                type: 'string',
                description: 'The OpenAI file_id of the PDF to send'
             }
          },
-         required: ['phone', 'fileId']
+         required: ['fileId']
       }
    }
 } 

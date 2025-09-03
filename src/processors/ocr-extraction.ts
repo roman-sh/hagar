@@ -25,6 +25,7 @@ export async function ocrExtractionProcessor(
 
    // 2. Call the OCR service to get raw data
    const rawData = await ocr.extractInvoiceDataFromUrl(url)
+   await job.log('Successfully extracted raw data from Azure OCR.')
 
    // Save extracted raw data as a job artefact
    await database.saveArtefact({
@@ -38,6 +39,7 @@ export async function ocrExtractionProcessor(
 
    // 3. Call the review service to get corrected data and annotation
    const { data: reviewedData, annotation } = await ocr.review(rawData)
+   await job.log('Successfully reviewed and corrected data with OpenAI.')
 
    // Save data after o3 review / modification as a job artefact
    await database.saveArtefact({
@@ -65,6 +67,7 @@ export async function ocrExtractionProcessor(
       type: DocType.MESSAGE,
       role: 'user',
       phone,
+      contextId: docId,
       name: 'app',
       content: {
          action: 'review_ocr_annotation',
@@ -76,7 +79,8 @@ export async function ocrExtractionProcessor(
    })
 
    // 6. Trigger GPT processing
-   gpt.process({ phone })
+   gpt.process({ phone, contextId: docId })
+   await job.log('Created trigger message and sent to GPT for review.')
 
    // 7. Set progress to 2/3 to indicate readiness for AI validation
    await job.progress(66)

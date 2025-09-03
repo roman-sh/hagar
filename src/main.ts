@@ -12,7 +12,8 @@ import { configureBullBoard, type BullBoardConfig } from './config/bull-board'
 import { initializeDebouncer } from './services/message-debouncer'
 import { Message } from "whatsapp-web.js"
 import { messageStore } from './services/message-store'
-import { phoneQueueManager } from './services/phone-queues-manager'
+import { phoneQueueManager } from './services/inbound-queues-manager'
+import { conversationManager } from './services/conversation-manager'
 
 
 export async function buildApp() {
@@ -24,6 +25,7 @@ export async function buildApp() {
       initializeRedis(),
       initializeS3(),
       client.initialize(), // whatsapp client
+      conversationManager.initialize(),
    ])
 
    initializeQueues()

@@ -16,10 +16,6 @@ export const finalizeScanValidationSchema: ChatCompletionTool = {
       parameters: {
          type: 'object',
          properties: {
-            docId: {
-               type: 'string',
-               description: 'The database ID of the document being processed.'
-            },
             invoiceId: {
                type: 'string',
                description: 'The certificate/document number extracted from the document'
@@ -41,7 +37,7 @@ export const finalizeScanValidationSchema: ChatCompletionTool = {
                description: 'Detailed explanation of why the scan passed validation'
             }
          },
-         required: ['docId', 'invoiceId', 'supplier', 'date', 'pages', 'annotation']
+         required: ['invoiceId', 'supplier', 'date', 'pages', 'annotation']
       }
    }
 }
@@ -53,7 +49,7 @@ export const finalizeScanValidation = async (args: finalizeScanValidationArgs) =
 
       return {
          success: true,
-         isSilent: true,
+         isSilent: !!nextStage,
          nextStage,
       }
    } catch (error) {

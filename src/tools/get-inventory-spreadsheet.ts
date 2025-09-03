@@ -16,13 +16,8 @@ export const getInventorySpreadsheetSchema: ChatCompletionTool = {
       description: 'Retrieves the JSON spreadsheet representation of an inventory draft, used for providing context to the agent during a correction flow.',
       parameters: {
          type: 'object',
-         properties: {
-            docId: {
-               type: 'string',
-               description: 'The database ID of the document being processed.',
-            },
-         },
-         required: ['docId'],
+         properties: {},
+         required: [],
       },
    },
 }

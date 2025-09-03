@@ -9,13 +9,8 @@ export const getOcrDataSchema: ChatCompletionTool = {
       description: 'Retrieves the structured OCR data for a given document, allowing for review and correction.',
       parameters: {
          type: 'object',
-         properties: {
-            docId: {
-               type: 'string',
-               description: 'The database ID of the document to retrieve data for.',
-            },
-         },
-         required: ['docId'],
+         properties: {},
+         required: [],
       },
    },
 }

@@ -11,9 +11,9 @@ import {
    scanValidationProcessor,
    ocrExtractionProcessor,
    updatePreparationProcessor,
-   inventoryUpdateProcessor,
+   inventoryUpdateProcessor,        
+   outboundMessagesProcessor,
 } from './processors'
-import { outboundMessagesProcessor } from './processors/outbound-messages-bee'
 import { database } from './services/db'
 import { queuesMap, outboundMessagesQueue, QueueKey } from './queues-base'
 
@@ -44,7 +44,7 @@ export function initializeQueues(): void {
       setupQueue(queueName)
    }
 
-   // Set up outbound message Bee queue
+   // Set up outbound message Bull queue
    outboundMessagesQueue.process(1, outboundMessagesProcessor)
 
    log.info('All queues initialized successfully')
@@ -69,17 +69,20 @@ function setupQueueEventHandlers(
 
    // Log when jobs become active (start processing)
    queue.on(JOB_STATUS.ACTIVE, async (job: Job<any>) => {
+      job.progress(0)
+      job.log('Job started processing')
+
+      log.info(
+         { jobId: job.id, queueName },
+         'Job started processing'
+      )
+
       // Update document to mark job as active/processing
       await database.recordJobProgress({
          jobId: job.id as string,
          queueName,
          status: JOB_STATUS.ACTIVE,
       })
-
-      log.info(
-         { jobId: job.id, queueName },
-         'Job started processing'
-      )
    })
 
    // Log when jobs are completed

@@ -74,7 +74,10 @@ Focus on these four areas:
                      type: "object",
                      properties: {
                         document_number: { type: "string" },
-                        supplier_name: { type: "string" },
+                        supplier_name: {
+                           type: "string",
+                           description: "Extract the supplier's name exactly as it appears in the document. Do not translate, summarize, or add any commentary."
+                        },
                         date: { type: "string" },
                         pages_count: { type: "integer" }
                      },

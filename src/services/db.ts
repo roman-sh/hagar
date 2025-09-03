@@ -238,78 +238,70 @@ export const database = {
    },
 
 
-   getMessages: async (phone: string): Promise<MessageDocument[]> => {
-      return await db.collection<MessageDocument>('messages').find({
-         'phone': phone
-      })
+   /**
+    * Retrieves messages for a specific phone number, optionally filtered by a context ID.
+    * If a `contextId` is provided, it fetches messages belonging to that specific
+    * document processing context. If `contextId` is `undefined`, it fetches only
+    * "general" conversation messages that do not have a `contextId`.
+    *
+    * @param {string} phone - The user's phone number.
+    * @param {string | undefined} contextId - The optional context (document) ID.
+    * @returns {Promise<MessageDocument[]>} A promise that resolves to an array of message documents.
+    */
+   getMessages: async (
+      phone: string,
+      contextId: string | undefined
+   ): Promise<MessageDocument[]> => {
+      const query: any = { phone }
+      query.contextId = contextId ?? { $exists: false }
+      return db.collection<MessageDocument>('messages').find(query)
          .sort({ createdAt: 1 }) // Sort chronologically (oldest first)
          .toArray()
    },
 
 
    /**
-    * Cleans the conversational context for a new session. It moves all previous messages
-    * for a store to an archive collection, then creates a single summary message from the
-    * user's prior inputs to preserve context in a token-efficient manner.
-    *
-    * @param {string} storeId - The ID of the store for which to clean the context.
-    * @returns {Promise<void>}
+    * Retrieves the phone number of the user who initiated a scan.
+    * Uses a simple, efficient findOne query on the scans collection.
+    * @param {string} docId - The ID of the scan document.
+    * @returns {Promise<string>} A promise that resolves to the phone number.
+    * @throws {Error} Throws an error if the document is not found or has no phone number.
     */
-   cleanContext: async (storeId: string): Promise<void> => {
-      const messagesCollection = db.collection<MessageDocument>('messages')
-      const archiveCollection = db.collection<MessageDocument>('messages_archive')
+   getScanOwnerPhone: async (docId: string): Promise<string> => {
+      const scan = await db.collection<ScanDocument>('scans').findOne(
+         { _id: docId },
+         { projection: { phone: 1 } }
+      )
 
-      // 1. Find all messages for the store.
-      const allMessages = await messagesCollection.find({ storeId }).toArray()
-      
-      if (!allMessages.length) {
-         log.info({ storeId }, 'No previous messages found. Context is already clean.')
-         return
+      if (!scan || !scan.phone) {
+         const message = `Could not find phone number for docId: ${docId}`
+         log.error(message)
+         throw new Error(message)
       }
 
-      // 2. Archive all messages.
-      await archiveCollection.insertMany(allMessages)
+      return scan.phone
+   },
 
-      // 3. Find the filename and docId from the last 'scanner' message for context.
-      const lastScanMessage = [...allMessages].reverse().find(m => m.name === 'scanner')
-      const filename = lastScanMessage?.content?.filename
-      const docId = lastScanMessage?.content?.docId
 
-      // 4. Keep only conversational messages (assistant or user) that have plain-string content.
-      const convoMessages = allMessages.filter(
-         (m) =>
-            (m.role === 'user' || m.role === 'assistant')
-            && typeof m.content === 'string'
+   /**
+    * Retrieves key details from a scan document using a simple find query.
+    * @param {string} docId - The ID of the scan document.
+    * @returns {Promise<{phone: string, filename: string}>} A promise that resolves to the phone and filename.
+    * @throws {Error} Throws an error if the document is not found or is missing required fields.
+    */
+   getScanDetails: async (docId: string): Promise<{phone: string, filename: string}> => {
+      const scan = await db.collection<ScanDocument>('scans').findOne(
+         { _id: docId },
+         { projection: { phone: 1, filename: 1 } }
       )
-      
-      // 5. Delete all original messages from the primary collection.
-      await messagesCollection.deleteMany({ storeId })
 
-      // 6. If there were conversational messages, insert a structured summary message.
-      if (convoMessages.length) {
-         await messagesCollection.insertOne({
-            _id: new ObjectId(),
-            type: DocType.MESSAGE,
-            storeId,
-            phone: convoMessages[convoMessages.length - 1].phone, // phone of last message
-            role: 'assistant',
-            content: {
-               note: 'Summary of previous session for context',
-               meta: {
-                  filename,
-                  docId,
-                  archivedCount: allMessages.length,
-               },
-               transcript: convoMessages.map(m => ({ role: m.role, text: m.content as string }))
-            },
-            createdAt: new Date(),
-         })
+      if (!scan || !scan.phone || !scan.filename) {
+         const message = `Could not find required scan details (phone, filename) for docId: ${docId}`
+         log.error(message)
+         throw new Error(message)
       }
 
-      log.info(
-         { storeId },
-         `Context cleaned.\n${allMessages.length} messages archived.\n${convoMessages.length} messages summarized.`
-      )
+      return { phone: scan.phone, filename: scan.filename }
    },
 
 
