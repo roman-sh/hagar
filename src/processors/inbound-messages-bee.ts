@@ -79,12 +79,19 @@ export async function inboundMessagesBeeProcessor(
             content = await audio.transcribe(media)
             break
          }
-
          
+
+         case 'e2e_notification':
+         case 'notification_template': {
+            log.info({ type: message.type }, 'Ignoring system message type.')
+            return { success: true, message: 'System message ignored.' }
+         }
+ 
+
          case 'image': {
             // break
          }
-
+ 
          
          default: {
             throw new Error(`Unsupported message type: ${message.type}`)
