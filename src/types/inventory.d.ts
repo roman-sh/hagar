@@ -1,6 +1,7 @@
 import { type H } from '../config/constants'
 import { type QueueKey } from '../queues-base'
 import { type ProductDocument } from './documents'
+import { RexailProduct } from '../systems/rexail/rexail.d'
 
 
 /**
@@ -79,8 +80,21 @@ export type MatchType = 'barcode' | 'name' | 'manual' | 'skip' | 'history'
 
 export interface CatalogService {
    sync(storeId: string, options?: { force?: boolean }): Promise<void>
+   get(storeId: string): Promise<RexailProduct[]>
 }
 
 export interface CatalogModule {
    catalog: CatalogService
+}
+
+export interface UpdateService {
+   executeUpdate(
+      storeId: string,
+      preUpdateSnapshot: RexailProduct[],
+      matchedItems: InventoryItem[]
+   ): Promise<any>
+}
+
+export interface UpdateModule {
+   updater: UpdateService
 }

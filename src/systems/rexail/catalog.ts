@@ -167,6 +167,10 @@ export const catalog: CatalogService = {
          throw error
       }
    },
+
+   async get(storeId: string): Promise<RexailProduct[]> {
+      return fetch(storeId)
+   },
 }
 
 // ===================================================================================
@@ -190,7 +194,10 @@ async function fetch(storeId: string): Promise<RexailProduct[]> {
    })
 
    log.info({ storeId, productCount: response.data.data.length }, 'Successfully fetched catalog.')
-   return response.data.data
+   // Filter out hidden (deleted) products
+   const activeProducts = response.data.data.filter(p => !p.hidden)
+   log.info({ storeId, activeCount: activeProducts.length }, 'Returning only active (not hidden) products.')
+   return activeProducts
 }
 
 /**

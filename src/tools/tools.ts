@@ -11,6 +11,7 @@ import { applyInventoryCorrections, applyInventoryCorrectionsSchema } from './ap
 import { finalizeUpdatePreparation, finalizeUpdatePreparationSchema } from './finalize-update-preparation'
 import { QueueKey } from '../queues-base'
 import { shiftConversationContext, shiftConversationContextSchema } from './shift-conversation-context'
+import { finalizeInventoryUpdate, finalizeInventoryUpdateSchema } from './finalize-inventory-update'
 
 
 // Tool schemas for GPT
@@ -26,6 +27,7 @@ export const tools: ChatCompletionTool[] = [
   applyInventoryCorrectionsSchema,
   finalizeUpdatePreparationSchema,
   shiftConversationContextSchema,
+  finalizeInventoryUpdateSchema,
 ]
 
 // Tool function implementations
@@ -41,6 +43,7 @@ export const functions = {
   applyInventoryCorrections,
   finalizeUpdatePreparation,
   shiftConversationContext,
+  finalizeInventoryUpdate,
 }
 
 export const toolsByQueue: Record<QueueKey, ChatCompletionTool[]> = {
@@ -60,7 +63,9 @@ export const toolsByQueue: Record<QueueKey, ChatCompletionTool[]> = {
     applyInventoryCorrectionsSchema,
     finalizeUpdatePreparationSchema,
   ],
-  inventory_update: [] as ChatCompletionTool[],
+  inventory_update: [
+    finalizeInventoryUpdateSchema,
+  ],
 } satisfies Record<string, ChatCompletionTool[]>
 
 

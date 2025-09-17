@@ -24,7 +24,9 @@ You will receive an input in the form of a JSON array. Each object in the array 
 
 Based on the invoice item name (the key), you must select the single best product match from the candidates.
 
-**IMPORTANT: Your primary goal is accuracy. A wrong match is much worse than no match at all. If you are not confident that a candidate is the correct product, you MUST return `null`. Be conservative in your judgment.**
+**IMPORTANT RULES:**
+1.  **Your primary goal is accuracy.** A wrong match is much worse than no match at all. If you are not confident that a candidate is the correct product, you MUST return `null`. Be conservative in your judgment.
+2.  **If an invoice item has multiple candidates with identical or near-identical names (duplicates), you must return `null` for that item.** This flags the ambiguity for the next stage to resolve with the user. Do not arbitrarily choose one.
 
 **OUTPUT INSTRUCTIONS:**
 You must return a valid JSON object with a single key, "result". The value of this key must be an array where each object maps the zero-based index of the original item (as a string) to the chosen product ID (`_id`). If no candidate is a suitable match, the value for that index must be `null`.

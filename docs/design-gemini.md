@@ -9,12 +9,10 @@ Hagar™ is an AI-powered inventory management system that transforms physical d
 ## Core Architectural Principles
 
 1.  **Flow-Centric Design**: The system is organized around the natural progression of data, from physical capture to digital processing and user interaction.
-2.  **Separation of Concerns**: Different technologies are used for specific tasks (e.g., Pi for hardware, Node.js for backend, AI for intelligence, WhatsApp for UI).
-3.  **Asynchronous Processing**: Heavy tasks (AI analysis, document processing) are handled in background queues to maintain a responsive user experience.
-4.  **Human-in-the-Loop**: AI automates where possible, but human oversight via WhatsApp ensures accuracy and handles exceptions.
-5.  **Cost Efficiency**: Multi-model AI architecture and message batching optimize for token usage and API call costs.
-6.  **Scalability & Reliability**: Queue-based architecture, persistent storage, and robust error handling ensure the system can grow and recover gracefully.
-7.  **Self-Improving System**: The system learns from user actions. Manual corrections and decisions on one invoice are stored and used to automate the processing of future, similar invoices.
+3.  **Human-in-the-Loop**: AI automates where possible, but human oversight via WhatsApp ensures accuracy and handles exceptions.
+4.  **Cost Efficiency**: Multi-model AI architecture and message batching optimize for token usage and API call costs.
+5.  **Scalability & Reliability**: Queue-based architecture, persistent storage, and robust error handling ensure the system can grow and recover gracefully.
+6.  **Self-Improving System**: The system learns from user actions. Manual corrections and decisions on one invoice are stored and used to automate the processing of future, similar invoices.
 
 ---
 
@@ -95,23 +93,29 @@ This flow describes how documents from all ingestion channels are processed and 
     *   `visualInspect`: Performs custom visual analysis based on a specific user query/prompt.
     *   `finalizeScanValidation`: Called when the user confirms the validation, this tool completes the hanging Bull job.
 
-### C. WhatsApp User Interface (WhatsApp Web.js + Bee Queues)
+### C. WhatsApp User Interface (WhatsApp Web.js + Bull.js)
 
-*   **Message Handling**: Incoming WhatsApp messages are received by the `whatsapp-web.js` client.
-*   **Per-Phone Queues (Bee)**: To ensure correct message processing order, especially with time-consuming operations like audio transcription, each phone number has its own Bee queue (`inbound:<phone>`) with `concurrency=1`. This prevents a later, faster-to-process text message from overtaking an earlier, slower audio message from the same user.
+*   **Inbound Message Ordering (Bee Queues)**: To ensure strict processing order for incoming messages from a single user, especially with time-consuming operations like audio transcription, each phone number has its own **inbound** Bee queue (`inbound:<phone>`) with `concurrency=1`. This prevents a later, faster-to-process text message from overtaking an earlier, slower audio message.
+*   **Outbound Message Orchestration (Bull.js)**: All **outbound** messages are handled by the `ConversationManager`. As described at the end of this section, messages are added to the specific per-document Bull queue. If that document is the active context, the message is sent immediately. If not, it is buffered in that document's paused queue, waiting for its turn.
 *   **Message Debouncing**: Rapid sequences of messages from a user are batched using a short delay (e.g., 1 second). This reduces the number of calls to the AI and provides better contextual understanding for multi-part messages.
 *   **In-Memory Message Store**: Full WhatsApp `Message` objects (which contain methods like `.downloadMedia()`) are stored in an in-memory map (`messageStore`) because they cannot be directly serialized into queues. Message IDs are passed through queues instead.
 *   **Conversation Flow**: The AI (via the text model) presents validation results to the user on WhatsApp. The user can confirm, ask questions (triggering `visualInspect`), or provide corrections. This human-in-the-loop process is critical for accuracy.
+*   **Solving Conversational Concurrency: The `ConversationManager`**: A core challenge is handling users who upload multiple documents in quick succession. While the backend should process these documents in parallel for efficiency, the user-facing WhatsApp conversation must remain linear and focused on one document at a time to avoid confusion. This is solved by the **`ConversationManager`**, a central service that orchestrates the user experience. It maintains two key states:
+    1.  **A Context Queue (Redis List)**: A strict FIFO (First-In, First-Out) queue for each user, which lists the `docId`s of all documents currently being processed. The document at the front of this queue is the **"active context"**.
+    2.  **Per-Document Message Queues (Bull)**: Each document gets its own dedicated outbound message queue. These queues are **paused by default**.
+
+    The `ConversationManager` ensures that only the message queue for the **active context** is running. All messages generated for other documents (e.g., draft-ready notifications) are safely buffered in their respective paused queues until it's their turn to become the active context. This architecture allows for a highly performant, concurrent backend while presenting a simple, serialized, and predictable conversational interface to the user.
 
 ---
 
 ## Flow 5: Validation Completion & Data Persistence
 
-### A. Completing the Job
+### A. Completing the Job & Advancing the Pipeline
 
-*   When the user confirms the document validation (e.g., by replying "approve" on WhatsApp), the AI text model calls the `finalizeScanValidation` tool.
-*   This tool retrieves the corresponding Bull job (using the document ID which is also the job ID) and uses `job.moveToCompleted()` to mark it as finished, passing the extracted and validated data (invoice number, supplier, date, etc.) as the job's return value.
-*   The `scan_validation` field in the MongoDB `scans` document is updated with the status "completed" and the extracted data.
+*   When a pipeline stage is ready to be completed (either through automated processing or after user confirmation), the AI calls the appropriate finalization tool (e.g., `finalizeScanValidation`).
+*   This tool, in turn, calls the `pipeline.advance()` service.
+*   `pipeline.advance` finds the currently "active" Bull job for that document and **forcibly marks it as completed** (using `job.moveToCompleted()`), passing along the validated data. It also records this completion event in MongoDB for auditing purposes. It then immediately enqueues a new job for the document in the next stage of the pipeline (e.g., `ocr_extraction`).
+*   **Graceful Context Handoff**: When a document completes its **final** pipeline stage, `pipeline.advance()` notifies the `ConversationManager` to schedule a context shift. The manager attaches a one-time `.once('completed', ...)` listener to the active document's outbound queue. After the AI sends its final closing message for the current document and that message job completes, the listener fires, triggering the context shift. This ensures the user receives all messages for one document before the conversation for the next one begins.
 
 ### B. Monitoring & Audit
 

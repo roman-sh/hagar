@@ -122,6 +122,10 @@ export type OcrExtractionJobCompletedPayload = {
    annotation?: string
 }
 
+export type UpdatePreparationJobCompletedPayload = {
+   data: InventoryDocument
+}
+
 export type InventoryUpdateJobCompletedPayload = {
    [key: string]: any
 }
@@ -145,4 +149,5 @@ export type JobWaitingPayloads =
 export type JobCompletedPayloads =
    | ScanValidationJobCompletedPayload
    | OcrExtractionJobCompletedPayload
+   | UpdatePreparationJobCompletedPayload
    | InventoryUpdateJobCompletedPayload
