@@ -41,9 +41,9 @@ client.on('disconnected', (reason) => {
 client.on('change_state', (state) => {
    log.info({ state }, 'WhatsApp client state changed')
 })
-
 // @ts-ignore
 client.on('qr', (qr) => {
    log.info('QR code received - scan with your phone')
    qrcode.generate(qr, { small: true })
 })
+

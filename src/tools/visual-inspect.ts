@@ -12,7 +12,7 @@ export const visualInspectSchema: ChatCompletionTool = {
    type: 'function',
    function: {
       name: 'visualInspect',
-      description: 'Analyze the visual content of a PDF for specific information',
+      description: 'Analyzes the visual content of a PDF for specific information. The analysis is limited to the top half portion of each page.',
       parameters: {
          type: 'object',
          properties: {
@@ -45,7 +45,7 @@ export const visualInspect = async (args: VisualInspectArgs) => {
                },
                {
                   type: 'text',
-                  text: args.prompt
+                  text: `**IMPORTANT: You are viewing only the top half of each page.** This is intentional. Please answer the user's question based on the content visible in the top portion of the document.\n\nUser's question: "${args.prompt}"`
                }
             ]
          }

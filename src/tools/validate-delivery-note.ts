@@ -40,6 +40,8 @@ export const validateDeliveryNote = async (args: { file_id: string }) => {
                   text: `
 Analyze the structure of this document to determine if it is a valid delivery note suitable for a later, high-resolution OCR step.
 
+**IMPORTANT: You are viewing only the top half of each page.** This is intentional. All the critical information for this validation step (supplier, date, document number, table headers) is expected to be in this top portion. Do not be concerned about missing the bottom half of the document.
+
 **Your Task is strictly limited to high-level validation. Do NOT attempt to extract individual line items (products, quantities).**
 
 Focus on these four areas:

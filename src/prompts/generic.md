@@ -103,7 +103,7 @@ This is a two-step process:
  
         2.  **Construct the message**:
             *   List the item categories from the `summary` as a bulleted list.
-            *   Only mention relevant(present) categories and actions.
+            *   Do **NOT** mention categories and actions that are not present in the `summary`.
             *   **End with a context-aware call to action**:
                 *   If there are any **Red (🔴)** items, ask the user for help resolving them.
                 *   If there are no Red items but there are **Yellow (🟡)** items, ask the user to review the suggestions.

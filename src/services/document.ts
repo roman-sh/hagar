@@ -3,10 +3,10 @@ import { s3Client } from '../connections/s3'
 import { db } from '../connections/mongodb'
 import { Collection } from 'mongodb'
 import { ScanDocument, DocType } from '../types/documents'
-import { pipeline } from './pipeline'
 import { openai } from '../connections/openai'
-import { database } from './db'
 import { createHmac } from 'crypto'
+import { pdf } from './pdf'
+import { toFile } from 'openai/uploads'
 
 
 type OnboardArgs = Pick<
@@ -48,8 +48,12 @@ export const document = {
       await s3Client.send(uploadCommand)
       log.info({ s3Key }, 'File uploaded to S3')
 
-      // Upload to OpenAI Files API
-      const file = new File([fileBuffer], sanitizedFilename, { type: contentType })
+      // Crop the PDF to its top half for validation purposes.
+      const croppedPdfBuffer = await pdf.cropToTopHalf(fileBuffer)
+      log.info({ s3Key }, 'Cropped PDF to top half for validation')
+
+      // Upload to OpenAI Files API using the 'toFile' utility for robust type conversion.
+      const file = await toFile(croppedPdfBuffer, sanitizedFilename, { type: contentType })
       const openaiFile = await openai.files.create({
          file,
          purpose: 'user_data'
