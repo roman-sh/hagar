@@ -150,12 +150,12 @@ p {
 }
 .table th:nth-child(3),
 .table td:nth-child(3) {
-	width: 47%;
+	width: 45%;
 }
 .table th:nth-child(4),
 .table td:nth-child(4) {
-	width: 10%;
-	justify-content: center;
+	width: 12%;
+	/* justify-content: center; */
 }
 
 /* Text styles */

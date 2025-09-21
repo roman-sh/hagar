@@ -1,5 +1,6 @@
 import { PassArgs } from '../../types/inventory'
 import { database } from '../db'
+import { EXPRESSION_REGEX } from '../../utils/math'
 
 /**
  * Applies historical matching decisions to unresolved items in an inventory document.
@@ -42,6 +43,14 @@ export async function historyPass({ doc, storeId, docId }: PassArgs): Promise<vo
          item.inventory_item_id = match.inventory_item_id
          item.inventory_item_name = match.inventory_item_name
          item.inventory_item_unit = match.inventory_item_unit
+         
+         // This is a mechanism that allows us to correctly adjust the quantity
+         // for items that supplied by weight, but sold by quantity.
+         // In this case the quantity field will hold a string expression.
+         if (isExpression(match.quantity)) {
+            item.quantity = applyRule(item.quantity, match.quantity)
+         } 
+
          item.match_type = match.match_type === 'skip' ? 'skip' : 'history'
          updatedCount++
       }
@@ -52,4 +61,37 @@ export async function historyPass({ doc, storeId, docId }: PassArgs): Promise<vo
    } else {
       log.info({ docId }, `[history-pass] No historical matches found for any items.`)
    }
+}
+
+
+/**
+ * Matches a string representing a simple mathematical expression.
+ * e.g., "2.00 * 10.5"
+ * - Group 1: Captures the operator (* or /).
+ * - Group 2: Captures the factor (the second number, including decimals).
+ */
+
+function isExpression(quantity: string): boolean {
+   return EXPRESSION_REGEX.test(quantity)
+}
+
+/**
+ * Applies a historical quantity conversion rule to a new item's quantity.
+ * This function assumes the historical quantity is a valid expression.
+ * It extracts the operator and factor from the historical expression and applies
+ * it to the new item's quantity to generate a new expression string.
+ *
+ * @param currentItemQuantity The quantity from the item on the new invoice.
+ * @param historicalExpression The quantity expression from the matched historical record.
+ * @returns The transformed quantity expression string.
+ */
+function applyRule(currentItemQuantity: string, historicalExpression: string): string {
+   // Extract the operator and factor from the historical expression.
+   const match = historicalExpression.match(EXPRESSION_REGEX)
+
+   const operator = match[2] // The operator (* or /)
+   const factor = match[3]   // The factor (the second number)
+   
+   // Construct the new expression using the current item's quantity and the learned rule.
+   return `${currentItemQuantity} ${operator} ${factor}`
 } 

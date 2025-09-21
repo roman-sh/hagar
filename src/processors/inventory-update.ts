@@ -1,19 +1,14 @@
 import { Job } from 'bull'
+import { OptionalId } from 'mongodb'
 import { db } from '../connections/mongodb'
 import { UPDATE_PREPARATION, H } from '../config/constants'
 import { database } from '../services/db'
-import { ScanDocument } from '../types/documents'
-import { InventoryUpdateJobData, UpdatePreparationJobCompletedPayload } from '../types/jobs'
-import { InventoryItem } from '../types/inventory'
-import { QueueKey } from '../queues-base'
-import {
-   RexailProduct,
-} from '../systems/rexail/rexail'
 import { gpt } from '../services/gpt'
-import { OptionalId } from 'mongodb'
-import { MessageDocument, DocType } from '../types/documents'
-import { CatalogModule, UpdateModule } from '../types/inventory'
-import { InventoryDocument } from '../types/inventory'
+import { ScanDocument, MessageDocument, DocType } from '../types/documents'
+import { InventoryUpdateJobData, UpdatePreparationJobCompletedPayload } from '../types/jobs'
+import { InventoryItem, CatalogModule, UpdateModule, InventoryDocument } from '../types/inventory'
+import { QueueKey } from '../queues-base'
+import { evaluateExpression } from '../utils/math'
 
 
 /**
@@ -51,17 +46,25 @@ export async function inventoryUpdateProcessor(
    )
    job.log(`Filtered down to ${matchedItems.length} matched items with valid IDs.`)
 
+   // 5. Evaluate any quantity expressions into final numbers before updating.
+   try {
+      matchedItems.forEach(item => {
+         // evaluateExpression handles both expressions and simple number strings.
+         item[H.QUANTITY] = evaluateExpression(item[H.QUANTITY])
+      })
+   }
+   catch (error) {
+      log.error({ docId, err: error }, 'Failed to evaluate quantity expressions.')
+      throw error // Fail the job if any quantity is invalid.
+   }
 
-   // 5. Fetch Live Catalog from the system-specific service
+
+   // 6. Fetch Live Catalog from the system-specific service
    const liveCatalog = await catalog.get(storeId)
    job.log(`Fetched ${liveCatalog.length} products from live catalog.`)
 
-   // 6. Build & Persist Pre-Update Snapshot
-   const matchedItemIds = new Set(matchedItems.map(item => item[H.INVENTORY_ITEM_ID]))
-   const preUpdateSnapshot = (liveCatalog as RexailProduct[]).filter(product => {
-      const internalProductId = `product:${storeId}:${product.nonObfuscatedId}`
-      return matchedItemIds.has(internalProductId)
-   })
+   // 7. Build & Persist Pre-Update Snapshot using the system-specific service.
+   const preUpdateSnapshot = updater.createPreUpdateSnapshot(liveCatalog, matchedItems, storeId)
 
    await database.saveArtefact({
       docId,
@@ -71,7 +74,7 @@ export async function inventoryUpdateProcessor(
    })
    job.log(`Saved pre-update snapshot with ${preUpdateSnapshot.length} items to artefacts.`)
 
-   // 7. Execute Update and Handoff to AI
+   // 8. Execute Update and Handoff to AI
    const phone = await database.getScanOwnerPhone(docId)
    try {
       await updater.executeUpdate(storeId, preUpdateSnapshot, matchedItems)
@@ -96,7 +99,7 @@ export async function inventoryUpdateProcessor(
          event: 'inventory_update_failed',
          error: errorMessage,
       })
-      
+
       throw error
    }
 

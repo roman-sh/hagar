@@ -2,17 +2,19 @@
 
 ## Overview
 
-Hagar™ is an AI-powered inventory management system that transforms physical document scanning into automated digital workflows. This document describes the system architecture by following the **flow of data and processing**, explaining key technology choices and design decisions at each stage. The goal is to provide a high-level understanding of how the system works, why certain technologies are used, and how they interact.
+Hagar™ is an AI-assisted inventory management system designed to help retail stores automate the process of updating stock from supplier delivery notes (תעודות משלוח). Store managers simply scan a delivery note or send a PDF to a WhatsApp number. The system then uses a combination of OCR and AI to process the document, match the listed items to products in the store's back-office catalog, and prepare a draft inventory update. This draft is sent back to the manager on WhatsApp for a final, conversational review. Once approved, Hagar automatically updates the store's back-office inventory system, closing the loop from physical paper to digital record.
+
+This document describes the system architecture by following the flow of data from ingestion to finalization, explaining key technology choices and design decisions at each stage.
 
 ---
 
 ## Core Architectural Principles
 
-1.  **Flow-Centric Design**: The system is organized around the natural progression of data, from physical capture to digital processing and user interaction.
-3.  **Human-in-the-Loop**: AI automates where possible, but human oversight via WhatsApp ensures accuracy and handles exceptions.
-4.  **Cost Efficiency**: Multi-model AI architecture and message batching optimize for token usage and API call costs.
-5.  **Scalability & Reliability**: Queue-based architecture, persistent storage, and robust error handling ensure the system can grow and recover gracefully.
-6.  **Self-Improving System**: The system learns from user actions. Manual corrections and decisions on one invoice are stored and used to automate the processing of future, similar invoices.
+1.  **Conversational, Human-in-the-Loop AI**: The entire workflow is mediated through a simple WhatsApp conversation. While AI handles the heavy lifting of OCR and product matching, the user always has the final say, ensuring accuracy and allowing for the correction of ambiguous items.
+2.  **Adaptive Learning System**: Hagar is designed to get smarter over time. Every manual correction or decision made by a user (e.g., matching a supplier's item to a store product, or permanently skipping an item) is saved. This history is used to automate the processing of future, similar invoices, reducing manual work with each use.
+3.  **Pluggable & Extensible Architecture**: The core processing pipeline is generic. System-specific logic (e.g., for integrating with different back-office systems like Rexail or Priority) is encapsulated in dynamic modules. This integration is achieved by communicating directly with the private APIs used by the store's web-based back-office, using techniques like headless browsing to automate authentication and acquire session tokens when necessary. This means Hagar can connect to a wide range of inventory systems without needing official, public API access or provider involvement.
+4.  **Cost-Optimized AI Usage**: The system uses a multi-model AI strategy to keep costs low. Expensive visual and audio models are used sparingly for initial analysis, while the bulk of the conversational logic is handled by more cost-effective text models. This "right tool for the right job" approach provides power without excessive expense.
+5.  **Reliability through Asynchronicity**: All processing is handled by a robust, queue-based system (BullMQ + Redis). This ensures that every document is processed reliably, even if parts of the system are temporarily unavailable. It also allows for scalable, parallel processing of documents from multiple users while maintaining a simple, one-at-a-time conversational experience for each user.
 
 ---
 
@@ -116,12 +118,6 @@ This flow describes how documents from all ingestion channels are processed and 
 *   This tool, in turn, calls the `pipeline.advance()` service.
 *   `pipeline.advance` finds the currently "active" Bull job for that document and **forcibly marks it as completed** (using `job.moveToCompleted()`), passing along the validated data. It also records this completion event in MongoDB for auditing purposes. It then immediately enqueues a new job for the document in the next stage of the pipeline (e.g., `ocr_extraction`).
 *   **Graceful Context Handoff**: When a document completes its **final** pipeline stage, `pipeline.advance()` notifies the `ConversationManager` to schedule a context shift. The manager attaches a one-time `.once('completed', ...)` listener to the active document's outbound queue. After the AI sends its final closing message for the current document and that message job completes, the listener fires, triggering the context shift. This ensures the user receives all messages for one document before the conversation for the next one begins.
-
-### B. Monitoring & Audit
-
-*   **Bull Board**: Provides a web UI to monitor job statuses (active, completed, failed), view job data, and manage queues.
-*   **MongoDB**: Serves as the system of record, storing all document metadata, processing states, and conversation history, providing a comprehensive audit trail.
-*   **Structured Logging (Pino)**: Detailed logs capture system events, AI interactions, and errors for debugging and operational monitoring.
 
 ---
 
@@ -229,31 +225,48 @@ The processor executes a series of abstract phases to transform the raw data int
 
 ---
 
-## Flow 9: Back-Office System Integration
+## Flow 9: Final Inventory Update & System Integration
+ 
+This represents the final, automated stage of the pipeline, where the user-verified document from the preparation stage is used to update the store's back-office inventory system.
+ 
+### A. Core Architecture: Consistent Pluggable Design
+ 
+This stage follows the same extensible architecture as the preceding one to ensure maintainability and scalability.
+ 
+*   **Generic Processor**: A single, generic `inventory-update` processor handles all jobs for this stage. Its role is to orchestrate the high-level steps of the update.
+*   **Dynamic Module Loading**: The processor dynamically loads a system-specific `updater` module (e.g., from `src/systems/rexail/update.ts`). This module encapsulates all the logic required to communicate with the target back-office system's API.
+ 
+### B. The Update Pipeline: Abstract Phases
+ 
+1.  **Phase 1: Pre-Update Snapshot**
+    *   **Objective**: To create an audit trail and a mechanism for potential reversal.
+    *   **Key Action**: Before making any changes, the processor first fetches the live, real-time data from the back-office system for every product that is about to be updated. This "before" snapshot is saved as a job artefact in MongoDB.
+    *   **Rationale**: This design choice provides a critical layer of data integrity. If an update causes an issue, this snapshot contains the exact state of the products before the change, allowing for easier debugging and manual reversal.
+ 
+2.  **Phase 2: System-Specific Update Execution**
+    *   **Objective**: To delegate the final API communication to the specialized module.
+    *   **Key Action**: The generic processor passes the pre-update snapshot and the user-approved inventory data to the dynamically loaded `updater` module.
+    *   **System-Specific Logic**: The `updater` module is responsible for all vendor-specific logic. This includes constructing the precise API payload according to the back-office system's requirements and making the final API call to execute the inventory update.
+ 
+3.  **Phase 3: AI Handoff & Finalization**
+    *   **Objective**: To close the loop with the user and formally complete the document's journey.
+    *   **Key Actions**:
+        *   Upon a successful API response, the processor triggers the conversational AI with an `inventory_update_succeeded` event.
+        *   The AI then calls the `finalizeInventoryUpdate` tool, which retrieves a pre-computed summary of the update. The AI relays this summary to the user and officially marks the document's pipeline as complete.
+ 
+---
+ 
+## System Observability
 
-This represents the final stage of the pipeline, where the verified document from the preparation stage is used to update the store's official back-office system.
+A multi-layered approach to observability ensures system health can be monitored in real-time and issues can be debugged efficiently.
 
-*   **Objective**: To apply the finalized data to the target inventory management system, completing the end-to-end workflow.
-*   **Mechanism**: This stage is triggered after the `Product Matching & Draft Preparation` flow is successfully completed. It uses the same dynamic module system to load the appropriate integration logic for the specific store's back-office software.
-*   **System-Specific Actions**: The loaded module contains the necessary code to communicate with the external system's API. This could involve a variety of actions, such as:
-    *   Updating stock counts for received items.
-    *   Adding new products to the catalog.
-    *   Marking existing products as "active" or "visible" in an online store, effectively using recent invoices to curate the active catalog.
-*   **Completion**: Once the back-office system confirms the update was successful, the processing journey for the document is complete.
+*   **Job & Queue Monitoring (Bull Board)**: The Bull Board dashboard provides a real-time web UI to inspect the state of all processing queues. It's the primary tool for operational visibility, allowing for monitoring of job statuses (active, completed, failed), viewing job data, and manually managing queues if necessary.
+
+*   **Centralized Logging (Pino + Better Stack)**: The application uses Pino to generate structured, JSON-formatted logs for all significant events, AI interactions, and errors. These logs are streamed to **Better Stack**, a centralized log management platform. This provides powerful search capabilities, real-time log tailing, and the ability to create dashboards and alerts based on log patterns.
+
+*   **Data Auditing (MongoDB)**: MongoDB serves as the ultimate system of record. It stores all document metadata, the complete processing state history for each pipeline stage, and the full user conversation history, providing a comprehensive and permanent audit trail for every document processed.
 
 ---
 
-## Production Deployment & CI/CD  
+## Production Deployment & CI/CD
 To keep operational overhead low we deploy everything onto a single DigitalOcean droplet. Docker Compose groups the Node.js application, the Hebrew-lemmatizer side-service and the host’s native Redis into one self-contained stack. GitHub Actions builds and publishes each image to GHCR on every push to `main`, giving us reproducible, one-command upgrades (`docker compose pull && up -d`) while layer caching in the registry keeps both the build and pull steps quick.
-
----
-
-## Summary of Design Achievements
-
-This flow-based architecture achieves:
-
-*   **Reliability**: Through robust hardware integration, persistent queues, and specific error handling techniques (like per-phone queues for message ordering).
-*   **Cost Efficiency**: Primarily through the multi-model AI strategy that minimizes token usage for expensive media processing.
-*   **User Experience**: Leverages the ubiquity of WhatsApp for a zero-training interface, with real-time feedback and conversational error resolution.
-*   **Scalability**: Asynchronous queue-based processing, stateless components, and a database designed for growth allow the system to handle increasing load.
-*   **Maintainability**: Clear separation of concerns between hardware interaction (Python on Pi), backend logic (Node.js), AI services, and data storage makes the system easier to develop, test, and debug. TypeScript enhances code quality and maintainability on the backend.

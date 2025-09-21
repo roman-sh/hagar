@@ -1,19 +1,20 @@
-# System Architecture: AI-Powered Inventory Automation
+# Hagar™, an AI-Powered Inventory Automation System
 
-## Executive Summary
+## Overview
 
-This document outlines the architecture of an AI-powered inventory management system designed to automate the traditionally manual process of handling supplier invoices and delivery notes. The system transforms physical documents, either scanned in-store or uploaded via WhatsApp, into structured digital data that is validated, corrected through a conversational AI, and integrated with the store's back-office systems. The architecture is designed to be scalable, reliable, and cost-efficient, with a strong emphasis on a seamless user experience for non-technical users.
+Hagar™ is an AI-assisted inventory management system designed to help retail stores automate the process of updating stock from supplier delivery notes (תעודות משלוח). Store managers simply scan a delivery note or send a PDF to a WhatsApp number. The system then uses a combination of OCR and AI to process the document, match the listed items to products in the store's back-office catalog, and prepare a draft inventory update. This draft is sent back to the manager on WhatsApp for a final, conversational review. Once approved, Hagar automatically updates the store's back-office inventory system, closing the loop from physical paper to digital record.
+
+This document describes the system architecture by following the flow of data from ingestion to finalization, explaining key technology choices and design decisions at each stage.
 
 ---
 
 ## Core Architectural Principles
 
-The system is built on a foundation of key principles that guide its design and evolution:
-
-1.  **Scalability & Reliability:** The system is built on an asynchronous, queue-based architecture. This allows it to handle a high volume of concurrent operations reliably, with persistent jobs ensuring graceful recovery from failures.
-2.  **Human-in-the-Loop AI:** The system automates repetitive tasks but leverages a conversational interface (WhatsApp) to bring in a human user for critical validation and exception handling, ensuring high accuracy and building user trust.
-3.  **Efficient Context Management:** The system isolates media analysis from the main conversation. Specialized models process large files like images and audio, and only their text-based results are added to the AI's context. This ensures a lean, focused, and cost-effective conversational history.
-4.  **Self-Improving System:** The system is designed to learn from user interactions. Manual corrections and product matches from one invoice are recorded and used as a high-priority data source for automating the processing of future, similar documents.
+1.  **Conversational, Human-in-the-Loop AI**: The entire workflow is mediated through a simple WhatsApp conversation. While AI handles the heavy lifting of OCR and product matching, the user always has the final say, ensuring accuracy and allowing for the correction of ambiguous items.
+2.  **Adaptive Learning System**: Hagar is designed to get smarter over time. Every manual correction or decision made by a user (e.g., matching a supplier's item to a store product, or permanently skipping an item) is saved. This history is used to automate the processing of future, similar invoices, reducing manual work with each use.
+3.  **Pluggable & Extensible Architecture**: The core processing pipeline is generic. System-specific logic (e.g., for integrating with different back-office systems like Rexail or Priority) is encapsulated in dynamic modules. This integration is achieved by communicating directly with the private APIs used by the store's web-based back-office, using techniques like headless browsing to automate authentication and acquire session tokens when necessary. This means Hagar can connect to a wide range of inventory systems without needing official, public API access or provider involvement.
+4.  **Cost-Optimized AI Usage**: The system uses a multi-model AI strategy to keep costs low. Expensive visual and audio models are used sparingly for initial analysis, while the bulk of the conversational logic is handled by more cost-effective text models. This "right tool for the right job" approach provides power without excessive expense.
+5.  **Reliability through Asynchronicity**: All processing is handled by a robust, queue-based system (BullMQ + Redis). This ensures that every document is processed reliably, even if parts of the system are temporarily unavailable. It also allows for scalable, parallel processing of documents from multiple users while maintaining a simple, one-at-a-time conversational experience for each user.
 
 ---
 
@@ -105,5 +106,8 @@ Many target businesses use older back-office systems that lack modern, well-docu
 | **Database**          | MongoDB Atlas                                | Its flexible, document-based model is ideal for storing varied metadata, and its integrated Atlas Search feature powers advanced text-search capabilities. |
 | **Object Storage**    | AWS S3                                       | A durable, scalable, and cost-effective solution for long-term storage of original source documents.                                        |
 | **AI & NLP**          | OpenAI models, Custom Microservice           | Leverages state-of-the-art models for orchestration, vision and embeddings, supplemented by a self-hosted microservice for specialized linguistic tasks. |
+| **Automation**        | Puppeteer                                    | Powers headless browser automation for legacy system integration and for converting HTML documents into PDFs.                                |
+| **Rendering**         | React (SSR)                                  | Enables the creation of dynamic, component-based HTML documents on the server-side for generating user-facing documents.                   |
+| **Observability**     | Pino, Better Stack                           | Provides structured, high-performance logging and a centralized platform for real-time log analysis, monitoring, and alerting.             |
 | **Deployment**        | Docker, Docker Compose, GitHub Actions       | A containerized approach ensures consistency across development and production environments, with CI/CD for automated builds and deployments.  |
 | **Hardware/IoT**      | Raspberry Pi, Python                         | A cost-effective and flexible platform for managing on-site hardware and providing a bridge to the cloud backend.                         |

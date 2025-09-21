@@ -78,9 +78,15 @@ export type PassArgs = {
 
 export type MatchType = 'barcode' | 'name' | 'manual' | 'skip' | 'history'
 
+/**
+ * A generic type representing a product from any back-office system.
+ * This union should be expanded as more systems are integrated.
+ */
+export type Product = RexailProduct
+
 export interface CatalogService {
    sync(storeId: string, options?: { force?: boolean }): Promise<void>
-   get(storeId: string): Promise<RexailProduct[]>
+   get(storeId: string): Promise<Product[]>
 }
 
 export interface CatalogModule {
@@ -88,9 +94,15 @@ export interface CatalogModule {
 }
 
 export interface UpdateService {
+   createPreUpdateSnapshot(
+      liveCatalog: Product[],
+      matchedItems: InventoryItem[],
+      storeId: string
+   ): Product[]
+
    executeUpdate(
       storeId: string,
-      preUpdateSnapshot: RexailProduct[],
+      preUpdateSnapshot: Product[],
       matchedItems: InventoryItem[]
    ): Promise<any>
 }

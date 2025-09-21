@@ -7,6 +7,29 @@ import {
 } from './rexail'
 import rexailApi from './api'
 
+
+/**
+ * Filters the live catalog to create a "before" snapshot containing only
+ * the products that are about to be updated.
+ *
+ * @param liveCatalog The full, live product catalog.
+ * @param matchedItems The user-approved items to be updated.
+ * @param storeId The ID of the store.
+ * @returns An array of RexailProduct objects for the snapshot.
+ */
+function createPreUpdateSnapshot(
+   liveCatalog: RexailProduct[],
+   matchedItems: InventoryItem[],
+   storeId: string
+): RexailProduct[] {
+   const matchedItemIds = new Set(matchedItems.map(item => item[H.INVENTORY_ITEM_ID]))
+   const preUpdateSnapshot = liveCatalog.filter(product => {
+      const internalProductId = `product:${storeId}:${product.nonObfuscatedId}`
+      return matchedItemIds.has(internalProductId)
+   })
+   return preUpdateSnapshot
+}
+
 /**
  * Executes the inventory update for the Rexail system.
  * This function encapsulates the system-specific logic for building the payload
@@ -26,6 +49,7 @@ async function executeUpdate(
 }
 
 export const updater = {
+   createPreUpdateSnapshot,
    executeUpdate,
 }
 
