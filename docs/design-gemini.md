@@ -183,6 +183,26 @@ This flow details how Hagar connects to a back-office system (using Rexail as an
 
 ---
 
+## Flow 7a: Alternative Workflow - Manual Back-Office Integration
+
+This workflow provides a complete alternative to the automated back-office integration, designed for stores where the owner prefers not to provide direct system credentials. This enhances trust and simplifies onboarding by allowing the manager to mediate all interactions with their back-office system.
+
+### A. Manual Catalog Ingestion via Chrome Extension
+
+*   **Problem**: The system needs a fresh product catalog to perform accurate item matching, but does not have the credentials to fetch it automatically.
+*   **Solution**: A dedicated Chrome Extension allows a logged-in store manager to act as the agent for fetching the catalog.
+    *   **Architecture**: The extension uses a multi-script architecture to navigate browser security restrictions. A content script is injected into the webpage to scrape data, but to bypass the page's strict CORS and Content Security Policies, the final API call to the Hagar backend is delegated to a background service worker running in the extension's own privileged context.
+    *   **Backend Process**: The extension sends the full catalog payload to the `/api/ingest-catalog` endpoint. The backend identifies the store and saves the raw catalog to a dedicated S3 path. This S3 file is then used during the `update-preparation` stage if the store's configuration has the `manualSync` flag set to `true`.
+
+### B. Inventory Update via Spreadsheet (Future Work)
+
+*   **Problem**: After an inventory draft is approved by the user, the system needs to update the back-office inventory without direct API access.
+*   **Proposed Solution**: A new pipeline stage will replace the automated `inventory_update` stage for manually-integrated stores.
+    *   **Mechanism**: This stage will generate a formatted spreadsheet file (e.g., Excel or CSV) containing the finalized inventory changes, structured in a format compatible with the target back-office system's import tools.
+    *   **User Action**: The system will send this generated file to the store manager (e.g., via WhatsApp). The manager can then use their back-office's native "import from file" functionality to apply the inventory update, closing the loop manually.
+
+---
+
 ## Flow 8: Product Matching & Draft Preparation
 
 This flow details the `update-preparation` pipeline stage, responsible for transforming a validated list of OCR'd line items into a fully resolved inventory draft. It is built on a robust, pluggable architecture where business logic is separated into distinct, configurable phases.
@@ -269,4 +289,4 @@ A multi-layered approach to observability ensures system health can be monitored
 ---
 
 ## Production Deployment & CI/CD
-To keep operational overhead low we deploy everything onto a single DigitalOcean droplet. Docker Compose groups the Node.js application, the Hebrew-lemmatizer side-service and the host’s native Redis into one self-contained stack. GitHub Actions builds and publishes each image to GHCR on every push to `main`, giving us reproducible, one-command upgrades (`docker compose pull && up -d`) while layer caching in the registry keeps both the build and pull steps quick.
+To keep operational overhead low, the entire system is deployed onto a single DigitalOcean droplet. **Nginx** is used as a reverse proxy to terminate SSL (via Let's Encrypt) and route incoming HTTPS traffic to the appropriate service. **Docker Compose** then orchestrates the application containers, which include the main Node.js app and a sidecar service for Hebrew lemmatization. The stack is configured to connect to the host's **native Redis server**, which is managed separately. GitHub Actions builds and publishes container images to GHCR on every push to `main`, enabling reproducible, one-command deployments and fast rollouts via layer caching.

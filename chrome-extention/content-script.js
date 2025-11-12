@@ -109,8 +109,7 @@ function log(message) {
 
       log(`Successfully fetched catalog data with ${catalogResponse.data.length} products.`)
 
-      // --- Step 4: Send the Data to the Backend Server ---
-      // We send the entire response object to be saved in S3.
+      // --- Step 4: Send the Data to the Backend Server (via background to avoid CORS) ---
       await sendToBackend(catalogResponse, storeName)
 
    } catch (error) {
@@ -119,39 +118,37 @@ function log(message) {
 })()
 
 /**
- * Sends the extracted catalog data and store name to the backend server.
- * @param {object} data The full catalog data object from the API.
+ * Sends the extracted catalog data and store name to the backend server via the background service worker.
+ * @param {object} catalogResponse The full catalog data object from the API.
  * @param {string} storeName The name of the store extracted from the page.
  */
 async function sendToBackend(catalogResponse, storeName) {
-   // This is the endpoint where the catalog data will be sent.
-   const HAGAR_BACKEND_URL = 'http://138.197.187.213:3000/api/ingest-catalog' // Production
-   // const HAGAR_BACKEND_URL = 'https://a0f4e59ba8be.ngrok-free.app/api/ingest-catalog' // ngrok for local testing
-
-   log(`Sending data for store '${storeName}' to backend at ${HAGAR_BACKEND_URL}...`)
+   log(`Sending data for store '${storeName}' to backend via background...`)
 
    try {
-      // We package the store name and the full catalog response into a single payload.
-      const payload = {
-         storeName: storeName,
-         catalog: catalogResponse,
-      }
-
-      const response = await fetch(HAGAR_BACKEND_URL, {
-         method: 'POST',
-         headers: {
-            'Content-Type': 'application/json',
-         },
-         body: JSON.stringify(payload)
+      const response = await new Promise(resolve => {
+         chrome.runtime.sendMessage(
+            {
+               type: 'SEND_CATALOG',
+               storeName,
+               catalog: catalogResponse,
+            },
+            (res) => {
+               if (chrome.runtime.lastError) {
+                  resolve({ ok: false, error: chrome.runtime.lastError.message })
+               } else {
+                  resolve(res)
+               }
+            }
+         )
       })
 
-      if (!response.ok) {
-         throw new Error(`Backend API response was not ok: ${response.statusText}`)
+      if (response?.ok) {
+         log('Successfully sent data to backend.')
+      } else {
+         const detail = response?.error || response?.statusText || `status ${response?.status || ''}`
+         log(`ERROR: Failed to send data to backend: ${detail}`)
       }
-
-      const result = await response.json()
-      log('Successfully sent data to backend.')
-
    } catch (error) {
       log(`ERROR: Failed to send data to backend: ${error.message}`)
    }

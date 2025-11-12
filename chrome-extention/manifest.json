@@ -10,9 +10,13 @@
    "host_permissions": [
       "https://retailer-il.rexail.com/*",
       "https://il.rexail.com/*",
+      "https://api.hagar.teivah.solutions/*",
       "http://138.197.187.213/*",
       "https://*.ngrok-free.app/*"
    ],
+   "background": {
+      "service_worker": "background.js"
+   },
    "action": {
       "default_popup": "popup.html",
       "default_icon": {

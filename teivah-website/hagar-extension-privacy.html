@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+   <meta charset="UTF-8">
+   <title>Privacy Policy for Rexail Catalog Sync Extension</title>
+   <style>
+      body {
+         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+         line-height: 1.6;
+         max-width: 800px;
+         margin: 40px auto;
+         padding: 0 20px;
+         color: #333;
+      }
+
+      h1 {
+         font-size: 2em;
+      }
+
+      h2 {
+         font-size: 1.5em;
+         border-bottom: 1px solid #eee;
+         padding-bottom: 10px;
+         margin-top: 40px;
+      }
+
+      p,
+      ul {
+         font-size: 1.1em;
+      }
+
+      li {
+         margin-bottom: 10px;
+      }
+
+      a {
+         color: #007bff;
+      }
+
+      .footer {
+         margin-top: 50px;
+         text-align: center;
+         color: #777;
+         font-size: 0.9em;
+      }
+   </style>
+</head>
+
+<body>
+   <h1>Privacy Policy for the Rexail Catalog Sync Extension</h1>
+   <p>This document outlines the privacy practices for the "Rexail Catalog Sync" Chrome extension, an internal business
+      tool provided by Teivah Solutions.</p>
+
+   <h2>Data Collection and Usage</h2>
+   <p>This extension is designed for a single purpose: to synchronize a product catalog from the Rexail backoffice to
+      the Hagar inventory management system. To achieve this, the extension accesses two specific pieces of data:</p>
+   <ul>
+      <li><strong>Authentication Token:</strong> The extension accesses a temporary authentication token ("tarfash")
+         from the active Rexail webpage. This token is used exclusively to make an authenticated API call to retrieve
+         the product catalog. The token is used in-memory for this single request and is not stored, logged, or shared
+         for any other purpose.</li>
+      <li><strong>Website Content (Store Name):</strong> The extension reads the store's name from the HTML content of
+         the active backoffice webpage. This store name is sent to the Hagar backend along with the catalog data for the
+         sole purpose of identifying the correct store for the sync.</li>
+   </ul>
+
+   <h2>Data Storage and Sharing</h2>
+   <p>No personal or user data is stored by the extension itself. The authentication token and store name are used
+      ephemerally and are not saved after the sync operation is complete. We do not sell or transfer any user data to
+      third parties.</p>
+
+   <h2>Contact</h2>
+   <p>If you have any questions about this privacy policy, please contact us at <a
+         href="mailto:[email protected]">[email protected]</a>.</p>
+
+   <div class="footer">
+      <p>&copy; 2025 Teivah Solutions. All rights reserved.</p>
+      <p><a href="index.html">Back to Home</a></p>
+   </div>
+</body>
+
+</html>
