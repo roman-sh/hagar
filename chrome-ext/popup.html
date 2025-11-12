@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Catalog Extractor</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      width: 350px;
+      padding: 10px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    #logArea {
+      width: 98%;
+      height: 150px;
+      margin-top: 10px;
+      font-family: monospace;
+      font-size: 11px;
+      white-space: pre-wrap;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h3>Backoffice Catalog Extractor</h3>
+  <button id="getCatalogBtn">Fetch and Process Catalog</button>
+  <textarea id="logArea" readonly placeholder="Logs will appear here..."></textarea>
+  <script src="popup.js"></script>
+</body>
+</html>

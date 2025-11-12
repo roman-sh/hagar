@@ -1,0 +1,39 @@
+{
+   "manifest_version": 3,
+   "name": "Rexail Catalog Sync",
+   "version": "1.0",
+   "description": "A one-click tool to securely send the latest product catalog from the Rexail backoffice to the Hagar inventory system.",
+   "permissions": [
+      "activeTab",
+      "scripting"
+   ],
+   "host_permissions": [
+      "https://retailer-il.rexail.com/*",
+      "https://il.rexail.com/*",
+      "http://138.197.187.213/*",
+      "https://*.ngrok-free.app/*"
+   ],
+   "action": {
+      "default_popup": "popup.html",
+      "default_icon": {
+         "16": "icons/icon16.png",
+         "48": "icons/icon48.png",
+         "128": "icons/icon128.png"
+      }
+   },
+   "web_accessible_resources": [
+      {
+         "resources": [
+            "injector.js"
+         ],
+         "matches": [
+            "https://retailer-il.rexail.com/*"
+         ]
+      }
+   ],
+   "icons": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+   }
+}

@@ -22,6 +22,7 @@ import { InvoiceMeta, ProductCandidate, InventoryItem } from '../types/inventory
 import { QueueKey } from '../queues-base'
 import { TEXT_SEARCH_INDEX_NAME, LEMMA_SEARCH_CANDIDATE_LIMIT } from '../config/settings'
 import { DocType } from '../types/documents'
+import { createCanonicalNameKey } from '../utils/string-utils'
 
 
 /**
@@ -164,6 +165,11 @@ export const database = {
       return store
    },
 
+   getStoreByName: async (storeName: string): Promise<StoreDocument | null> => {
+      const nameKey = createCanonicalNameKey(storeName)
+      const store = await db.collection<StoreDocument>('stores').findOne({ nameKey })
+      return store
+   },
    
    // only update fields we send as data, like this:
    // updateStore(storeId, { catalog: { hash: newHash } })

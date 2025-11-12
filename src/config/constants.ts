@@ -54,4 +54,10 @@ export const DISPLAY_HEADERS = {
    [H.MATCH_TYPE]: 'אופן התאמה'
 }
 
+// ===================================================================================
+// S3 Key Templates
+// ===================================================================================
+
+export const S3_MANUAL_CATALOG_KEY = 'manual-catalogs/{{storeId}}.json'
+
 

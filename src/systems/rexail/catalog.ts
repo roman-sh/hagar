@@ -10,6 +10,9 @@ import {
    EMBEDDING_MODEL_CONFIG,
 } from '../../config/settings'
 import { lemmatizer } from '../../services/lemmatizer'
+import { s3Client } from '../../connections/s3'
+import { GetObjectCommand } from '@aws-sdk/client-s3'
+import { S3_MANUAL_CATALOG_KEY } from '../../config/constants'
 
 /**
  * Service object for interacting with the Rexail catalog.
@@ -178,24 +181,51 @@ export const catalog: CatalogService = {
 // ===================================================================================
 
 /**
- * Fetches the full, store-specific product catalog from the Rexail API.
- * This was previously named 'getObfuscated'.
+ * Fetches the full, store-specific product catalog, dynamically choosing the data source.
+ * 
+ * This function is the central point for retrieving catalog data. It checks the store's
+ * `manualSync` flag to decide on the appropriate data source:
+ * 
+ * - If `manualSync` is `true`, it fetches the catalog from a JSON file in S3.
+ * - If `manualSync` is `false`, it fetches the catalog directly from the live Rexail API.
+ * 
+ * After fetching, it performs a consistent filtering step to remove hidden products.
+ *
  * @param {string} storeId - The ID of the store for which to fetch the catalog.
- * @returns {Promise<RexailProduct[]>} A promise that resolves to the array of products.
+ * @returns {Promise<RexailProduct[]>} A promise that resolves to the array of active products.
+ * @see {@link ../api/ingest-catalog.ts|ingestCatalogHandler} for the S3 upload implementation.
  */
 async function fetch(storeId: string): Promise<RexailProduct[]> {
-   log.info({ storeId }, 'Fetching catalog from Rexail API.')
+   const store = await database.getStore(storeId)
+   let catalogResponse: RexailObfuscatedCatalogResponse
 
-   const response = await rexailApi.get<RexailObfuscatedCatalogResponse>('catalog/obfuscated/get', {
-      params: {
-         inheritFromMaster: false,
-      },
-      storeId,
-   })
+   if (store.catalog?.manualSync) {
+      log.info({ storeId }, 'Fetching manual catalog from S3.')
+      const s3Key = S3_MANUAL_CATALOG_KEY.replace('{{storeId}}', storeId)
+      
+      const command = new GetObjectCommand({
+         Bucket: process.env.AWS_BUCKET_NAME,
+         Key: s3Key,
+      })
 
-   log.info({ storeId, productCount: response.data.data.length }, 'Successfully fetched catalog.')
-   // Filter out hidden (deleted) products
-   const activeProducts = response.data.data.filter(p => !p.hidden)
+      const response = await s3Client.send(command)
+      const body = await response.Body.transformToString()
+      catalogResponse = JSON.parse(body)
+
+   } else {
+      log.info({ storeId }, 'Fetching catalog from Rexail API.')
+      const response = await rexailApi.get<RexailObfuscatedCatalogResponse>('catalog/obfuscated/get', {
+         params: {
+            inheritFromMaster: false,
+         },
+         storeId,
+      })
+      catalogResponse = response.data
+   }
+   
+   log.info({ storeId, productCount: catalogResponse.data.length }, 'Successfully fetched catalog.')
+   // Filter out hidden (deleted) products.
+   const activeProducts = catalogResponse.data.filter(p => !p.hidden)
    log.info({ storeId, activeCount: activeProducts.length }, 'Returning only active (not hidden) products.')
    return activeProducts
 }

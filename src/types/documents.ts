@@ -90,6 +90,8 @@ export interface StoreDocument extends BaseDocument {
    _id: string
    type: DocType.STORE
    system: string
+   storeId: string
+   nameKey: string
    deviceId: string
    phones: string[]
    pipeline: QueueKey[] // Array of queue steps from QueueKey type
@@ -101,7 +103,8 @@ export interface StoreDocument extends BaseDocument {
    }
    catalog: {
       lastSync?: Date
-      syncCooldownMinutes?: number
+      syncCooldownMinutes?: number,
+      manualSync?: Boolean
    }
 }
 

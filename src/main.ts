@@ -2,6 +2,7 @@ import './utils/suppress-warnings'
 import './utils/global-logger'
 import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
+import { cors } from 'hono/cors'
 import { initializeQueues } from './queues-init'
 import { initializeDatabase } from './connections/mongodb'
 import { initializeRedis } from './connections/redis'
@@ -14,6 +15,7 @@ import { Message } from "whatsapp-web.js"
 import { messageStore } from './services/message-store'
 import { phoneQueueManager } from './services/inbound-queues-manager'
 import { conversationManager } from './services/conversation-manager'
+import { ingestCatalogHandler } from './api/ingest-catalog'
 
 
 export async function buildApp() {
@@ -42,6 +44,9 @@ export async function buildApp() {
    // Initialize Hono server app
    const app = new Hono()
 
+   // Allow requests from any origin
+   app.use('/api/*', cors())
+
    // Set up Bull Board
    const bullBoardConfig: BullBoardConfig = configureBullBoard()
 
@@ -59,6 +64,9 @@ export async function buildApp() {
    // We use scan apps to upload PDFs directly to Hagar's whatsapp.
    // Uncomment this if physical scanner + RPi becomes relevant again.
    // app.post('/api/pdf-upload', pdfUploadHandler)
+
+   // Route for the Chrome extension to upload the catalog
+   app.post('/api/ingest-catalog', ingestCatalogHandler)
 
    // Define a health check endpoint
    app.get('/health', (c) => c.json({ status: 'ok' }))
