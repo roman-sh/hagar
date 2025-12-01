@@ -2,7 +2,7 @@
 
 ## Overview
 
-Hagar™ is an AI-assisted inventory management system designed to help retail stores automate the process of updating stock from supplier delivery notes (תעודות משלוח). Store managers simply scan a delivery note or send a PDF to a WhatsApp number. The system then uses a combination of OCR and AI to process the document, match the listed items to products in the store's back-office catalog, and prepare a draft inventory update. This draft is sent back to the manager on WhatsApp for a final, conversational review. Once approved, Hagar automatically updates the store's back-office inventory system, closing the loop from physical paper to digital record.
+Hagar™ is an AI-assisted inventory management system designed to help retail stores automate the process of updating stock from supplier delivery notes (תעודות משלוח). Store managers simply scan a delivery note or send a PDF to a WhatsApp number. The system then uses a combination of OCR and AI to process the document, match the listed items to products in the store's back-office catalog, and prepare a draft inventory update. This draft is sent back to the manager on WhatsApp for a final, conversational review. Once approved, Hagar completes the process based on the store's preference: it either **automatically updates** the back-office inventory system (for fully automated flows) or **generates an import-ready Excel file** for the manager to upload manually (for flows prioritizing user control), closing the loop from physical paper to digital record.
 
 This document describes the system architecture by following the flow of data from ingestion to finalization, explaining key technology choices and design decisions at each stage.
 
@@ -12,7 +12,7 @@ This document describes the system architecture by following the flow of data fr
 
 1.  **Conversational, Human-in-the-Loop AI**: The entire workflow is mediated through a simple WhatsApp conversation. While AI handles the heavy lifting of OCR and product matching, the user always has the final say, ensuring accuracy and allowing for the correction of ambiguous items.
 2.  **Adaptive Learning System**: Hagar is designed to get smarter over time. Every manual correction or decision made by a user (e.g., matching a supplier's item to a store product, or permanently skipping an item) is saved. This history is used to automate the processing of future, similar invoices, reducing manual work with each use.
-3.  **Pluggable & Extensible Architecture**: The core processing pipeline is generic. System-specific logic (e.g., for integrating with different back-office systems like Rexail or Priority) is encapsulated in dynamic modules. This integration is achieved by communicating directly with the private APIs used by the store's web-based back-office, using techniques like headless browsing to automate authentication and acquire session tokens when necessary. This means Hagar can connect to a wide range of inventory systems without needing official, public API access or provider involvement.
+3.  **Pluggable & Extensible Architecture**: The core processing pipeline is generic. System-specific logic (e.g., for integrating with different back-office systems like Rexail or Priority) is encapsulated in dynamic modules. This integration is achieved by communicating directly with the private APIs used by the store's web-based back-office. This flexibility extends to security models: the system supports both a **fully automated mode** (using securely encrypted credentials) and a **"credential-less" mode** where a local browser extension facilitates data access without the backend ever storing login details.
 4.  **Cost-Optimized AI Usage**: The system uses a multi-model AI strategy to keep costs low. Expensive visual and audio models are used sparingly for initial analysis, while the bulk of the conversational logic is handled by more cost-effective text models. This "right tool for the right job" approach provides power without excessive expense.
 5.  **Reliability through Asynchronicity**: All processing is handled by a robust, queue-based system (BullMQ + Redis). This ensures that every document is processed reliably, even if parts of the system are temporarily unavailable. It also allows for scalable, parallel processing of documents from multiple users while maintaining a simple, one-at-a-time conversational experience for each user.
 
@@ -89,11 +89,15 @@ Matching OCR'd item names from an invoice to a product catalog is a non-trivial 
 
 ### Challenge: Integrating with Legacy Back-Office Systems
 
-Many target businesses use older back-office systems that lack modern, well-documented APIs for tasks like authentication or data synchronization.
+Many target businesses use older back-office systems that lack modern, well-documented APIs for tasks like authentication or data synchronization. Hagar employs two distinct integration strategies to accommodate different levels of trust and control.
 
-*   **Solution: Headless Browser Automation and Intelligent Caching**
-    *   For authentication, a **headless browser (Puppeteer)** is used to programmatically perform a user login, simulating a real user to extract a session token.
-    *   For data like the product catalog, the system performs an **intelligent delta-based synchronization**. It periodically fetches the full catalog from the legacy system's API, compares it against its local cache using an MD5 fingerprint of each product, and then only performs the necessary database operations (inserts, updates, deletes). This, combined with on-demand embedding generation only for new/updated items, minimizes both API load and AI processing costs.
+*   **Solution A: Secure Direct Automation**
+    For full automation, the system uses **securely encrypted credentials** to authenticate via a headless browser (Puppeteer). This allows for autonomous catalog synchronization and direct inventory updates. The system performs an **intelligent delta-based synchronization**, periodically fetching the full catalog, comparing it against a local cache using MD5 fingerprints, and performing minimal database operations.
+
+*   **Solution B: The "No-Credential" Browser Bridge**
+    For users who prefer not to share credentials or want absolute control over database writes, Hagar utilizes a custom **Chrome Extension**.
+    1.  **Catalog Fetching:** The extension runs in the user's already-authenticated browser session. It captures the catalog and securely transmits it to the backend via an **NGINX-secured HTTPS endpoint**. This allows the AI to match products without the backend ever holding back-office credentials.
+    2.  **Excel Handoff:** Instead of writing directly to the database, the system generates a precise Excel file. The user reviews and uploads this file manually, ensuring no automated system has write-access to their inventory.
 
 ---
 
@@ -110,4 +114,6 @@ Many target businesses use older back-office systems that lack modern, well-docu
 | **Rendering**         | React (SSR)                                  | Enables the creation of dynamic, component-based HTML documents on the server-side for generating user-facing documents.                   |
 | **Observability**     | Pino, Better Stack                           | Provides structured, high-performance logging and a centralized platform for real-time log analysis, monitoring, and alerting.             |
 | **Deployment**        | Docker, Docker Compose, GitHub Actions       | A containerized approach ensures consistency across development and production environments, with CI/CD for automated builds and deployments.  |
+| **Client Extension**  | Chrome Extension API                         | Enables secure, client-side catalog extraction from authenticated sessions, bypassing the need for stored credentials on the backend.      |
+| **Security/Proxy**    | NGINX                                        | Provides a secure HTTPS reverse proxy to safely ingest data from the Chrome extension into the backend.                                    |
 | **Hardware/IoT**      | Raspberry Pi, Python                         | A cost-effective and flexible platform for managing on-site hardware and providing a bridge to the cloud backend.                         |
