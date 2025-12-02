@@ -1,6 +1,7 @@
 import { openai } from '../connections/openai'
 import { ChatCompletionTool } from 'openai/resources'
 import { AUX_MODEL } from '../config/settings'
+import { database } from '../services/db'
 
 
 export const validateDeliveryNoteSchema: ChatCompletionTool = {
@@ -10,19 +11,21 @@ export const validateDeliveryNoteSchema: ChatCompletionTool = {
       description: 'Extract structured details from a delivery note PDF for validation',
       parameters: {
          type: 'object',
-         properties: {
-            file_id: {
-               type: 'string',
-               description: 'The OpenAI file_id of the PDF to analyze'
-            }
-         },
-         required: ['file_id']
+         properties: {},
+         required: []
       }
    }
 }
 
 
-export const validateDeliveryNote = async (args: { file_id: string }) => {
+interface ValidateDeliveryNoteArgs {
+   docId: string
+}
+
+
+export const validateDeliveryNote = async ({ docId }: ValidateDeliveryNoteArgs) => {
+   const { fileId } = await database.getScanDetails(docId)
+
    const response = await openai.chat.completions.create({
       model: AUX_MODEL,
       messages: [
@@ -32,7 +35,7 @@ export const validateDeliveryNote = async (args: { file_id: string }) => {
                {
                   type: 'file',
                   file: {
-                     file_id: args.file_id
+                     file_id: fileId
                   }
                },
                {

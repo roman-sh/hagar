@@ -1,0 +1,1 @@
+Automated matching of items to the product catalog using historical data, barcodes, and vector search. Includes a collaborative review process where you help the user resolve ambiguities.

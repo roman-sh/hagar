@@ -292,22 +292,22 @@ export const database = {
    /**
     * Retrieves key details from a scan document using a simple find query.
     * @param {string} docId - The ID of the scan document.
-    * @returns {Promise<{phone: string, filename: string}>} A promise that resolves to the phone and filename.
+    * @returns {Promise<{phone: string, filename: string, fileId: string}>} A promise that resolves to the phone, filename and fileId.
     * @throws {Error} Throws an error if the document is not found or is missing required fields.
     */
-   getScanDetails: async (docId: string): Promise<{phone: string, filename: string}> => {
+   getScanDetails: async (docId: string): Promise<{phone: string, filename: string, fileId: string}> => {
       const scan = await db.collection<ScanDocument>('scans').findOne(
          { _id: docId },
-         { projection: { phone: 1, filename: 1 } }
+         { projection: { phone: 1, filename: 1, fileId: 1 } }
       )
 
-      if (!scan || !scan.phone || !scan.filename) {
-         const message = `Could not find required scan details (phone, filename) for docId: ${docId}`
+      if (!scan || !scan.phone || !scan.filename || !scan.fileId) {
+         const message = `Could not find required scan details (phone, filename, fileId) for docId: ${docId}`
          log.error(message)
          throw new Error(message)
       }
 
-      return { phone: scan.phone, filename: scan.filename }
+      return { phone: scan.phone, filename: scan.filename, fileId: scan.fileId }
    },
 
 

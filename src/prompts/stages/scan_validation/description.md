@@ -1,0 +1,1 @@
+Validation of document readability, page order and orientation, and presence of inventory data, followed by metadata extraction (Supplier, Date, Document Number) using llm visual analysis

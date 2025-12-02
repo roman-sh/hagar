@@ -16,59 +16,59 @@ import { finalizeInventoryUpdate, finalizeInventoryUpdateSchema } from './finali
 
 // Tool schemas for GPT
 export const tools: ChatCompletionTool[] = [
-  validateDeliveryNoteSchema,
-  finalizeScanValidationSchema,
-  visualInspectSchema,
-  finalizeOcrExtractionSchema,
-  getOcrDataSchema,
-  getInventorySpreadsheetSchema,
-  requestInventoryConfirmationSchema,
-  productSearchSchema,
-  applyInventoryCorrectionsSchema,
-  finalizeUpdatePreparationSchema,
-  shiftConversationContextSchema,
-  finalizeInventoryUpdateSchema,
+   validateDeliveryNoteSchema,
+   finalizeScanValidationSchema,
+   visualInspectSchema,
+   finalizeOcrExtractionSchema,
+   getOcrDataSchema,
+   getInventorySpreadsheetSchema,
+   requestInventoryConfirmationSchema,
+   productSearchSchema,
+   applyInventoryCorrectionsSchema,
+   finalizeUpdatePreparationSchema,
+   shiftConversationContextSchema,
+   finalizeInventoryUpdateSchema,
 ]
 
 // Tool function implementations
 export const functions = {
-  validateDeliveryNote,
-  finalizeScanValidation,
-  visualInspect,
-  finalizeOcrExtraction,
-  getOcrData,
-  getInventorySpreadsheet,
-  requestInventoryConfirmation,
-  productSearch,
-  applyInventoryCorrections,
-  finalizeUpdatePreparation,
-  shiftConversationContext,
-  finalizeInventoryUpdate,
+   validateDeliveryNote,
+   finalizeScanValidation,
+   visualInspect,
+   finalizeOcrExtraction,
+   getOcrData,
+   getInventorySpreadsheet,
+   requestInventoryConfirmation,
+   productSearch,
+   applyInventoryCorrections,
+   finalizeUpdatePreparation,
+   shiftConversationContext,
+   finalizeInventoryUpdate,
 }
 
 export const toolsByQueue: Record<QueueKey, ChatCompletionTool[]> = {
-  scan_validation: [
-    validateDeliveryNoteSchema,
-    finalizeScanValidationSchema,
-    visualInspectSchema,
-  ],
-  ocr_extraction: [
-    finalizeOcrExtractionSchema,
-    getOcrDataSchema,
-  ],
-  update_preparation: [
-    getInventorySpreadsheetSchema,
-    requestInventoryConfirmationSchema,
-    productSearchSchema,
-    applyInventoryCorrectionsSchema,
-    finalizeUpdatePreparationSchema,
-  ],
-  inventory_update: [
-    finalizeInventoryUpdateSchema,
-  ],
+   scan_validation: [
+      validateDeliveryNoteSchema,
+      finalizeScanValidationSchema,
+      visualInspectSchema,
+   ],
+   ocr_extraction: [
+      finalizeOcrExtractionSchema,
+      getOcrDataSchema,
+   ],
+   update_preparation: [
+      getInventorySpreadsheetSchema,
+      requestInventoryConfirmationSchema,
+      productSearchSchema,
+      applyInventoryCorrectionsSchema,
+      finalizeUpdatePreparationSchema,
+   ],
+   inventory_update: [
+      finalizeInventoryUpdateSchema,
+   ],
 } satisfies Record<string, ChatCompletionTool[]>
 
 
 export const defaultTools: ChatCompletionTool[] = [
-  shiftConversationContextSchema,
+   shiftConversationContextSchema,
 ]

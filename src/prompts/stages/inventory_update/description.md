@@ -1,0 +1,1 @@
+Final execution of the inventory update via direct API write to inventory data.

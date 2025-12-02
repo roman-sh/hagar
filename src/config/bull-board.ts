@@ -1,5 +1,5 @@
 import { createBullBoard } from '@bull-board/api'
-import { BullAdapter } from '@bull-board/api/bullAdapter.js'
+import { BullAdapter } from '@bull-board/api/bullAdapter'
 import { HonoAdapter } from '@bull-board/hono'
 import { serveStatic as nodeServeStatic } from '@hono/node-server/serve-static'
 import { queuesMap } from '../queues-base.js'

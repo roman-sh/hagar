@@ -11,12 +11,11 @@ import {
 } from "openai/resources/chat/completions"
 import { functions, toolsByQueue, defaultTools } from "../tools/tools"
 import { db } from "../connections/mongodb"
-import { outboundMessagesQueue } from "../queues-base"
 import { json } from "../utils/json"
-import systemPrompt from '../prompts/generic.md'
 import { ConversationContext } from "../types/shared"
 import { messageStore } from "./message-store"
 import { findActiveJob } from "./pipeline"
+import { prompts } from "./prompts"
 import { QueueKey } from "../queues-base"
 import { MAIN_MODEL } from "../config/settings"
 import { conversationManager } from './conversation-manager'
@@ -53,15 +52,18 @@ export const gpt = {
       // We use docId for clarity in some places, but they are the same thing.
       const docId = contextId
  
-      // Tools are provided per pipeline stage (queue). 
+      // Tools are provided per pipeline stage (queue).
+      const currentQueue = await getCurrentQueue(docId)
       const currentTools = [
          ...defaultTools,
-         ...(toolsByQueue[await getCurrentQueue(docId)] ?? [])
+         ...(toolsByQueue[currentQueue] ?? [])
       ]
 
       // Get message documents from the database
       const messageDocs = await database.getMessages(phone, contextId)
       const history = composeHistory(messageDocs)
+
+      const systemMessage = await prompts.composeSystemMessage(currentQueue, phone)
 
       const state: GptState = {
          done: false,
@@ -77,7 +79,7 @@ export const gpt = {
          const { message } = (await openai.chat.completions.create({
             model,
             messages: [
-               getSystemMessage(),  // inject the system message dynamically to allow history truncation
+               { role: 'system', content: systemMessage },
                ...history,
                ...state.messages
             ],
@@ -166,14 +168,6 @@ function executeTools(
          }
       }
    }))
-}
-
-
-function getSystemMessage(): ChatCompletionMessageParam {
-   return {
-      role: 'system' as const,
-      content: systemPrompt
-   }
 }
 
 

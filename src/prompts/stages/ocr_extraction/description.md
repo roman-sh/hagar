@@ -1,0 +1,1 @@
+High-resolution OCR extraction of tabular data, followed by AI-assisted loop to ensure valid data structure.

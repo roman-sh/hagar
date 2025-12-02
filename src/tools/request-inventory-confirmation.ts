@@ -32,8 +32,7 @@ export const requestInventoryConfirmationSchema: ChatCompletionTool = {
  * It is designed to be a self-sufficient, all-in-one function called by the agent.
  * @param args - The arguments for the tool, containing the docId.
  */
-export const requestInventoryConfirmation = async (args: RequestInventoryConfirmationArgs) => {
-   const { docId } = args
+export const requestInventoryConfirmation = async ({ docId }: RequestInventoryConfirmationArgs) => {
    try {
       // Step 1: Find the active job using its ID.
       const { job } = await findActiveJob(docId)
