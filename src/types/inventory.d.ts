@@ -40,7 +40,7 @@ export type ProductCandidate = Pick<ProductDocument,
  */
 export interface InventoryDocument {
    items: InventoryItem[]
-   meta?: InvoiceMeta
+   meta: InvoiceMeta
 }
 
 export interface HistoryItem extends InventoryItem {
@@ -109,4 +109,16 @@ export interface UpdateService {
 
 export interface UpdateModule {
    updater: UpdateService
+}
+
+export interface ExportService {
+   createExportFile(items: InventoryItem[], docId: string, meta: InvoiceMeta): Promise<{
+      filename: string
+      mimetype: string
+      data: Buffer | string
+   }>
+}
+
+export interface ExportModule {
+   exporter: ExportService
 }

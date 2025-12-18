@@ -30,6 +30,7 @@
     "bull": "^4.16.5",
     "console-table-printer": "^2.14.6",
     "deep-diff": "^1.0.2",
+    "exceljs": "^4.4.0",
     "hono": "^4.7.5",
     "ioredis": "^5.6.0",
     "mongodb": "^6.15.0",

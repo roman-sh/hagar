@@ -1,0 +1,1 @@
+Generation of an Excel file designed for importing the delivery note into the store's back-office inventory system. This file allows the store manager to manually upload the finalized data via the application's import feature.

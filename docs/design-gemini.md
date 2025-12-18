@@ -194,13 +194,6 @@ This workflow provides a complete alternative to the automated back-office integ
     *   **Architecture**: The extension uses a multi-script architecture to navigate browser security restrictions. A content script is injected into the webpage to scrape data, but to bypass the page's strict CORS and Content Security Policies, the final API call to the Hagar backend is delegated to a background service worker running in the extension's own privileged context.
     *   **Backend Process**: The extension sends the full catalog payload to the `/api/ingest-catalog` endpoint. The backend identifies the store and saves the raw catalog to a dedicated S3 path. This S3 file is then used during the `update-preparation` stage if the store's configuration has the `manualSync` flag set to `true`.
 
-### B. Inventory Update via Spreadsheet (Future Work)
-
-*   **Problem**: After an inventory draft is approved by the user, the system needs to update the back-office inventory without direct API access.
-*   **Proposed Solution**: A new pipeline stage will replace the automated `inventory_update` stage for manually-integrated stores.
-    *   **Mechanism**: This stage will generate a formatted spreadsheet file (e.g., Excel or CSV) containing the finalized inventory changes, structured in a format compatible with the target back-office system's import tools.
-    *   **User Action**: The system will send this generated file to the store manager (e.g., via WhatsApp). The manager can then use their back-office's native "import from file" functionality to apply the inventory update, closing the loop manually.
-
 ---
 
 ## Flow 8: Product Matching & Draft Preparation
@@ -246,36 +239,54 @@ The processor executes a series of abstract phases to transform the raw data int
 ---
 
 ## Flow 9: Final Inventory Update & System Integration
- 
+
 This represents the final, automated stage of the pipeline, where the user-verified document from the preparation stage is used to update the store's back-office inventory system.
- 
+
 ### A. Core Architecture: Consistent Pluggable Design
- 
+
 This stage follows the same extensible architecture as the preceding one to ensure maintainability and scalability.
- 
+
 *   **Generic Processor**: A single, generic `inventory-update` processor handles all jobs for this stage. Its role is to orchestrate the high-level steps of the update.
 *   **Dynamic Module Loading**: The processor dynamically loads a system-specific `updater` module (e.g., from `src/systems/rexail/update.ts`). This module encapsulates all the logic required to communicate with the target back-office system's API.
- 
+
 ### B. The Update Pipeline: Abstract Phases
- 
+
 1.  **Phase 1: Pre-Update Snapshot**
     *   **Objective**: To create an audit trail and a mechanism for potential reversal.
     *   **Key Action**: Before making any changes, the processor first fetches the live, real-time data from the back-office system for every product that is about to be updated. This "before" snapshot is saved as a job artefact in MongoDB.
     *   **Rationale**: This design choice provides a critical layer of data integrity. If an update causes an issue, this snapshot contains the exact state of the products before the change, allowing for easier debugging and manual reversal.
- 
+
 2.  **Phase 2: System-Specific Update Execution**
     *   **Objective**: To delegate the final API communication to the specialized module.
     *   **Key Action**: The generic processor passes the pre-update snapshot and the user-approved inventory data to the dynamically loaded `updater` module.
     *   **System-Specific Logic**: The `updater` module is responsible for all vendor-specific logic. This includes constructing the precise API payload according to the back-office system's requirements and making the final API call to execute the inventory update.
- 
+
 3.  **Phase 3: AI Handoff & Finalization**
     *   **Objective**: To close the loop with the user and formally complete the document's journey.
     *   **Key Actions**:
         *   Upon a successful API response, the processor triggers the conversational AI with an `inventory_update_succeeded` event.
         *   The AI then calls the `finalizeInventoryUpdate` tool, which retrieves a pre-computed summary of the update. The AI relays this summary to the user and officially marks the document's pipeline as complete.
- 
+
 ---
- 
+
+## Flow 10: Excel Export & Reporting (Alternative Output)
+
+This alternative pipeline stage is designed for stores that cannot or prefer not to use direct API integration for inventory updates. It replaces Flow 9 in the pipeline configuration for such stores, offering a manual but streamlined "import-ready" workflow.
+
+### A. Core Architecture: Pluggable Export Modules
+
+Similar to other pipeline stages, this flow uses a generic `excel-export` processor that orchestrates the job but delegates the system-specific logic to dynamically loaded modules. This ensures the core pipeline remains agnostic while being able to generate highly specific file formats (e.g., for Rexail) that meet strict vendor requirements.
+
+### B. The Export Process
+
+The process is designed to bridge the gap between Hagar's data and the store's back-office without direct API access.
+
+1.  **System-Specific File Generation**: The loaded exporter module transforms the finalized inventory data into a format that guarantees a successful import into the target back-office system. To minimize import errors, it employs a prioritized logic for identifying products: preferring system-known barcodes when available, falling back to internal IDs for manual lookup, and finally providing the supplier's raw item name for completely unmatched items. This ensures every line in the file is actionable for the store manager.
+
+2.  **Delivery & Finalization**: The generated file is delivered directly to the store manager via WhatsApp. The AI then confirms the delivery and marks the document's processing journey as complete. This allows the manager to immediately upload the file using their back-office system's native import feature, effectively closing the inventory update loop manually.
+
+---
+
 ## System Observability
 
 A multi-layered approach to observability ensures system health can be monitored in real-time and issues can be debugged efficiently.

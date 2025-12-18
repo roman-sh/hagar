@@ -151,17 +151,17 @@ export const conversationManager = {
             if (!contextId) throw new Error("contextId is required for media messages.")
             jobData = { type: 'media_url', phone, contextId, fileUrl: fileUrl!, filename }
             break
-         
+
          case 'media_base64':
             if (!contextId) throw new Error("contextId is required for media messages.")
             if (!filename) throw new Error("filename is required for base64 media.")
             jobData = { type: 'media_base64', phone, contextId, mimetype: media!.mimetype, data: media!.data, filename }
             break
-         
+
          case 'text':
             jobData = { type: 'text', phone, content: content!, contextId }
             break
-         
+
          case 'empty':
             log.warn({ phone, contextId }, 'Attempted to send an empty message. Aborting.')
             return
@@ -213,6 +213,14 @@ export const conversationManager = {
    /**
     * Schedules a one-time context shift to occur after the next message in a
     * specific document's queue is successfully sent.
+    * 
+    * LOGIC EXPLAINED:
+    * This method is called at the end of the pipeline. At this point, the final stage is complete (nextStage is null/undefined),
+    * and the tool returns `isSilent: false`. This makes the AI to generate a final text confirmation (e.g., "Done!").
+    * 
+    * We want to close the queue (shift context) only AFTER that final text message is sent.
+    * To do this, we attach a listener that waits for the *next* message to be processed.
+    * 
     * @param phone The user's phone number.
     * @param docId The document ID whose queue will be monitored.
     * @returns True if the listener was attached, false if the queue was not found.
@@ -220,11 +228,18 @@ export const conversationManager = {
    scheduleContextShift(phone: string, docId: string): boolean {
       const queue = this.getQueue(docId)
       if (queue) {
-         log.info({ phone, docId }, 'Attaching one-time context shift listener to queue.')
-         queue.once('completed', () => {
-            log.info({ phone, docId }, 'Listener triggered on job completion. Executing scheduled context shift.')
-            // Not awaiting this is intentional to avoid blocking message processing.
-            this.shiftContext(phone)
+         log.info({ phone, docId }, 'Attaching 2-stage (active->completed) context shift listener.')
+
+         // We do not want to trigger a context shift on the current message (e.g. file upload) completion, 
+         // So we watch for the full lifecycle: active -> completed of the NEXT job.
+         queue.once('active', () => {
+            log.info({ phone, docId }, 'Next message became active in outbound queue. Waiting for completion.')
+
+            // Wait for THAT job to complete
+            queue.once('completed', () => {
+               log.info({ phone, docId }, 'Message sent successfully. Shifting context.')
+               this.shiftContext(phone)
+            })
          })
          return true
       } else {

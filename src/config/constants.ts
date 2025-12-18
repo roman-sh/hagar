@@ -6,6 +6,7 @@ export const SCAN_VALIDATION = 'scan_validation'
 export const OCR_EXTRACTION = 'ocr_extraction'
 export const UPDATE_PREPARATION = 'update_preparation'
 export const INVENTORY_UPDATE = 'inventory_update'
+export const EXCEL_EXPORT = 'excel_export'
 export const INBOUND_MESSAGES = 'inbound_messages'
 export const OUTBOUND_MESSAGES = 'outbound_messages'
 

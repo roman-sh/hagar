@@ -528,7 +528,6 @@ export const database = {
          .aggregate<ProductCandidate>(pipeline)
          .toArray()
    },
-
    
    /**
     * For a given supplier item name, finds the single most recent historical
@@ -602,3 +601,4 @@ export const database = {
       return results[0] as Partial<InventoryItem>
    },
 }
+

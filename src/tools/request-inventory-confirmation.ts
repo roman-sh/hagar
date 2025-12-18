@@ -2,6 +2,7 @@ import { ChatCompletionTool } from 'openai/resources'
 import { database } from '../services/db'
 import { html } from '../services/html'
 import * as inventory from '../services/inventory'
+import { generateExportFilename } from '../utils/inventory'
 import { findActiveJob } from '../services/pipeline'
 import { InventoryDocument } from '../types/inventory'
 import { conversationManager } from '../services/conversation-manager'
@@ -49,14 +50,12 @@ export const requestInventoryConfirmation = async ({ docId }: RequestInventoryCo
       // Step 5: Generate the confirmation PDF on-the-fly from the document data.
       const pdfBuffer = await html.generateInventoryConfirmation(doc)
 
-      // Step 6: Construct a meaningful filename, preferring supplier/invoice ID but falling back to the original.
-      let pdfFilename = originalFilename
-      const { supplier, invoiceId } = doc.meta || {}
-      if (supplier && invoiceId) {
-         // Combine supplier and invoice ID, then sanitize the entire string.
-         const rawFilename = `${supplier}_${invoiceId}.pdf`
-         pdfFilename = rawFilename.replace(/[\s/\\?%*:|"<>]/g, '_')
-      }
+      // Step 6: Construct a meaningful filename, preferring supplier/invoice ID.
+      const pdfFilename = generateExportFilename({
+         extension: 'pdf',
+         docId,
+         meta: doc.meta
+      })
 
       // Step 7: Send the PDF through the queueing system to respect conversation context.
       await conversationManager.send({

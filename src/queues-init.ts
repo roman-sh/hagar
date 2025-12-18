@@ -5,6 +5,7 @@ import {
    OCR_EXTRACTION,
    UPDATE_PREPARATION,
    INVENTORY_UPDATE,
+   EXCEL_EXPORT,
 } from './config/constants'
 import { JobDataMap } from './types/jobs.js'
 import {
@@ -12,6 +13,7 @@ import {
    ocrExtractionProcessor,
    updatePreparationProcessor,
    inventoryUpdateProcessor,        
+   excelExportProcessor,
    outboundMessagesProcessor,
 } from './processors'
 import { database } from './services/db'
@@ -31,6 +33,7 @@ const processorsMap: {
    [OCR_EXTRACTION]: ocrExtractionProcessor,
    [UPDATE_PREPARATION]: updatePreparationProcessor,
    [INVENTORY_UPDATE]: inventoryUpdateProcessor,
+   [EXCEL_EXPORT]: excelExportProcessor,
 }
 
 /**

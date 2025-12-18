@@ -6,6 +6,7 @@ import {
    OCR_EXTRACTION,
    UPDATE_PREPARATION,
    INVENTORY_UPDATE,
+   EXCEL_EXPORT,
 } from '../config/constants.js'
 
 /**
@@ -44,6 +45,12 @@ export type UpdatePreparationJobData = {} | InventoryDocument
 export interface InventoryUpdateJobData {}
 
 /**
+ * Job data for the excel export queue.
+ * This is currently a placeholder and can be expanded later.
+ */
+export interface ExcelExportJobData {}
+
+/**
  * A map that associates each queue name with its specific job data type.
  * This is the key to achieving strong typing for queues and processors.
  */
@@ -52,6 +59,7 @@ export interface JobDataMap {
    [OCR_EXTRACTION]: OcrExtractionJobData
    [UPDATE_PREPARATION]: UpdatePreparationJobData
    [INVENTORY_UPDATE]: InventoryUpdateJobData
+   [EXCEL_EXPORT]: ExcelExportJobData
 }
 
 
