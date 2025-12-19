@@ -2,6 +2,7 @@ import { ChatCompletionTool } from 'openai/resources'
 import { database } from '../services/db'
 import { lemmatizer } from '../services/lemmatizer'
 import { ProductCandidate } from '../types/inventory'
+import { LEMMA_SEARCH_LIMIT_MANUAL } from '../config/settings'
 
 
 export const productSearchSchema: ChatCompletionTool = {
@@ -39,7 +40,7 @@ export async function productSearch(args: {
 
    // 3. Create an array of search promises
    const searchPromises = lemmatizedQueries.map(lemmas =>
-      database.searchProductsByLemmas(lemmas, storeId)
+      database.searchProductsByLemmas(lemmas, storeId, LEMMA_SEARCH_LIMIT_MANUAL)
    )
 
    // 4. Execute all searches in parallel

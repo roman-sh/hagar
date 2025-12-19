@@ -30,9 +30,18 @@ export const VECTOR_SEARCH_INDEX_NAME = 'name_embedding_index_3072'
 export const TEXT_SEARCH_INDEX_NAME = 'name-lemmas'
 
 /**
- * The maximum number of candidates to return from a lemma-based product search.
+ * The maximum number of candidates to return from a lemma-based product search
+ * during automated pipeline passes (e.g. initial matching).
+ * Kept low to reduce noise and token usage.
  */
-export const LEMMA_SEARCH_CANDIDATE_LIMIT = 3
+export const LEMMA_SEARCH_LIMIT_AUTO = 3
+
+/**
+ * The maximum number of candidates to return from a lemma-based product search
+ * during manual lookup (e.g. via the productSearch tool).
+ * Kept higher to provide more options for human review.
+ */
+export const LEMMA_SEARCH_LIMIT_MANUAL = 5
 
 /**
  * The model identifier for auxiliary, non-conversational AI tasks.

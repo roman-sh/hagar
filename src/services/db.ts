@@ -20,7 +20,7 @@ import {
 } from '../types/jobs'
 import { InvoiceMeta, ProductCandidate, InventoryItem } from '../types/inventory'
 import { QueueKey } from '../queues-base'
-import { TEXT_SEARCH_INDEX_NAME, LEMMA_SEARCH_CANDIDATE_LIMIT } from '../config/settings'
+import { TEXT_SEARCH_INDEX_NAME, LEMMA_SEARCH_LIMIT_AUTO } from '../config/settings'
 import { DocType } from '../types/documents'
 import { createCanonicalNameKey } from '../utils/string-utils'
 
@@ -490,9 +490,10 @@ export const database = {
     * pre-filtering by storeId for performance.
     * @param {string[]} lemmas - The lemmatized search terms.
     * @param {string} storeId - The store to search within.
+    * @param {number} [limit=LEMMA_SEARCH_LIMIT_AUTO] - The maximum number of results to return.
     * @returns {Promise<ProductCandidate[]>} A promise that resolves to an array of product candidates.
     */
-   searchProductsByLemmas: async (lemmas: string[], storeId: string): Promise<ProductCandidate[]> => {
+   searchProductsByLemmas: async (lemmas: string[], storeId: string, limit: number = LEMMA_SEARCH_LIMIT_AUTO): Promise<ProductCandidate[]> => {
       const pipeline = [
          {
             $search: {
@@ -513,7 +514,7 @@ export const database = {
                }
             }
          },
-         { $limit: LEMMA_SEARCH_CANDIDATE_LIMIT },
+         { $limit: limit },
          {
             $project: {
                _id: 1,
