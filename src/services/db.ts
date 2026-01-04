@@ -138,14 +138,14 @@ export const database = {
 
       if (!matchingStores.length) {
          const message = `StoreId not found for phone: ${phone}`
-         log.error({ notifyPhone: phone }, message)
+         log.error(message)
          // TODO: Set up a demo store for unregistered phones
          throw new Error(message)
       }
 
       if (matchingStores.length > 1) {
          const message = `Multiple stores found for phone: ${phone}.`
-         log.error({ notifyPhone: phone, storesFound: matchingStores }, message)
+         log.error(message)
          throw new Error(message)
       }
 
