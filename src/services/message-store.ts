@@ -9,11 +9,11 @@ export const messageStore = {
     * @param message - WhatsApp message object
     * @returns The message ID for queue processing
     */
-   store: (message: Message): string => {
+   store: async (message: Message): Promise<string> => {
       const messageId = message.id._serialized
-      const phone = message.from.split('@')[0]
+      const { number } = await message.getContact()
       messagesMap.set(messageId, message)
-      messagesMap.set(phone, message)  // keep reference to last message for typing indicator
+      messagesMap.set(number, message)  // keep reference to last message for typing indicator
       return messageId
    },
    

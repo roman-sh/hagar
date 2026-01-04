@@ -35,10 +35,10 @@ export async function buildApp() {
 
    // Listen for incoming messages
    client.on('message', async (message: Message) => {
-      log.debug({ from: message.from, type: message.type }, 'Received WhatsApp message')
-      const messageId = messageStore.store(message)
-      const phone = message.from.split('@')[0] // Extract phone number
-      await phoneQueueManager.addMessage(phone, { messageId })
+      const { number } = await message.getContact()
+      log.debug({ from: number, type: message.type }, 'Received WhatsApp message')
+      await messageStore.store(message)
+      await phoneQueueManager.addMessage(number, { messageId: message.id._serialized })
    })
 
    // Initialize Hono server app

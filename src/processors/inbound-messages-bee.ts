@@ -30,10 +30,10 @@ export async function inboundMessagesBeeProcessor(
    const
       // Retrieve the original message object from the store
       message = messageStore.get(messageId),
-      phone = message.from.split('@')[0], // Extract phone number from WhatsApp ID
       contact = await message.getContact(),
+      { number: phone } = contact,
       userName = (contact.name || contact.pushname || phone).replace(/[\s<|\\/>]/g, '_'),
-      storeId = await database.getStoreIdByPhone(message.from.split('@')[0])
+      storeId = await database.getStoreIdByPhone(phone)
 
    let content: Message['body'] | undefined
    
