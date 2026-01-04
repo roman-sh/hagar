@@ -125,7 +125,7 @@ export const database = {
     * @throws {Error} Throws an error if multiple stores are found for the same phone number.
     */
    getStoreIdByPhone: async (phone: string): Promise<StoreDocument['storeId']> => {
-      const cacheKey = `storeId:phone:${phone}`
+      const cacheKey = `phone-to-store:${phone}`
       const cachedStoreId = await redisClient.get(cacheKey)
 
       if (cachedStoreId) {
